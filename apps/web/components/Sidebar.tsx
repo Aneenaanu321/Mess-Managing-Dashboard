@@ -138,7 +138,6 @@ export function Sidebar({ open, onClose, onToggle }: SidebarProps) {
           open ? "w-[17rem] translate-x-0" : "-translate-x-full w-[17rem] lg:translate-x-0 lg:w-[4.5rem]",
         )}
         aria-hidden={!open && !isDesktop}
-        aria-expanded={open}
       >
         <div
           className={clsx(
