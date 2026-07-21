@@ -1,0 +1,94 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #f3f5f4;
+  --foreground: #0f172a;
+  --surface: #ffffff;
+  --ring: #44b86b;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
+@keyframes auth-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes auth-rise {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes auth-orb {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(18px, -22px) scale(1.08);
+  }
+}
+
+@keyframes auth-sheen {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.auth-fade-in {
+  animation: auth-fade-in 0.6s ease-out both;
+}
+
+.auth-rise {
+  animation: auth-rise 0.75s cubic-bezier(0.22, 1, 0.36, 1) 0.12s both;
+}
+
+.auth-rise-delayed {
+  animation: auth-rise 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.22s both;
+}
+
+.auth-orb {
+  animation: auth-orb 14s ease-in-out infinite;
+}
+
+.auth-orb-delayed {
+  animation: auth-orb 18s ease-in-out 2s infinite;
+}
+
+.auth-sheen {
+  background-size: 200% 200%;
+  animation: auth-sheen 16s ease infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-fade-in,
+  .auth-rise,
+  .auth-rise-delayed,
+  .auth-orb,
+  .auth-orb-delayed,
+  .auth-sheen {
+    animation: none;
+  }
+}
