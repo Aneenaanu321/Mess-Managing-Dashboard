@@ -15,9 +15,11 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { Download } from "lucide-react";
 import { useCurrentUser } from "@/lib/auth";
 import { useReportsSummary, useReceivablesAging, AgingBucket } from "@/lib/reports";
-import { Badge, Card } from "@/components/ui";
+import { Badge, Button, Card } from "@/components/ui";
+import { downloadCsv } from "@/lib/csv";
 
 const PIE_COLORS = ["#2563eb", "#1d4ed8", "#0ea5e9", "#22c55e", "#f59e0b", "#ef4444", "#8b5cf6", "#0f766e", "#64748b", "#be123c", "#65a30d"];
 
@@ -190,9 +192,41 @@ export default function ReportsPage() {
       </Card>
 
       <Card className="mt-6 overflow-hidden">
-        <div className="border-b border-slate-200 p-5">
-          <h2 className="text-sm font-semibold text-slate-900">Receivables Aging</h2>
-          <p className="mt-0.5 text-xs text-slate-500">Outstanding balances on unpaid invoices, bucketed by days past due.</p>
+        <div className="flex items-start justify-between border-b border-slate-200 p-5">
+          <div>
+            <h2 className="text-sm font-semibold text-slate-900">Receivables Aging</h2>
+            <p className="mt-0.5 text-xs text-slate-500">Outstanding balances on unpaid invoices, bucketed by days past due.</p>
+          </div>
+          {(aging?.invoices.length ?? 0) > 0 && (
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() =>
+                downloadCsv(
+                  "receivables-aging",
+                  aging!.invoices.map((inv) => ({
+                    code: inv.code,
+                    customer: inv.customerName,
+                    dueDate: new Date(inv.dueDate).toLocaleDateString(),
+                    bucket: AGING_BUCKET_LABELS[inv.bucket],
+                    balance: inv.balance,
+                    currency: inv.currency,
+                  })),
+                  [
+                    { key: "code", label: "Invoice" },
+                    { key: "customer", label: "Customer" },
+                    { key: "dueDate", label: "Due Date" },
+                    { key: "bucket", label: "Bucket" },
+                    { key: "balance", label: "Balance" },
+                    { key: "currency", label: "Currency" },
+                  ],
+                )
+              }
+            >
+              <Download size={14} />
+              Export CSV
+            </Button>
+          )}
         </div>
 
         <div className="grid grid-cols-2 gap-px bg-slate-100 sm:grid-cols-5">

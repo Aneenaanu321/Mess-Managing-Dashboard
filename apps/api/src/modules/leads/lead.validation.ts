@@ -72,6 +72,18 @@ export const disqualifyLeadSchema = z.object({
   note: z.string().optional(),
 });
 
+// Deliberately loose here — each row is validated individually inside
+// leadService.bulkImport (via createLeadSchema.safeParse) so one malformed
+// row is reported and skipped instead of rejecting the whole batch, which a
+// single strict z.array(createLeadSchema) would do.
+export const bulkImportLeadsSchema = z.object({
+  rows: z
+    .array(z.record(z.string(), z.unknown()))
+    .min(1, "At least one row is required")
+    .max(500, "Import is capped at 500 rows per request"),
+});
+export type BulkImportLeadsInput = z.infer<typeof bulkImportLeadsSchema>;
+
 export const listLeadsQuerySchema = z.object({
   status: z.enum(["NEW", "CONTACTED", "QUALIFIED", "DISQUALIFIED", "CONVERTED"]).optional(),
   ownerId: z.string().optional(),

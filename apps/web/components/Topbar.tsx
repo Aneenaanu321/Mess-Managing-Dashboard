@@ -1,9 +1,10 @@
 "use client";
 
-import { Bell, Building2, ChevronDown, LogOut, Menu } from "lucide-react";
+import { Building2, ChevronDown, LogOut, Menu } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useCurrentUser, useLogout } from "@/lib/auth";
 import { useRouter } from "next/navigation";
+import { NotificationBell } from "@/components/NotificationBell";
 
 type TopbarProps = {
   sidebarOpen: boolean;
@@ -80,14 +81,7 @@ export function Topbar({ sidebarOpen, onMenuClick }: TopbarProps) {
       )}
 
       <div className="ml-auto flex items-center gap-1.5 sm:gap-2">
-        <button
-          type="button"
-          className="relative rounded-xl p-2.5 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800"
-          aria-label="Notifications"
-        >
-          <Bell size={18} />
-          <span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-brand-500 ring-2 ring-white" />
-        </button>
+        <NotificationBell />
 
         {user && (
           <div className="relative ml-1 border-l border-slate-200 pl-2 sm:pl-3" ref={menuRef}>

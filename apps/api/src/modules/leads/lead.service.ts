@@ -1,6 +1,6 @@
 import { DisqualifyReason } from "@prisma/client";
 import { leadRepository } from "./lead.repository";
-import { CreateLeadInput, UpdateLeadInput } from "./lead.validation";
+import { createLeadSchema, CreateLeadInput, UpdateLeadInput, BulkImportLeadsInput } from "./lead.validation";
 import { ApiError } from "../../utils/ApiError";
 import { nextNumber } from "../../utils/numberSequence";
 import { scoreLead } from "../ai/leadScoring";
@@ -235,5 +235,39 @@ export const leadService = {
     });
 
     return result;
+  },
+
+  /**
+   * CSV bulk import (PRD: "replace Excel-based tracking"). Reuses `create`
+   * row-by-row rather than a single bulk insert so each row still gets
+   * duplicate detection, AI scoring, and its own audit log entry —
+   * consistency with a manually-created lead mattered more here than raw
+   * throughput at the (capped at 500 rows) sizes this is meant for. One bad
+   * row doesn't abort the batch; its error comes back per-row instead.
+   */
+  async bulkImport(ctx: ActorCtx, input: BulkImportLeadsInput) {
+    const outcomes: Array<{ row: number; success: boolean; code?: string; error?: string }> = [];
+
+    for (let i = 0; i < input.rows.length; i++) {
+      const parsed = createLeadSchema.safeParse(input.rows[i]);
+      if (!parsed.success) {
+        const message = parsed.error.issues.map((issue) => issue.message).join("; ");
+        outcomes.push({ row: i + 1, success: false, error: message });
+        continue;
+      }
+
+      try {
+        const lead = await this.create(ctx, parsed.data);
+        outcomes.push({ row: i + 1, success: true, code: lead.code });
+      } catch (err) {
+        outcomes.push({ row: i + 1, success: false, error: err instanceof Error ? err.message : "Unknown error" });
+      }
+    }
+
+    return {
+      total: input.rows.length,
+      created: outcomes.filter((o) => o.success).length,
+      failed: outcomes.filter((o) => !o.success),
+    };
   },
 };

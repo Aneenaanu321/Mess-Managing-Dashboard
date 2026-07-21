@@ -2,20 +2,53 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Plus, Search } from "lucide-react";
+import { Download, Plus, Search, Upload } from "lucide-react";
 import { useLeads, STATUS_TONE, Lead } from "@/lib/leads";
 import { hasPermission, useCurrentUser } from "@/lib/auth";
 import { Badge, Button, Input, Select, Card } from "@/components/ui";
+import { downloadCsv } from "@/lib/csv";
+import { LeadImportModal } from "@/components/LeadImportModal";
 
 const STATUS_OPTIONS = ["", "NEW", "CONTACTED", "QUALIFIED", "DISQUALIFIED", "CONVERTED"];
 
 export default function LeadsPage() {
   const [status, setStatus] = useState("");
   const [search, setSearch] = useState("");
+  const [showImport, setShowImport] = useState(false);
   const { data: user } = useCurrentUser();
   const { data, isLoading, isError } = useLeads({ status: status || undefined, search: search || undefined });
 
   const leads = data?.data ?? [];
+
+  function handleExport() {
+    downloadCsv(
+      "leads",
+      leads.map((l: Lead) => ({
+        code: l.code,
+        companyName: l.companyName,
+        contactName: l.contactName,
+        email: l.email ?? "",
+        phone: l.phone ?? "",
+        source: l.source,
+        industry: l.industry,
+        score: l.score,
+        owner: l.owner ? `${l.owner.firstName} ${l.owner.lastName}` : "",
+        status: l.status,
+      })),
+      [
+        { key: "code", label: "Code" },
+        { key: "companyName", label: "Company" },
+        { key: "contactName", label: "Contact" },
+        { key: "email", label: "Email" },
+        { key: "phone", label: "Phone" },
+        { key: "source", label: "Source" },
+        { key: "industry", label: "Industry" },
+        { key: "score", label: "Score" },
+        { key: "owner", label: "Owner" },
+        { key: "status", label: "Status" },
+      ],
+    );
+  }
 
   return (
     <div className="space-y-5">
@@ -27,15 +60,31 @@ export default function LeadsPage() {
             {data?.meta?.total ?? 0} total lead{data?.meta?.total === 1 ? "" : "s"} in your pipeline
           </p>
         </div>
-        {hasPermission(user, "lead:create") && (
-          <Link href="/leads/new">
-            <Button>
-              <Plus size={16} />
-              New Lead
+        <div className="flex gap-2">
+          {leads.length > 0 && (
+            <Button variant="secondary" onClick={handleExport}>
+              <Download size={16} />
+              Export CSV
             </Button>
-          </Link>
-        )}
+          )}
+          {hasPermission(user, "lead:create") && (
+            <Button variant="secondary" onClick={() => setShowImport(true)}>
+              <Upload size={16} />
+              Bulk Import
+            </Button>
+          )}
+          {hasPermission(user, "lead:create") && (
+            <Link href="/leads/new">
+              <Button>
+                <Plus size={16} />
+                New Lead
+              </Button>
+            </Link>
+          )}
+        </div>
       </div>
+
+      {showImport && <LeadImportModal onClose={() => setShowImport(false)} />}
 
       <Card className="flex flex-wrap items-center gap-3 p-4">
         <div className="relative min-w-[220px] flex-1">

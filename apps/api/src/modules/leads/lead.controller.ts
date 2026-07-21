@@ -6,6 +6,7 @@ import {
   assignLeadSchema,
   disqualifyLeadSchema,
   listLeadsQuerySchema,
+  bulkImportLeadsSchema,
 } from "./lead.validation";
 import { ApiError } from "../../utils/ApiError";
 import { requireParam } from "../../utils/assert";
@@ -66,6 +67,12 @@ export const leadController = {
       estimatedValue,
       currency: req.body?.currency,
     });
+    res.status(201).json({ success: true, data: result });
+  },
+
+  async bulkImport(req: Request, res: Response) {
+    const input = bulkImportLeadsSchema.parse(req.body);
+    const result = await leadService.bulkImport(ctxFrom(req), input);
     res.status(201).json({ success: true, data: result });
   },
 };

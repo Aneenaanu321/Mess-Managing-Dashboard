@@ -1,8 +1,15 @@
 import { prisma } from "../../config/prisma";
-import { ListAuditLogQuery } from "./settings.validation";
+import { ListAuditLogQuery, UpsertSlaPolicyInput } from "./settings.validation";
+import { writeAuditLog } from "../../utils/audit";
+
+const PRIORITY_ORDER = ["CRITICAL", "HIGH", "MEDIUM", "LOW"];
 
 interface Ctx {
   companyId: string;
+}
+
+interface WriteCtx extends Ctx {
+  userId: string;
 }
 
 export const settingsService = {
@@ -79,5 +86,36 @@ export const settingsService = {
     ]);
 
     return { items, total, page, pageSize, totalPages: Math.ceil(total / pageSize) };
+  },
+
+  async getSlaPolicies(ctx: Ctx) {
+    const policies = await prisma.slaPolicy.findMany({ where: { companyId: ctx.companyId } });
+    // Always return all 4 priorities even if a company somehow has fewer
+    // seeded — the UI shouldn't have to handle a missing row as a special case.
+    return PRIORITY_ORDER.map((priority) => policies.find((p) => p.priority === priority) ?? { id: null, priority, responseMins: null, resolutionMins: null });
+  },
+
+  async upsertSlaPolicy(ctx: WriteCtx, input: UpsertSlaPolicyInput) {
+    const existing = await prisma.slaPolicy.findUnique({
+      where: { companyId_priority: { companyId: ctx.companyId, priority: input.priority } },
+    });
+
+    const policy = await prisma.slaPolicy.upsert({
+      where: { companyId_priority: { companyId: ctx.companyId, priority: input.priority } },
+      create: { companyId: ctx.companyId, priority: input.priority, responseMins: input.responseMins, resolutionMins: input.resolutionMins },
+      update: { responseMins: input.responseMins, resolutionMins: input.resolutionMins },
+    });
+
+    await writeAuditLog({
+      companyId: ctx.companyId,
+      actorId: ctx.userId,
+      entityType: "SlaPolicy",
+      entityId: policy.id,
+      action: existing ? "UPDATE" : "CREATE",
+      before: existing,
+      after: policy,
+    });
+
+    return policy;
   },
 };

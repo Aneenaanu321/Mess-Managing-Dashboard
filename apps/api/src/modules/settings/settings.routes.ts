@@ -18,5 +18,9 @@ router.get("/roles", asyncHandler(settingsController.roles));
 router.get("/users", asyncHandler(settingsController.users));
 router.get("/sequences", asyncHandler(settingsController.sequences));
 router.get("/audit-log", asyncHandler(settingsController.auditLog));
+router.get("/sla-policies", asyncHandler(settingsController.slaPolicies));
+// Editing SLA targets is an org-level configuration change, gated tighter
+// than the router-level read check above.
+router.patch("/sla-policies", authorize(PERMISSIONS.SETTINGS_MANAGE_ORG), asyncHandler(settingsController.upsertSlaPolicy));
 
 export default router;

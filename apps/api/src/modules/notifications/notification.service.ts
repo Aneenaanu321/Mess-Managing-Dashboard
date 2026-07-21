@@ -56,4 +56,12 @@ export const notificationService = {
   markRead(userId: string, id: string) {
     return prisma.notification.updateMany({ where: { id, userId }, data: { readAt: new Date() } });
   },
+
+  markAllRead(userId: string) {
+    return prisma.notification.updateMany({ where: { userId, readAt: null }, data: { readAt: new Date() } });
+  },
+
+  countUnread(userId: string) {
+    return prisma.notification.count({ where: { userId, readAt: null } });
+  },
 };

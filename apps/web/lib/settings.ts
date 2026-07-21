@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "./api-client";
 
 export interface OrgBranch {
@@ -98,5 +98,30 @@ export function useAuditLog(params: { entityType?: string; action?: string; page
   return useQuery({
     queryKey: ["settings", "audit-log", params],
     queryFn: async () => apiClient.get<AuditLogEntry[]>(`/settings/audit-log?${query.toString()}`),
+  });
+}
+
+export type TicketPriority = "CRITICAL" | "HIGH" | "MEDIUM" | "LOW";
+
+export interface SlaPolicyRow {
+  id: string | null;
+  priority: TicketPriority;
+  responseMins: number | null;
+  resolutionMins: number | null;
+}
+
+export function useSlaPolicies() {
+  return useQuery({
+    queryKey: ["settings", "sla-policies"],
+    queryFn: async () => (await apiClient.get<SlaPolicyRow[]>("/settings/sla-policies")).data,
+  });
+}
+
+export function useUpsertSlaPolicy() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { priority: TicketPriority; responseMins: number; resolutionMins: number }) =>
+      (await apiClient.patch<SlaPolicyRow>("/settings/sla-policies", input)).data,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["settings", "sla-policies"] }),
   });
 }

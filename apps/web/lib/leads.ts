@@ -48,6 +48,21 @@ export function useLead(id: string) {
   });
 }
 
+export interface BulkImportResult {
+  total: number;
+  created: number;
+  failed: { row: number; error?: string }[];
+}
+
+export function useBulkImportLeads() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (rows: Record<string, unknown>[]) =>
+      (await apiClient.post<BulkImportResult>("/leads/bulk-import", { rows })).data,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["leads"] }),
+  });
+}
+
 export function useCreateLead() {
   const queryClient = useQueryClient();
   return useMutation({

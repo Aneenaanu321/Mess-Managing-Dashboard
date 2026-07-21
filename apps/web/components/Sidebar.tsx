@@ -17,6 +17,7 @@ import {
   Package,
   Warehouse,
   Truck,
+  Handshake,
   FolderKanban,
   Wrench,
   Cpu,
@@ -56,6 +57,7 @@ const NAV = [
       { href: "/inventory", label: "Inventory & Catalog", icon: Package },
       { href: "/warehouse", label: "Warehouse", icon: Warehouse },
       { href: "/procurement", label: "Procurement", icon: Truck },
+      { href: "/vendors", label: "Vendors", icon: Handshake },
     ],
   },
   {

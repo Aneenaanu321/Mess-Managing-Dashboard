@@ -2,17 +2,28 @@
 
 import { useState } from "react";
 import clsx from "clsx";
-import { Building2, Hash, ScrollText, ShieldCheck, Users as UsersIcon } from "lucide-react";
-import { useOrgSettings, useRoleSettings, useUserSettings, useSequenceSettings, useAuditLog } from "@/lib/settings";
-import { Badge, Card, Input, Select } from "@/components/ui";
+import { Building2, Hash, ScrollText, ShieldCheck, Timer, Users as UsersIcon } from "lucide-react";
+import {
+  useOrgSettings,
+  useRoleSettings,
+  useUserSettings,
+  useSequenceSettings,
+  useAuditLog,
+  useSlaPolicies,
+  useUpsertSlaPolicy,
+  TicketPriority,
+} from "@/lib/settings";
+import { hasPermission, useCurrentUser } from "@/lib/auth";
+import { Badge, Button, Card, Input, Select } from "@/components/ui";
 
-type Tab = "org" | "roles" | "users" | "sequences" | "audit-log";
+type Tab = "org" | "roles" | "users" | "sequences" | "sla" | "audit-log";
 
 const TABS: { key: Tab; label: string; icon: typeof Building2 }[] = [
   { key: "org", label: "Organization", icon: Building2 },
   { key: "roles", label: "Roles", icon: ShieldCheck },
   { key: "users", label: "Users", icon: UsersIcon },
   { key: "sequences", label: "Number Sequences", icon: Hash },
+  { key: "sla", label: "SLA Policies", icon: Timer },
   { key: "audit-log", label: "Audit Log", icon: ScrollText },
 ];
 
@@ -56,6 +67,7 @@ export default function SettingsPage() {
       {tab === "roles" && <RolesSection />}
       {tab === "users" && <UsersSection />}
       {tab === "sequences" && <SequencesSection />}
+      {tab === "sla" && <SlaPoliciesSection />}
       {tab === "audit-log" && <AuditLogSection />}
     </div>
   );
@@ -274,6 +286,122 @@ function SequencesSection() {
         </table>
       )}
     </Card>
+  );
+}
+
+const PRIORITY_TONE: Record<TicketPriority, "red" | "amber" | "blue" | "slate"> = {
+  CRITICAL: "red",
+  HIGH: "amber",
+  MEDIUM: "blue",
+  LOW: "slate",
+};
+
+function SlaPoliciesSection() {
+  const { data: policies, isLoading, isError } = useSlaPolicies();
+  const { data: user } = useCurrentUser();
+  const canManage = hasPermission(user, "settings:manage_org");
+
+  return (
+    <Card className="overflow-hidden">
+      <div className="border-b border-slate-200 p-4">
+        <h2 className="text-sm font-semibold text-slate-900">Support SLA Targets</h2>
+        <p className="mt-0.5 text-xs text-slate-500">
+          Time-to-first-response and time-to-resolution targets per ticket priority, in minutes. Drives the SLA_RISK/SLA_BREACH
+          reminders <code>apps/worker</code> sends.
+        </p>
+      </div>
+      {isError && <p className="p-6 text-sm text-red-600">Couldn&apos;t load SLA policies.</p>}
+      {isLoading && <p className="p-6 text-sm text-slate-500">Loading…</p>}
+      {!isLoading && !isError && (
+        <table className="w-full text-sm">
+          <thead className="border-b border-slate-200 bg-slate-50 text-left text-xs font-medium uppercase text-slate-500">
+            <tr>
+              <th className="px-4 py-2.5">Priority</th>
+              <th className="px-4 py-2.5">Response (mins)</th>
+              <th className="px-4 py-2.5">Resolution (mins)</th>
+              {canManage && <th className="px-4 py-2.5"></th>}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {policies?.map((policy) => (
+              <SlaPolicyRow key={policy.priority} policy={policy} canManage={canManage} />
+            ))}
+          </tbody>
+        </table>
+      )}
+    </Card>
+  );
+}
+
+function SlaPolicyRow({
+  policy,
+  canManage,
+}: {
+  policy: { priority: TicketPriority; responseMins: number | null; resolutionMins: number | null };
+  canManage: boolean;
+}) {
+  const upsert = useUpsertSlaPolicy();
+  const [responseMins, setResponseMins] = useState(String(policy.responseMins ?? ""));
+  const [resolutionMins, setResolutionMins] = useState(String(policy.resolutionMins ?? ""));
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSave() {
+    setError(null);
+    const response = Number(responseMins);
+    const resolution = Number(resolutionMins);
+    if (!response || !resolution || response <= 0 || resolution <= 0) {
+      setError("Enter positive numbers");
+      return;
+    }
+    try {
+      await upsert.mutateAsync({ priority: policy.priority, responseMins: response, resolutionMins: resolution });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Save failed");
+    }
+  }
+
+  return (
+    <tr className="hover:bg-slate-50">
+      <td className="px-4 py-3">
+        <Badge tone={PRIORITY_TONE[policy.priority]}>{policy.priority}</Badge>
+      </td>
+      <td className="px-4 py-3">
+        {canManage ? (
+          <Input
+            type="number"
+            min={1}
+            value={responseMins}
+            onChange={(e) => setResponseMins(e.target.value)}
+            className="w-28"
+          />
+        ) : (
+          (policy.responseMins ?? "—")
+        )}
+      </td>
+      <td className="px-4 py-3">
+        {canManage ? (
+          <Input
+            type="number"
+            min={1}
+            value={resolutionMins}
+            onChange={(e) => setResolutionMins(e.target.value)}
+            className="w-28"
+          />
+        ) : (
+          (policy.resolutionMins ?? "—")
+        )}
+      </td>
+      {canManage && (
+        <td className="px-4 py-3">
+          <div className="flex items-center gap-2">
+            <Button size="sm" variant="secondary" onClick={handleSave} disabled={upsert.isPending}>
+              {upsert.isPending ? "Saving…" : "Save"}
+            </Button>
+            {error && <span className="text-xs text-red-600">{error}</span>}
+          </div>
+        </td>
+      )}
+    </tr>
   );
 }
 

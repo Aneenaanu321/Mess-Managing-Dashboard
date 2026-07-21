@@ -1,11 +1,11 @@
 import { Request, Response } from "express";
 import { settingsService } from "./settings.service";
-import { listAuditLogQuerySchema } from "./settings.validation";
+import { listAuditLogQuerySchema, upsertSlaPolicySchema } from "./settings.validation";
 import { ApiError } from "../../utils/ApiError";
 
 function ctxFrom(req: Request) {
   if (!req.auth) throw ApiError.unauthorized();
-  return { companyId: req.auth.companyId };
+  return { companyId: req.auth.companyId, userId: req.auth.sub };
 }
 
 export const settingsController = {
@@ -37,5 +37,16 @@ export const settingsController = {
       data: result.items,
       meta: { total: result.total, page: result.page, pageSize: result.pageSize, totalPages: result.totalPages },
     });
+  },
+
+  async slaPolicies(req: Request, res: Response) {
+    const data = await settingsService.getSlaPolicies(ctxFrom(req));
+    res.json({ success: true, data });
+  },
+
+  async upsertSlaPolicy(req: Request, res: Response) {
+    const input = upsertSlaPolicySchema.parse(req.body);
+    const data = await settingsService.upsertSlaPolicy(ctxFrom(req), input);
+    res.json({ success: true, data });
   },
 };

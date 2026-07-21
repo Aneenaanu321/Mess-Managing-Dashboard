@@ -2,9 +2,11 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { Download } from "lucide-react";
 import { useCustomers, useMergeCustomers, INDUSTRIES, Customer } from "@/lib/customers";
 import { hasPermission, useCurrentUser } from "@/lib/auth";
 import { Button, Input, Select, Card } from "@/components/ui";
+import { downloadCsv } from "@/lib/csv";
 
 export default function CustomersPage() {
   const [industry, setIndustry] = useState("");
@@ -16,6 +18,28 @@ export default function CustomersPage() {
   const customers = data?.data ?? [];
   const canMerge = hasPermission(user, "customer:merge");
 
+  function handleExport() {
+    downloadCsv(
+      "customers",
+      customers.map((c: Customer) => ({
+        code: c.code,
+        name: c.name,
+        industry: c.industry,
+        website: c.website ?? "",
+        taxId: c.taxId ?? "",
+        owner: c.owner ? `${c.owner.firstName} ${c.owner.lastName}` : "",
+      })),
+      [
+        { key: "code", label: "Code" },
+        { key: "name", label: "Name" },
+        { key: "industry", label: "Industry" },
+        { key: "website", label: "Website" },
+        { key: "taxId", label: "Tax ID" },
+        { key: "owner", label: "Owner" },
+      ],
+    );
+  }
+
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
@@ -26,6 +50,12 @@ export default function CustomersPage() {
           </p>
         </div>
         <div className="flex gap-2">
+          {customers.length > 0 && (
+            <Button variant="secondary" onClick={handleExport}>
+              <Download size={16} />
+              Export CSV
+            </Button>
+          )}
           {canMerge && (
             <Button variant="secondary" onClick={() => setShowMerge((v) => !v)}>
               {showMerge ? "Cancel Merge" : "Merge Duplicates"}

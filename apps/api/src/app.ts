@@ -6,6 +6,8 @@ import cookieParser from "cookie-parser";
 import morgan from "morgan";
 import rateLimit from "express-rate-limit";
 import { env } from "./config/env";
+import { prisma } from "./config/prisma";
+import { redis } from "./config/redis";
 import { notFoundHandler, errorHandler } from "./middleware/errorHandler";
 
 import authRoutes from "./modules/auth/auth.routes";
@@ -53,6 +55,31 @@ export function createApp() {
   app.use(rateLimit({ windowMs: 60 * 1000, max: 300, standardHeaders: true, legacyHeaders: false }));
 
   app.get("/health", (_req, res) => res.json({ status: "ok", env: env.NODE_ENV }));
+
+  // Liveness (/health above) only proves the process is up. Readiness checks
+  // the two things a request actually needs to succeed — Postgres and
+  // Redis reachability — so an orchestrator can hold traffic back from an
+  // instance that's running but can't yet serve anything.
+  app.get("/health/ready", async (_req, res) => {
+    const checks = { database: false, redis: false };
+
+    try {
+      await prisma.$queryRaw`SELECT 1`;
+      checks.database = true;
+    } catch {
+      // left false
+    }
+
+    try {
+      await redis.ping();
+      checks.redis = true;
+    } catch {
+      // left false
+    }
+
+    const ready = checks.database && checks.redis;
+    res.status(ready ? 200 : 503).json({ status: ready ? "ready" : "not_ready", checks });
+  });
 
   const v1 = express.Router();
   v1.use("/auth", authRoutes);
