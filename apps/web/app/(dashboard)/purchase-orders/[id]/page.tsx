@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import { useCustomerPO, useVerifyCustomerPO, useRecordAdvancePayment, CUSTOMER_PO_STATUS_TONE } from "@/lib/purchase-orders";
 import { hasPermission, useCurrentUser } from "@/lib/auth";
 import { Badge, Button, Card } from "@/components/ui";
+import { FileAttachments } from "@/components/FileAttachments";
 
 export default function PurchaseOrderDetailPage() {
   const params = useParams<{ id: string }>();
@@ -102,6 +103,10 @@ export default function PurchaseOrderDetailPage() {
             <Row label="Status" value={po.quotation?.status ?? "—"} />
           </dl>
         </Card>
+      </div>
+
+      <div className="mt-4">
+        <FileAttachments entityType="CustomerPO" entityId={po.id} />
       </div>
     </div>
   );

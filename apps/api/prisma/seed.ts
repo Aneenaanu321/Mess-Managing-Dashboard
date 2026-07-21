@@ -212,7 +212,7 @@ async function main() {
   console.log("Seeding: campaign + demo leads...");
   const campaign = await prisma.campaign.upsert({
     where: { id: "demo-campaign-gitex" },
-    create: { id: "demo-campaign-gitex", name: "GITEX 2026", channel: "Exhibition" },
+    create: { id: "demo-campaign-gitex", companyId: company.id, name: "GITEX 2026", channel: "Exhibition" },
     update: {},
   });
 

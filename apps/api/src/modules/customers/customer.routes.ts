@@ -13,5 +13,6 @@ router.get("/", authorize(PERMISSIONS.CUSTOMER_VIEW), asyncHandler(customerContr
 router.get("/:id", authorize(PERMISSIONS.CUSTOMER_VIEW), asyncHandler(customerController.getById));
 router.post("/", authorize(PERMISSIONS.CUSTOMER_CREATE), asyncHandler(customerController.create));
 router.patch("/:id", authorize(PERMISSIONS.CUSTOMER_UPDATE), asyncHandler(customerController.update));
+router.post("/merge", authorize(PERMISSIONS.CUSTOMER_MERGE), asyncHandler(customerController.merge));
 
 export default router;

@@ -26,6 +26,7 @@ model Company {
   currency  String   @default("AED") // ISO 4217 default company currency
   timezone  String   @default("Asia/Dubai")
   logoUrl   String?
+  webhookToken String @unique @default(cuid()) // authenticates POST /public/leads — see modules/public
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -33,6 +34,7 @@ model Company {
   users         User[]
   customers     Customer[]
   leads         Lead[]
+  campaigns     Campaign[]
   products      Product[]
   priceLists    PriceList[]
   vendors       Vendor[]
@@ -288,6 +290,8 @@ enum DisqualifyReason {
 
 model Campaign {
   id        String   @id @default(cuid())
+  companyId String
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
   name      String
   channel   String   // e.g. "Exhibition - GITEX", "Google Ads", "Email Blast Q3"
   startDate DateTime?
@@ -297,6 +301,7 @@ model Campaign {
 
   leads Lead[]
 
+  @@index([companyId])
   @@map("campaigns")
 }
 

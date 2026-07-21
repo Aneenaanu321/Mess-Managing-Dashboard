@@ -13,6 +13,30 @@ export interface ReportsSummary {
   collections: { total: number; byMonth: { month: string; amount: number }[] };
 }
 
+export type AgingBucket = "CURRENT" | "DAYS_1_30" | "DAYS_31_60" | "DAYS_61_90" | "DAYS_90_PLUS";
+
+export interface ReceivablesAging {
+  buckets: Record<AgingBucket, number>;
+  invoices: {
+    id: string;
+    code: string;
+    customerName: string;
+    currency: string;
+    balance: number;
+    dueDate: string;
+    daysOverdue: number;
+    bucket: AgingBucket;
+  }[];
+}
+
+function agingBucket(daysOverdue: number): AgingBucket {
+  if (daysOverdue <= 0) return "CURRENT";
+  if (daysOverdue <= 30) return "DAYS_1_30";
+  if (daysOverdue <= 60) return "DAYS_31_60";
+  if (daysOverdue <= 90) return "DAYS_61_90";
+  return "DAYS_90_PLUS";
+}
+
 export const reportsService = {
   /** Same KPI set as the Executive Dashboard — exposed here too under /reports/executive. */
   getExecutiveSummary(ctx: Ctx): Promise<ExecutiveSummary> {
@@ -62,5 +86,46 @@ export const reportsService = {
       revenue: { paidInvoices, wonOpportunities, total: paidInvoices + wonOpportunities },
       collections: { total: collectionsTotal, byMonth },
     };
+  },
+
+  /** US-7.2: outstanding-balance buckets for unpaid invoices, oldest-first. */
+  async getReceivablesAging(ctx: Ctx): Promise<ReceivablesAging> {
+    const { companyId } = ctx;
+    const now = new Date();
+
+    const unpaid = await prisma.invoice.findMany({
+      where: { companyId, status: { in: ["SENT", "PARTIALLY_PAID", "OVERDUE"] } },
+      include: { customer: { select: { name: true } } },
+      orderBy: { dueDate: "asc" },
+    });
+
+    const buckets: Record<AgingBucket, number> = {
+      CURRENT: 0,
+      DAYS_1_30: 0,
+      DAYS_31_60: 0,
+      DAYS_61_90: 0,
+      DAYS_90_PLUS: 0,
+    };
+
+    const invoices = unpaid
+      .map((inv) => {
+        const balance = Number(inv.totalAmount) - Number(inv.amountPaid);
+        const daysOverdue = Math.floor((now.getTime() - inv.dueDate.getTime()) / (24 * 60 * 60 * 1000));
+        const bucket = agingBucket(daysOverdue);
+        buckets[bucket] += balance;
+        return {
+          id: inv.id,
+          code: inv.code,
+          customerName: inv.customer.name,
+          currency: inv.currency,
+          balance,
+          dueDate: inv.dueDate.toISOString(),
+          daysOverdue,
+          bucket,
+        };
+      })
+      .filter((inv) => inv.balance > 0);
+
+    return { buckets, invoices };
   },
 };

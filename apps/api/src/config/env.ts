@@ -18,11 +18,16 @@ const envSchema = z.object({
   JWT_REFRESH_EXPIRES_IN: z.string().default("7d"),
   REDIS_URL: z.string().default("redis://localhost:6379"),
   CORS_ORIGIN: z.string().default("http://localhost:3000"),
-  S3_ENDPOINT: z.string().optional(),
+  S3_ENDPOINT: z.string().default("http://localhost:9000"),
   S3_ACCESS_KEY: z.string().optional(),
   S3_SECRET_KEY: z.string().optional(),
   S3_BUCKET: z.string().optional(),
   ANTHROPIC_API_KEY: z.string().optional(),
+  SMTP_HOST: z.string().optional(),
+  SMTP_PORT: z.coerce.number().default(587),
+  SMTP_USER: z.string().optional(),
+  SMTP_PASS: z.string().optional(),
+  SMTP_FROM: z.string().default("RFIDCore <notifications@rfidcore.local>"),
 });
 
 const parsed = envSchema.safeParse(process.env);

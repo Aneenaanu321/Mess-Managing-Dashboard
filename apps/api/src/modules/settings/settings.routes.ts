@@ -16,5 +16,7 @@ router.use(
 router.get("/org", asyncHandler(settingsController.org));
 router.get("/roles", asyncHandler(settingsController.roles));
 router.get("/users", asyncHandler(settingsController.users));
+router.get("/sequences", asyncHandler(settingsController.sequences));
+router.get("/audit-log", asyncHandler(settingsController.auditLog));
 
 export default router;

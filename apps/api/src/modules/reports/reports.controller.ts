@@ -17,4 +17,9 @@ export const reportsController = {
     const data = await reportsService.getSummary(ctxFrom(req));
     res.json({ success: true, data });
   },
+
+  async receivablesAging(req: Request, res: Response) {
+    const data = await reportsService.getReceivablesAging(ctxFrom(req));
+    res.json({ success: true, data });
+  },
 };

@@ -106,4 +106,13 @@ export function useUpdateCustomer() {
   });
 }
 
+export function useMergeCustomers() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ sourceId, targetId }: { sourceId: string; targetId: string }) =>
+      (await apiClient.post<Customer>("/customers/merge", { sourceId, targetId })).data,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["customers"] }),
+  });
+}
+
 export { INDUSTRIES };

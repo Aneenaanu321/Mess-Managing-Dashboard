@@ -4,6 +4,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { useCustomer } from "@/lib/customers";
 import { Badge, Card } from "@/components/ui";
+import { ActivityTimeline } from "@/components/ActivityTimeline";
 
 export default function CustomerDetailPage() {
   const params = useParams<{ id: string }>();
@@ -88,6 +89,10 @@ export default function CustomerDetailPage() {
             </ul>
           )}
         </Card>
+      </div>
+
+      <div className="mt-4">
+        <ActivityTimeline scope={{ customerId: customer.id }} />
       </div>
     </div>
   );

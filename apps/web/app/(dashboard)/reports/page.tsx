@@ -16,10 +16,26 @@ import {
   YAxis,
 } from "recharts";
 import { useCurrentUser } from "@/lib/auth";
-import { useReportsSummary } from "@/lib/reports";
-import { Card } from "@/components/ui";
+import { useReportsSummary, useReceivablesAging, AgingBucket } from "@/lib/reports";
+import { Badge, Card } from "@/components/ui";
 
 const PIE_COLORS = ["#2563eb", "#1d4ed8", "#0ea5e9", "#22c55e", "#f59e0b", "#ef4444", "#8b5cf6", "#0f766e", "#64748b", "#be123c", "#65a30d"];
+
+const AGING_BUCKET_LABELS: Record<AgingBucket, string> = {
+  CURRENT: "Current",
+  DAYS_1_30: "1–30 days",
+  DAYS_31_60: "31–60 days",
+  DAYS_61_90: "61–90 days",
+  DAYS_90_PLUS: "90+ days",
+};
+
+const AGING_BUCKET_TONE: Record<AgingBucket, "slate" | "amber" | "red"> = {
+  CURRENT: "slate",
+  DAYS_1_30: "amber",
+  DAYS_31_60: "amber",
+  DAYS_61_90: "red",
+  DAYS_90_PLUS: "red",
+};
 
 function label(value: string) {
   return value.replaceAll("_", " ");
@@ -32,6 +48,7 @@ function formatCurrency(amount: number, currency: string) {
 export default function ReportsPage() {
   const { data: user } = useCurrentUser();
   const { data, isLoading, isError } = useReportsSummary();
+  const { data: aging, isLoading: agingLoading } = useReceivablesAging();
   const currency = user?.company?.currency ?? "AED";
 
   const leadFunnel = (data?.leadFunnel ?? []).map((row) => ({ ...row, name: label(row.status) }));
@@ -169,6 +186,54 @@ export default function ReportsPage() {
         </div>
         {collectionsByMonth.length === 0 && !isLoading && (
           <p className="mt-2 text-center text-sm text-slate-400">No payments recorded yet.</p>
+        )}
+      </Card>
+
+      <Card className="mt-6 overflow-hidden">
+        <div className="border-b border-slate-200 p-5">
+          <h2 className="text-sm font-semibold text-slate-900">Receivables Aging</h2>
+          <p className="mt-0.5 text-xs text-slate-500">Outstanding balances on unpaid invoices, bucketed by days past due.</p>
+        </div>
+
+        <div className="grid grid-cols-2 gap-px bg-slate-100 sm:grid-cols-5">
+          {(Object.keys(AGING_BUCKET_LABELS) as AgingBucket[]).map((bucket) => (
+            <div key={bucket} className="bg-white p-4">
+              <p className="text-xs font-medium uppercase tracking-wide text-slate-400">{AGING_BUCKET_LABELS[bucket]}</p>
+              <p className="mt-1.5 text-lg font-semibold text-slate-900">
+                {agingLoading ? "…" : formatCurrency(aging?.buckets[bucket] ?? 0, currency)}
+              </p>
+            </div>
+          ))}
+        </div>
+
+        {!agingLoading && (aging?.invoices.length ?? 0) === 0 && (
+          <p className="p-6 text-center text-sm text-slate-400">No outstanding receivables.</p>
+        )}
+        {(aging?.invoices.length ?? 0) > 0 && (
+          <table className="w-full text-sm">
+            <thead className="border-t border-slate-200 bg-slate-50 text-left text-xs font-medium uppercase text-slate-500">
+              <tr>
+                <th className="px-4 py-2.5">Invoice</th>
+                <th className="px-4 py-2.5">Customer</th>
+                <th className="px-4 py-2.5">Due</th>
+                <th className="px-4 py-2.5">Bucket</th>
+                <th className="px-4 py-2.5 text-right">Balance</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {aging?.invoices.map((inv) => (
+                <tr key={inv.id} className="hover:bg-slate-50">
+                  <td className="px-4 py-3 font-medium text-slate-900">{inv.code}</td>
+                  <td className="px-4 py-3 text-slate-600">{inv.customerName}</td>
+                  <td className="px-4 py-3 text-slate-600">{new Date(inv.dueDate).toLocaleDateString()}</td>
+                  <td className="px-4 py-3">
+                    <Badge tone={AGING_BUCKET_TONE[inv.bucket]}>{AGING_BUCKET_LABELS[inv.bucket]}</Badge>
+                  </td>
+                  <td className="px-4 py-3 text-right font-medium text-slate-900">{formatCurrency(inv.balance, inv.currency)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         )}
       </Card>
     </div>

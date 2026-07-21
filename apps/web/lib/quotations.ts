@@ -1,7 +1,9 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { apiClient } from "./api-client";
+import { apiClient, getAccessToken } from "./api-client";
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api/v1";
 
 export const QUOTATION_STATUSES = [
   "DRAFT",
@@ -119,6 +121,29 @@ export function useSendQuotation() {
       queryClient.invalidateQueries({ queryKey: ["quotations", id] });
     },
   });
+}
+
+/** Opens the branded PDF in a new tab. A plain <a href> can't carry our
+ * Bearer token, so this fetches the PDF as a blob (with auth) and opens
+ * that instead — same pattern as file attachment downloads. */
+export async function openQuotationPdf(id: string, code: string) {
+  const token = getAccessToken();
+  const res = await fetch(`${API_URL}/quotations/${id}/pdf`, {
+    credentials: "include",
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+  });
+  if (!res.ok) throw new Error("Failed to generate PDF");
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const win = window.open(url, "_blank", "noopener,noreferrer");
+  if (!win) {
+    // Popup blocked — fall back to a direct download instead.
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${code}.pdf`;
+    a.click();
+  }
+  setTimeout(() => URL.revokeObjectURL(url), 60_000);
 }
 
 export function useApproveQuotation() {

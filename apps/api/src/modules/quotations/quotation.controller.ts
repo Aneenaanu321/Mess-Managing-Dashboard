@@ -1,5 +1,7 @@
 import { Request, Response } from "express";
 import { quotationService } from "./quotation.service";
+import { streamQuotationPdf } from "./quotation.pdf";
+import { prisma } from "../../config/prisma";
 import { createQuotationSchema, updateQuotationSchema, listQuotationsQuerySchema } from "./quotation.validation";
 import { ApiError } from "../../utils/ApiError";
 import { requireParam } from "../../utils/assert";
@@ -45,5 +47,15 @@ export const quotationController = {
     const id = requireParam(req.params.id, "id");
     const quotation = await quotationService.approve(ctxFrom(req), id);
     res.json({ success: true, data: quotation });
+  },
+
+  async pdf(req: Request, res: Response) {
+    const id = requireParam(req.params.id, "id");
+    const ctx = ctxFrom(req);
+    const [quotation, company] = await Promise.all([
+      quotationService.getById(ctx, id),
+      prisma.company.findUniqueOrThrow({ where: { id: ctx.companyId }, select: { name: true, legalName: true, taxId: true } }),
+    ]);
+    streamQuotationPdf(res, quotation, company);
   },
 };

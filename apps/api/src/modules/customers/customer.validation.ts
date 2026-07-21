@@ -47,3 +47,9 @@ export const listCustomersQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(25),
 });
+
+export const mergeCustomersSchema = z.object({
+  sourceId: z.string().min(1, "sourceId is required"),
+  targetId: z.string().min(1, "targetId is required"),
+});
+export type MergeCustomersInput = z.infer<typeof mergeCustomersSchema>;

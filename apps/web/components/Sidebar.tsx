@@ -28,6 +28,9 @@ import {
   Sparkles,
   Settings,
   Menu,
+  Megaphone,
+  CalendarDays,
+  CheckSquare,
 } from "lucide-react";
 
 const NAV = [
@@ -40,6 +43,9 @@ const NAV = [
       { href: "/opportunities", label: "Opportunities", icon: Target },
       { href: "/pipeline", label: "Pipeline", icon: Kanban },
       { href: "/quotations", label: "Quotations", icon: FileText },
+      { href: "/approvals", label: "Approvals", icon: CheckSquare },
+      { href: "/campaigns", label: "Campaigns", icon: Megaphone },
+      { href: "/calendar", label: "Calendar", icon: CalendarDays },
     ],
   },
   {

@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useLead, useConvertLead, STATUS_TONE } from "@/lib/leads";
 import { hasPermission, useCurrentUser } from "@/lib/auth";
 import { Badge, Button, Card, Input, Label } from "@/components/ui";
+import { ActivityTimeline } from "@/components/ActivityTimeline";
 
 export default function LeadDetailPage() {
   const params = useParams<{ id: string }>();
@@ -83,6 +84,10 @@ export default function LeadDetailPage() {
             <p className="text-sm text-slate-500">You don&apos;t have permission to convert leads.</p>
           )}
         </Card>
+      </div>
+
+      <div className="mt-4">
+        <ActivityTimeline scope={{ leadId: lead.id }} />
       </div>
     </div>
   );

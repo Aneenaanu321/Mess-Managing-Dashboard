@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { useQuotation, useSendQuotation, useApproveQuotation, STATUS_TONE } from "@/lib/quotations";
+import { Download } from "lucide-react";
+import { useQuotation, useSendQuotation, useApproveQuotation, openQuotationPdf, STATUS_TONE } from "@/lib/quotations";
 import { hasPermission, useCurrentUser } from "@/lib/auth";
 import { Badge, Button, Card } from "@/components/ui";
 
@@ -14,6 +15,20 @@ export default function QuotationDetailPage() {
   const sendQuotation = useSendQuotation();
   const approveQuotation = useApproveQuotation();
   const [error, setError] = useState<string | null>(null);
+  const [downloading, setDownloading] = useState(false);
+
+  async function handleDownloadPdf() {
+    if (!quotation) return;
+    setError(null);
+    setDownloading(true);
+    try {
+      await openQuotationPdf(quotation.id, quotation.code);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to download PDF");
+    } finally {
+      setDownloading(false);
+    }
+  }
 
   if (isLoading) return <p className="text-sm text-slate-500">Loading…</p>;
   if (!quotation) return <p className="text-sm text-slate-500">Quotation not found.</p>;
@@ -84,7 +99,10 @@ export default function QuotationDetailPage() {
                 {sendQuotation.isPending ? "Sending…" : "Send to Customer"}
               </Button>
             )}
-            {!canApprove && !canSend && <p className="text-sm text-slate-500">No actions available for this status.</p>}
+            <Button variant="secondary" onClick={handleDownloadPdf} disabled={downloading}>
+              <Download size={14} />
+              {downloading ? "Preparing…" : "Download PDF"}
+            </Button>
           </div>
         </Card>
 

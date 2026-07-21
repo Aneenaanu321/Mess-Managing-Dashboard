@@ -1,5 +1,7 @@
 import { NotificationType } from "@prisma/client";
 import { prisma } from "../../config/prisma";
+import { sendEmail } from "../../utils/email";
+import { env } from "../../config/env";
 
 interface NotifyParams {
   userId: string;
@@ -10,22 +12,37 @@ interface NotifyParams {
 }
 
 /**
- * Fire-and-forget in-app notification. Kept synchronous/direct (not queued)
- * for v1 simplicity; once apps/worker is wired up, high-volume triggers
- * (SLA scans, AMC renewal sweeps) should enqueue via BullMQ instead of
- * calling this in a request path loop.
+ * Fire-and-forget in-app notification, mirrored to email (US-9.2). Kept
+ * synchronous/direct (not queued) for v1 simplicity; once apps/worker is
+ * wired up, high-volume triggers (SLA scans, AMC renewal sweeps) should
+ * enqueue via BullMQ instead of calling this in a request path loop.
+ * There's no per-user email preference toggle yet — every notification
+ * that reaches here goes out by email too, gated only by whether SMTP is
+ * configured (see utils/email.ts).
  */
 export const notificationService = {
   async notify(params: NotifyParams) {
-    return prisma.notification.create({
-      data: {
-        userId: params.userId,
-        type: params.type,
-        title: params.title,
-        body: params.body,
-        link: params.link,
-      },
-    });
+    const [notification, user] = await Promise.all([
+      prisma.notification.create({
+        data: {
+          userId: params.userId,
+          type: params.type,
+          title: params.title,
+          body: params.body,
+          link: params.link,
+        },
+      }),
+      prisma.user.findUnique({ where: { id: params.userId }, select: { email: true } }),
+    ]);
+
+    if (user) {
+      // Not awaited on the critical path — a slow/unreachable mail server
+      // shouldn't hold up whatever action triggered this notification.
+      const link = params.link ? `${env.CORS_ORIGIN}${params.link}` : undefined;
+      sendEmail({ to: user.email, subject: params.title, text: link ? `${params.body}\n\n${link}` : params.body }).catch(() => {});
+    }
+
+    return notification;
   },
 
   list(userId: string, unreadOnly = false) {

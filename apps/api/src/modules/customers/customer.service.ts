@@ -3,6 +3,7 @@ import { CreateCustomerInput, UpdateCustomerInput } from "./customer.validation"
 import { ApiError } from "../../utils/ApiError";
 import { nextNumber } from "../../utils/numberSequence";
 import { writeAuditLog } from "../../utils/audit";
+import { prisma } from "../../config/prisma";
 
 interface ActorCtx {
   companyId: string;
@@ -83,5 +84,53 @@ export const customerService = {
     });
 
     return updated;
+  },
+
+  /**
+   * US-2.1 AC: de-duplication tool, Super Admin/Sales Manager only, fully
+   * audit-logged. Reassigns every child record (contacts, sites,
+   * opportunities, quotations, POs, sales orders, projects, invoices,
+   * tickets, AMC contracts, activities) from the duplicate onto the
+   * surviving customer, then deletes the now-empty duplicate. Left as
+   * separate updateMany calls (not a raw SQL sweep) so a model this misses
+   * makes the final delete fail loudly on a FK constraint rather than
+   * silently losing data.
+   */
+  async merge(ctx: ActorCtx, sourceId: string, targetId: string) {
+    if (sourceId === targetId) throw ApiError.badRequest("Cannot merge a customer into itself");
+
+    const [source, target] = await Promise.all([
+      customerRepository.findById(ctx.companyId, sourceId),
+      customerRepository.findById(ctx.companyId, targetId),
+    ]);
+    if (!source) throw ApiError.notFound("Source customer not found");
+    if (!target) throw ApiError.notFound("Target customer not found");
+
+    await prisma.$transaction([
+      prisma.contact.updateMany({ where: { customerId: sourceId }, data: { customerId: targetId } }),
+      prisma.site.updateMany({ where: { customerId: sourceId }, data: { customerId: targetId } }),
+      prisma.opportunity.updateMany({ where: { customerId: sourceId }, data: { customerId: targetId } }),
+      prisma.quotation.updateMany({ where: { customerId: sourceId }, data: { customerId: targetId } }),
+      prisma.customerPO.updateMany({ where: { customerId: sourceId }, data: { customerId: targetId } }),
+      prisma.salesOrder.updateMany({ where: { customerId: sourceId }, data: { customerId: targetId } }),
+      prisma.project.updateMany({ where: { customerId: sourceId }, data: { customerId: targetId } }),
+      prisma.invoice.updateMany({ where: { customerId: sourceId }, data: { customerId: targetId } }),
+      prisma.ticket.updateMany({ where: { customerId: sourceId }, data: { customerId: targetId } }),
+      prisma.amcContract.updateMany({ where: { customerId: sourceId }, data: { customerId: targetId } }),
+      prisma.activity.updateMany({ where: { customerId: sourceId }, data: { customerId: targetId } }),
+      prisma.customer.delete({ where: { id: sourceId } }),
+    ]);
+
+    await writeAuditLog({
+      companyId: ctx.companyId,
+      actorId: ctx.userId,
+      entityType: "Customer",
+      entityId: targetId,
+      action: "MERGE",
+      before: { sourceId, sourceCode: source.code, sourceName: source.name },
+      after: { mergedInto: targetId, targetCode: target.code },
+    });
+
+    return customerRepository.findById(ctx.companyId, targetId);
   },
 };

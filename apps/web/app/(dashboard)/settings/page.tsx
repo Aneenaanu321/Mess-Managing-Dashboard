@@ -2,16 +2,18 @@
 
 import { useState } from "react";
 import clsx from "clsx";
-import { Building2, ShieldCheck, Users as UsersIcon } from "lucide-react";
-import { useOrgSettings, useRoleSettings, useUserSettings } from "@/lib/settings";
-import { Badge, Card } from "@/components/ui";
+import { Building2, Hash, ScrollText, ShieldCheck, Users as UsersIcon } from "lucide-react";
+import { useOrgSettings, useRoleSettings, useUserSettings, useSequenceSettings, useAuditLog } from "@/lib/settings";
+import { Badge, Card, Input, Select } from "@/components/ui";
 
-type Tab = "org" | "roles" | "users";
+type Tab = "org" | "roles" | "users" | "sequences" | "audit-log";
 
 const TABS: { key: Tab; label: string; icon: typeof Building2 }[] = [
   { key: "org", label: "Organization", icon: Building2 },
   { key: "roles", label: "Roles", icon: ShieldCheck },
   { key: "users", label: "Users", icon: UsersIcon },
+  { key: "sequences", label: "Number Sequences", icon: Hash },
+  { key: "audit-log", label: "Audit Log", icon: ScrollText },
 ];
 
 const STATUS_TONE: Record<string, "green" | "slate" | "red"> = {
@@ -53,6 +55,8 @@ export default function SettingsPage() {
       {tab === "org" && <OrgSection />}
       {tab === "roles" && <RolesSection />}
       {tab === "users" && <UsersSection />}
+      {tab === "sequences" && <SequencesSection />}
+      {tab === "audit-log" && <AuditLogSection />}
     </div>
   );
 }
@@ -93,6 +97,28 @@ function OrgSection() {
               <dd className="mt-0.5 text-sm text-slate-900">{org?.timezone}</dd>
             </div>
           </dl>
+        )}
+      </Card>
+
+      <Card className="p-6">
+        <h2 className="mb-1 text-sm font-semibold text-slate-900">Lead Intake Webhook</h2>
+        <p className="mb-3 text-xs text-slate-500">
+          Point your website contact form or marketing tool at this endpoint to auto-create leads. Keep the token private —
+          anyone with it can create leads in your account.
+        </p>
+        {!isLoading && org && (
+          <pre className="overflow-x-auto rounded-lg bg-slate-900 p-3 text-xs text-slate-100">
+{`POST ${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api/v1"}/public/leads
+Content-Type: application/json
+
+{
+  "webhookToken": "${org.webhookToken}",
+  "companyName": "Acme Corp",
+  "contactName": "Jane Doe",
+  "email": "jane@acme.com",
+  "source": "WEBSITE"
+}`}
+          </pre>
         )}
       </Card>
 
@@ -206,5 +232,110 @@ function UsersSection() {
         </table>
       )}
     </Card>
+  );
+}
+
+function SequencesSection() {
+  const { data: sequences, isLoading, isError } = useSequenceSettings();
+
+  if (isError) {
+    return <Card className="p-4 text-sm text-red-600">Couldn&apos;t load number sequences.</Card>;
+  }
+
+  return (
+    <Card className="overflow-hidden">
+      <div className="border-b border-slate-200 p-4">
+        <h2 className="text-sm font-semibold text-slate-900">Document Numbering</h2>
+        <p className="mt-0.5 text-xs text-slate-500">
+          Read-only — these counters drive LEAD/CUST/QT/CPO/SO/PRJ/etc. codes. Editing isn&apos;t exposed here to avoid
+          issuing a duplicate or out-of-order document number.
+        </p>
+      </div>
+      {isLoading && <p className="p-6 text-sm text-slate-500">Loading…</p>}
+      {!isLoading && (sequences?.length ?? 0) === 0 && <p className="p-6 text-sm text-slate-500">No sequences generated yet.</p>}
+      {(sequences?.length ?? 0) > 0 && (
+        <table className="w-full text-sm">
+          <thead className="border-b border-slate-200 bg-slate-50 text-left text-xs font-medium uppercase text-slate-500">
+            <tr>
+              <th className="px-4 py-2.5">Key</th>
+              <th className="px-4 py-2.5">Year</th>
+              <th className="px-4 py-2.5">Last Issued Value</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {sequences?.map((s) => (
+              <tr key={s.id} className="hover:bg-slate-50">
+                <td className="px-4 py-3 font-medium text-slate-900">{s.key}</td>
+                <td className="px-4 py-3 text-slate-600">{s.year}</td>
+                <td className="px-4 py-3 text-slate-600">{s.lastValue}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </Card>
+  );
+}
+
+function AuditLogSection() {
+  const [entityType, setEntityType] = useState("");
+  const [action, setAction] = useState("");
+  const { data, isLoading, isError } = useAuditLog({ entityType: entityType || undefined, action: action || undefined });
+  const entries = data?.data ?? [];
+
+  return (
+    <div className="space-y-4">
+      <Card className="flex flex-wrap items-center gap-3 p-4">
+        <Input
+          placeholder="Filter by entity type (e.g. Quotation)"
+          value={entityType}
+          onChange={(e) => setEntityType(e.target.value)}
+          className="max-w-xs"
+        />
+        <Select value={action} onChange={(e) => setAction(e.target.value)} className="w-full sm:w-44">
+          <option value="">All actions</option>
+          <option value="CREATE">CREATE</option>
+          <option value="UPDATE">UPDATE</option>
+          <option value="DELETE">DELETE</option>
+          <option value="APPROVE">APPROVE</option>
+          <option value="ASSIGN">ASSIGN</option>
+          <option value="CONVERT">CONVERT</option>
+        </Select>
+      </Card>
+
+      <Card className="overflow-hidden">
+        {isError && <p className="p-6 text-sm text-red-600">Couldn&apos;t load the audit log.</p>}
+        {isLoading && <p className="p-6 text-sm text-slate-500">Loading…</p>}
+        {!isLoading && entries.length === 0 && <p className="p-6 text-sm text-slate-500">No matching audit entries.</p>}
+        {entries.length > 0 && (
+          <table className="w-full text-sm">
+            <thead className="border-b border-slate-200 bg-slate-50 text-left text-xs font-medium uppercase text-slate-500">
+              <tr>
+                <th className="px-4 py-2.5">When</th>
+                <th className="px-4 py-2.5">Actor</th>
+                <th className="px-4 py-2.5">Action</th>
+                <th className="px-4 py-2.5">Entity</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {entries.map((entry) => (
+                <tr key={entry.id} className="align-top hover:bg-slate-50">
+                  <td className="whitespace-nowrap px-4 py-3 text-slate-600">{new Date(entry.createdAt).toLocaleString()}</td>
+                  <td className="px-4 py-3 text-slate-700">
+                    {entry.actor ? `${entry.actor.firstName} ${entry.actor.lastName}` : <span className="text-slate-400">System</span>}
+                  </td>
+                  <td className="px-4 py-3">
+                    <Badge tone="blue">{entry.action}</Badge>
+                  </td>
+                  <td className="px-4 py-3 text-slate-600">
+                    {entry.entityType} <span className="text-slate-400">#{entry.entityId.slice(-8)}</span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </Card>
+    </div>
   );
 }

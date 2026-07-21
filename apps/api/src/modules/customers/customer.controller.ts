@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { customerService } from "./customer.service";
-import { createCustomerSchema, updateCustomerSchema, listCustomersQuerySchema } from "./customer.validation";
+import { createCustomerSchema, updateCustomerSchema, listCustomersQuerySchema, mergeCustomersSchema } from "./customer.validation";
 import { ApiError } from "../../utils/ApiError";
 import { requireParam } from "../../utils/assert";
 
@@ -32,6 +32,12 @@ export const customerController = {
     const id = requireParam(req.params.id, "id");
     const input = updateCustomerSchema.parse(req.body);
     const customer = await customerService.update(ctxFrom(req), id, input);
+    res.json({ success: true, data: customer });
+  },
+
+  async merge(req: Request, res: Response) {
+    const input = mergeCustomersSchema.parse(req.body);
+    const customer = await customerService.merge(ctxFrom(req), input.sourceId, input.targetId);
     res.json({ success: true, data: customer });
   },
 };

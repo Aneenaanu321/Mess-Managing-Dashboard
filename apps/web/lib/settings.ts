@@ -18,6 +18,7 @@ export interface OrgSettings {
   taxId: string | null;
   currency: string;
   timezone: string;
+  webhookToken: string;
   branches: OrgBranch[];
 }
 
@@ -60,5 +61,42 @@ export function useUserSettings() {
   return useQuery({
     queryKey: ["settings", "users"],
     queryFn: async () => (await apiClient.get<UserSummary[]>("/settings/users")).data,
+  });
+}
+
+export interface NumberSequenceRow {
+  id: string;
+  key: string;
+  year: number;
+  lastValue: number;
+}
+
+export function useSequenceSettings() {
+  return useQuery({
+    queryKey: ["settings", "sequences"],
+    queryFn: async () => (await apiClient.get<NumberSequenceRow[]>("/settings/sequences")).data,
+  });
+}
+
+export interface AuditLogEntry {
+  id: string;
+  entityType: string;
+  entityId: string;
+  action: string;
+  before: unknown;
+  after: unknown;
+  createdAt: string;
+  actor: { id: string; firstName: string; lastName: string; email: string } | null;
+}
+
+export function useAuditLog(params: { entityType?: string; action?: string; page?: number } = {}) {
+  const query = new URLSearchParams();
+  if (params.entityType) query.set("entityType", params.entityType);
+  if (params.action) query.set("action", params.action);
+  if (params.page) query.set("page", String(params.page));
+
+  return useQuery({
+    queryKey: ["settings", "audit-log", params],
+    queryFn: async () => apiClient.get<AuditLogEntry[]>(`/settings/audit-log?${query.toString()}`),
   });
 }

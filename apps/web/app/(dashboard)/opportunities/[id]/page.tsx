@@ -6,6 +6,8 @@ import Link from "next/link";
 import { useOpportunity, useChangeOpportunityStage, OPPORTUNITY_STAGES, STAGE_TONE, LOSS_REASONS } from "@/lib/opportunities";
 import { hasPermission, useCurrentUser } from "@/lib/auth";
 import { Badge, Button, Card, Select, Label, Input } from "@/components/ui";
+import { ActivityTimeline } from "@/components/ActivityTimeline";
+import { PresalesSection } from "@/components/PresalesSection";
 
 export default function OpportunityDetailPage() {
   const params = useParams<{ id: string }>();
@@ -147,6 +149,14 @@ export default function OpportunityDetailPage() {
             </ul>
           )}
         </Card>
+      </div>
+
+      <div className="mt-4">
+        <PresalesSection opportunityId={opportunity.id} />
+      </div>
+
+      <div className="mt-4">
+        <ActivityTimeline scope={{ opportunityId: opportunity.id }} />
       </div>
     </div>
   );

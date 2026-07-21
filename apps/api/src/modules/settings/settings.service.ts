@@ -1,4 +1,5 @@
 import { prisma } from "../../config/prisma";
+import { ListAuditLogQuery } from "./settings.validation";
 
 interface Ctx {
   companyId: string;
@@ -48,5 +49,35 @@ export const settingsService = {
       status: user.status,
       lastLoginAt: user.lastLoginAt,
     }));
+  },
+
+  getSequences(ctx: Ctx) {
+    return prisma.numberSequence.findMany({
+      where: { companyId: ctx.companyId },
+      orderBy: [{ key: "asc" }, { year: "desc" }],
+    });
+  },
+
+  async getAuditLog(ctx: Ctx, query: ListAuditLogQuery) {
+    const { entityType, action, page, pageSize } = query;
+
+    const where = {
+      companyId: ctx.companyId,
+      ...(entityType ? { entityType } : {}),
+      ...(action ? { action } : {}),
+    };
+
+    const [items, total] = await Promise.all([
+      prisma.auditLog.findMany({
+        where,
+        include: { actor: { select: { id: true, firstName: true, lastName: true, email: true } } },
+        orderBy: { createdAt: "desc" },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      }),
+      prisma.auditLog.count({ where }),
+    ]);
+
+    return { items, total, page, pageSize, totalPages: Math.ceil(total / pageSize) };
   },
 };
