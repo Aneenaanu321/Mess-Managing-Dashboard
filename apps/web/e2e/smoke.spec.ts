@@ -22,8 +22,8 @@ test.describe("Sales flow smoke", () => {
     await page.getByLabel(/password/i).fill(password);
     await page.getByRole("button", { name: /sign in/i }).click();
 
-    await page.waitForURL(/\/(dashboard|leads)/, { timeout: 15_000 });
-    await page.goto("/leads");
-    await expect(page.getByRole("heading", { name: "Leads" })).toBeVisible();
+    await page.waitForURL(/\/(dashboard|new-inquiries)/, { timeout: 15_000 });
+    await page.goto("/new-inquiries");
+    await expect(page.getByRole("heading", { name: "New Inquiries" })).toBeVisible();
   });
 });

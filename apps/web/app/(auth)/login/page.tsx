@@ -28,7 +28,7 @@ export default function LoginPage() {
     setError(null);
     try {
       const result = await login.mutateAsync({ email, password, rememberMe });
-      router.push(result.user.portalCustomer ? "/portal" : "/leads");
+      router.push(result.user.portalCustomer ? "/portal" : "/new-inquiries");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login failed");
     }

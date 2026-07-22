@@ -60,12 +60,20 @@ export const updateLeadSchema = z.object({
   source: leadSourceEnum.optional(),
   industry: industryEnum.optional(),
   notes: z.string().optional(),
+  internalNotes: z.string().optional(),
 });
 export type UpdateLeadInput = z.infer<typeof updateLeadSchema>;
 
 export const assignLeadSchema = z.object({
   ownerId: z.string().min(1, "ownerId is required"),
 });
+
+export const bulkAssignLeadsSchema = z.object({
+  leadIds: z.array(z.string().min(1)).min(1).max(100),
+  ownerId: z.string().min(1).optional(),
+  mode: z.enum(["single", "round_robin"]).default("single"),
+});
+export type BulkAssignLeadsInput = z.infer<typeof bulkAssignLeadsSchema>;
 
 export const disqualifyLeadSchema = z.object({
   reason: disqualifyReasonEnum,
@@ -87,6 +95,14 @@ export type BulkImportLeadsInput = z.infer<typeof bulkImportLeadsSchema>;
 export const listLeadsQuerySchema = z.object({
   status: z.enum(["NEW", "CONTACTED", "QUALIFIED", "DISQUALIFIED", "CONVERTED"]).optional(),
   ownerId: z.string().optional(),
+  unassigned: z
+    .union([z.literal("true"), z.literal("false"), z.boolean()])
+    .optional()
+    .transform((v) => v === true || v === "true"),
+  slaBreached: z
+    .union([z.literal("true"), z.literal("false"), z.boolean()])
+    .optional()
+    .transform((v) => v === true || v === "true"),
   industry: industryEnum.optional(),
   search: z.string().optional(),
   page: z.coerce.number().int().min(1).default(1),

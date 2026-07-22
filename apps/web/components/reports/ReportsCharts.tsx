@@ -17,6 +17,7 @@ import {
 } from "recharts";
 import { Card } from "@/components/ui";
 import { useChartTheme, tooltipContentStyle } from "@/lib/chart-theme";
+import { getPageLabel } from "@/lib/nav-labels";
 
 const PIE_COLORS = ["#2563eb", "#1d4ed8", "#0ea5e9", "#22c55e", "#f59e0b", "#ef4444", "#8b5cf6", "#0f766e", "#64748b", "#be123c", "#65a30d"];
 
@@ -47,7 +48,7 @@ export function ReportsCharts({
     <>
       <div className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Card className="p-5">
-          <h2 className="mb-4 text-sm font-semibold text-primary">Lead Funnel by Status</h2>
+          <h2 className="mb-4 text-sm font-semibold text-primary">{getPageLabel("/new-inquiries")} by Status</h2>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={leadFunnel}>
@@ -55,7 +56,7 @@ export function ReportsCharts({
                 <XAxis dataKey="name" tick={{ fontSize: 11, fill: chart.axis }} interval={0} angle={-15} textAnchor="end" height={50} />
                 <YAxis tick={{ fontSize: 11, fill: chart.axis }} allowDecimals={false} />
                 <Tooltip contentStyle={tooltipContentStyle(chart)} />
-                <Bar dataKey="count" name="Leads" fill="#2563eb" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="count" name={getPageLabel("/new-inquiries")} fill="#2563eb" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -76,7 +77,7 @@ export function ReportsCharts({
               {leadFunnel.length === 0 && !isLoading && (
                 <tr>
                   <td colSpan={2} className="py-3 text-center text-muted">
-                    No leads yet.
+                    No {getPageLabel("/new-inquiries").toLowerCase()} yet.
                   </td>
                 </tr>
               )}
@@ -85,7 +86,7 @@ export function ReportsCharts({
         </Card>
 
         <Card className="p-5">
-          <h2 className="mb-4 text-sm font-semibold text-primary">Opportunities by Stage</h2>
+          <h2 className="mb-4 text-sm font-semibold text-primary">{getPageLabel("/active-deals")} by Stage</h2>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
@@ -124,7 +125,7 @@ export function ReportsCharts({
               {opportunityByStage.length === 0 && !isLoading && (
                 <tr>
                   <td colSpan={3} className="py-3 text-center text-muted">
-                    No opportunities yet.
+                    No deals yet.
                   </td>
                 </tr>
               )}

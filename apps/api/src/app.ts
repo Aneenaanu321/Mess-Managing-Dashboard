@@ -40,6 +40,7 @@ import dashboardRoutes from "./modules/dashboard/dashboard.routes";
 import reportsRoutes from "./modules/reports/reports.routes";
 import aiRoutes from "./modules/ai/ai.routes";
 import settingsRoutes from "./modules/settings/settings.routes";
+import salesOpsRoutes from "./modules/sales-ops/salesOps.routes";
 
 export function createApp() {
   const app = express();
@@ -106,6 +107,7 @@ export function createApp() {
   v1.use("/reports", reportsRoutes);
   v1.use("/ai", aiRoutes);
   v1.use("/settings", settingsRoutes);
+  v1.use("/sales-ops", salesOpsRoutes);
   v1.use("/projects", projectRoutes);
   v1.use("/installations", installationRoutes);
   v1.use("/devices", deviceRoutes);

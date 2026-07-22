@@ -5,6 +5,7 @@ import Link from "next/link";
 import { CheckCircle2, Plus } from "lucide-react";
 import { useCalendarEvents, useCompleteCalendarEvent, CalendarEvent, CALENDAR_EVENT_TYPE_LABELS } from "@/lib/calendar";
 import { Badge, Button, Card } from "@/components/ui";
+import { getPageLabel, getSectionForPage } from "@/lib/nav-labels";
 
 function groupByDay(events: CalendarEvent[]) {
   const groups = new Map<string, CalendarEvent[]>();
@@ -27,8 +28,8 @@ export default function CalendarPage() {
     <div className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-700">Sales</p>
-          <h1 className="font-display mt-1 text-2xl font-semibold tracking-tight text-primary">Calendar &amp; Follow-ups</h1>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-700">{getSectionForPage("/calendar")}</p>
+          <h1 className="font-display mt-1 text-2xl font-semibold tracking-tight text-primary">{getPageLabel("/calendar")}</h1>
           <p className="mt-1 text-sm text-slate-500">Your upcoming meetings, site visits, and follow-up reminders.</p>
         </div>
         <div className="flex items-center gap-3">

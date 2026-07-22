@@ -60,6 +60,7 @@ export interface Opportunity {
   lossReason: string | null;
   lossNote: string | null;
   competitor: string | null;
+  internalNotes?: string | null;
   wonAt: string | null;
   lostAt: string | null;
   createdAt: string;
@@ -113,6 +114,24 @@ export function useCreateOpportunity() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["opportunities"] });
       toast.success("Saved");
+    },
+  });
+}
+
+export function useUpdateOpportunity() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      id,
+      input,
+    }: {
+      id: string;
+      input: Partial<CreateOpportunityInput> & { competitor?: string; internalNotes?: string };
+    }) => (await apiClient.patch<Opportunity>(`/opportunities/${id}`, input)).data,
+    onSuccess: (_data, vars) => {
+      queryClient.invalidateQueries({ queryKey: ["opportunities"] });
+      queryClient.invalidateQueries({ queryKey: ["opportunities", vars.id] });
+      toast.success("Deal updated");
     },
   });
 }

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCreateCalendarEvent, CalendarEventType, CALENDAR_EVENT_TYPE_LABELS } from "@/lib/calendar";
 import { Button, Card, Input, Label, Select } from "@/components/ui";
+import { getNewItemLabel } from "@/lib/nav-labels";
 
 const TYPES = Object.keys(CALENDAR_EVENT_TYPE_LABELS) as CalendarEventType[];
 
@@ -31,7 +32,7 @@ export default function NewCalendarEventPage() {
 
   return (
     <div className="mx-auto max-w-lg">
-      <h1 className="mb-6 text-xl font-semibold text-primary">New Calendar Event</h1>
+      <h1 className="mb-6 text-xl font-semibold text-primary">{getNewItemLabel("/calendar")}</h1>
       <Card className="p-6">
         <form className="space-y-4" onSubmit={handleSubmit}>
           <div>

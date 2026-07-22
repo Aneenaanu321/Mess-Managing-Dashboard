@@ -4,6 +4,7 @@ import { JOB_QUEUE_NAME, JOB_NAMES } from "./queue";
 import { runAmcRenewalCheck } from "./jobs/amcRenewal.job";
 import { runSlaBreachCheck } from "./jobs/slaBreach.job";
 import { runInvoiceOverdueCheck } from "./jobs/invoiceOverdue.job";
+import { runCoordinatorDigest } from "./jobs/coordinatorDigest.job";
 
 async function processJob(job: Job) {
   switch (job.name) {
@@ -13,6 +14,8 @@ async function processJob(job: Job) {
       return runSlaBreachCheck();
     case JOB_NAMES.INVOICE_OVERDUE_CHECK:
       return runInvoiceOverdueCheck();
+    case JOB_NAMES.COORDINATOR_DIGEST:
+      return runCoordinatorDigest();
     default:
       throw new Error(`Unknown job name: ${job.name}`);
   }

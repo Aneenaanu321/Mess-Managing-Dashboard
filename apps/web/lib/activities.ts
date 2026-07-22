@@ -11,6 +11,7 @@ export interface Activity {
   type: ActivityType;
   subject: string;
   body: string | null;
+  durationMins?: number | null;
   occurredAt: string;
   actor: { id: string; firstName: string; lastName: string } | null;
 }
@@ -36,7 +37,7 @@ export function useActivities(scope: ActivityScope) {
 export function useCreateActivity(scope: ActivityScope) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (input: { type: ActivityType; subject: string; body?: string }) =>
+    mutationFn: async (input: { type: ActivityType; subject: string; body?: string; durationMins?: number }) =>
       (await apiClient.post<Activity>("/activities", { ...input, ...scope })).data,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["activities", scope] });

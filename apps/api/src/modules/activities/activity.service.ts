@@ -23,6 +23,7 @@ export const activityService = {
       type: input.type as ActivityType,
       subject: input.subject,
       body: input.body,
+      durationMins: input.durationMins,
       occurredAt: input.occurredAt ?? new Date(),
       actor: { connect: { id: ctx.userId } },
       ...(input.leadId ? { lead: { connect: { id: input.leadId } } } : {}),

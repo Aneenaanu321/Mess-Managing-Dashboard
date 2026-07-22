@@ -27,6 +27,10 @@ model Company {
   timezone  String   @default("Asia/Dubai")
   logoUrl   String?
   webhookToken String @unique @default(cuid()) // authenticates POST /public/leads — see modules/public
+  leadAssignMode LeadAssignMode @default(MANUAL)
+  roundRobinCursor Int @default(0)
+  leadSlaHours Int @default(24)
+  quoteChaseDays Int @default(7)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -42,8 +46,22 @@ model Company {
   numberSeqs    NumberSequence[]
   slaPolicies   SlaPolicy[]
   auditLogs     AuditLog[]
+  shiftHandovers ShiftHandoverNote[]
 
   @@map("companies")
+}
+
+model ShiftHandoverNote {
+  id        String   @id @default(cuid())
+  companyId String
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id])
+  body      String
+  createdAt DateTime @default(now())
+
+  @@index([companyId, createdAt])
+  @@map("shift_handover_notes")
 }
 
 model Branch {
@@ -71,6 +89,7 @@ enum RoleKey {
   SALES_DIRECTOR
   SALES_MANAGER
   SALES_EXECUTIVE
+  SALES_COORDINATOR
   PRE_SALES_ENGINEER
   TECHNICAL_CONSULTANT
   PROJECT_MANAGER
@@ -81,6 +100,11 @@ enum RoleKey {
   WAREHOUSE
   PROCUREMENT
   CUSTOMER_PORTAL_USER
+}
+
+enum LeadAssignMode {
+  MANUAL
+  ROUND_ROBIN
 }
 
 model Role {
@@ -165,8 +189,10 @@ model User {
   approvalsDecided        Approval[]          @relation("ApprovalDecider")
   managedProjects         Project[]           @relation("ProjectManager")
   engineerTasks           EngineerTask[]      @relation("TaskAssignee")
+  tasksCreated            EngineerTask[]      @relation("TaskCreator")
   supportTicketsAssigned  Ticket[]            @relation("TicketAssignee")
   supportTicketsRaised    Ticket[]            @relation("TicketRaisedBy")
+  shiftHandovers          ShiftHandoverNote[]
 
   @@index([companyId])
   @@map("users")
@@ -334,6 +360,8 @@ model Lead {
   convertedOpportunityId String?         @unique
   convertedOpportunity Opportunity?      @relation("LeadToOpportunity", fields: [convertedOpportunityId], references: [id])
   notes                String?
+  internalNotes        String?           // coordinator-only; never on customer-facing exports
+  firstContactedAt     DateTime?
   createdAt            DateTime          @default(now())
   updatedAt            DateTime          @updatedAt
 
@@ -461,6 +489,7 @@ model Opportunity {
   lossReason          LossReason?
   lossNote             String?
   competitor           String?
+  internalNotes        String?
   createdAt            DateTime        @default(now())
   updatedAt             DateTime       @updatedAt
   wonAt                 DateTime?
@@ -579,6 +608,7 @@ model Activity {
   customer      Customer?     @relation(fields: [customerId], references: [id])
   opportunityId String?
   opportunity   Opportunity?  @relation(fields: [opportunityId], references: [id])
+  durationMins  Int?
   occurredAt    DateTime      @default(now())
   createdAt     DateTime      @default(now())
 
@@ -658,6 +688,7 @@ model Quotation {
   createdBy      User            @relation("QuotationCreator", fields: [createdById], references: [id])
   sentAt         DateTime?
   decidedAt      DateTime?
+  revisionNote   String?
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
 
@@ -1122,6 +1153,8 @@ model EngineerTask {
   companyId   String
   projectId   String
   project     Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdById String?
+  createdBy   User?      @relation("TaskCreator", fields: [createdById], references: [id])
   assigneeId  String?
   assignee    User?      @relation("TaskAssignee", fields: [assigneeId], references: [id])
   title       String

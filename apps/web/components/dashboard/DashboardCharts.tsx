@@ -19,6 +19,7 @@ import {
 import { Card } from "@/components/ui";
 import { useChartTheme, tooltipContentStyle } from "@/lib/chart-theme";
 import { formatChartLabel, LEAD_STATUS_MEANINGS } from "@/lib/chart-labels";
+import { getPageLabel } from "@/lib/nav-labels";
 
 const PIE_COLORS = ["#2563eb", "#0ea5e9", "#22c55e", "#f59e0b", "#ef4444", "#8b5cf6", "#64748b"];
 
@@ -49,9 +50,9 @@ export function DashboardCharts({
       <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
         <Card className="p-5 lg:col-span-2">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-primary">Open Pipeline by Stage</h2>
-            <Link href="/pipeline" className="text-xs font-medium text-brand-700 hover:underline dark:text-brand-400">
-              View pipeline
+            <h2 className="text-sm font-semibold text-primary">Open {getPageLabel("/deal-board")} by Stage</h2>
+            <Link href="/deal-board" className="text-xs font-medium text-brand-700 hover:underline dark:text-brand-400">
+              View {getPageLabel("/deal-board").toLowerCase()}
             </Link>
           </div>
           <div className="h-60">
@@ -60,24 +61,24 @@ export function DashboardCharts({
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={chart.grid} />
                 <XAxis dataKey="name" tick={{ fontSize: 10, fill: chart.axis }} interval={0} angle={-20} textAnchor="end" height={54} />
                 <YAxis tick={{ fontSize: 11, fill: chart.axis }} allowDecimals={false} />
-                <Tooltip cursor={{ fill: chart.cursor }} contentStyle={tooltipContentStyle(chart)} formatter={(value: number) => [value, "Opportunities"]} />
-                <Bar dataKey="count" name="Opportunities" fill="#38a169" radius={[4, 4, 0, 0]} maxBarSize={36} />
+                <Tooltip cursor={{ fill: chart.cursor }} contentStyle={tooltipContentStyle(chart)} formatter={(value: number) => [value, getPageLabel("/active-deals")]} />
+                <Bar dataKey="count" name={getPageLabel("/active-deals")} fill="#38a169" radius={[4, 4, 0, 0]} maxBarSize={36} />
               </BarChart>
             </ResponsiveContainer>
           </div>
           {!reportsLoading && pipelineByStage.length === 0 && (
-            <p className="mt-2 text-center text-sm text-slate-400">No open opportunities yet.</p>
+            <p className="mt-2 text-center text-sm text-slate-400">No open {getPageLabel("/active-deals").toLowerCase()} yet.</p>
           )}
         </Card>
 
         <Card className="p-5">
           <div className="mb-1 flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-primary">Lead Funnel</h2>
-            <Link href="/leads" className="text-xs font-medium text-brand-700 hover:underline dark:text-brand-400">
-              View leads
+            <h2 className="text-sm font-semibold text-primary">{getPageLabel("/new-inquiries")} Funnel</h2>
+            <Link href="/new-inquiries" className="text-xs font-medium text-brand-700 hover:underline dark:text-brand-400">
+              View {getPageLabel("/new-inquiries").toLowerCase()}
             </Link>
           </div>
-          <p className="mb-3 text-xs text-muted">How many leads are at each stage of qualification.</p>
+          <p className="mb-3 text-xs text-muted">How many inquiries are at each stage of qualification.</p>
           <div className="h-52">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
@@ -91,7 +92,7 @@ export function DashboardCharts({
                   formatter={(value: number, _name, item: { payload?: ChartRow }) => {
                     const key = item.payload?.status ?? item.payload?.name?.toUpperCase().replaceAll(" ", "_") ?? "";
                     const hint = LEAD_STATUS_MEANINGS[key];
-                    return [`${value} lead${value === 1 ? "" : "s"}${hint ? ` — ${hint}` : ""}`, item.payload?.name ?? "Status"];
+                    return [`${value} ${value === 1 ? "inquiry" : "inquiries"}${hint ? ` — ${hint}` : ""}`, item.payload?.name ?? "Status"];
                   }}
                 />
                 <Legend
@@ -121,7 +122,7 @@ export function DashboardCharts({
             })}
           </ul>
           {!reportsLoading && leadFunnel.length === 0 && (
-            <p className="mt-2 text-center text-sm text-slate-400">No leads yet.</p>
+            <p className="mt-2 text-center text-sm text-slate-400">No inquiries yet.</p>
           )}
         </Card>
       </div>
@@ -131,7 +132,7 @@ export function DashboardCharts({
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-sm font-semibold text-primary">Collections Trend</h2>
             <Link href="/reports" className="text-xs font-medium text-brand-700 hover:underline dark:text-brand-400">
-              Full reports
+              {getPageLabel("/reports")}
             </Link>
           </div>
           <div className="h-60">

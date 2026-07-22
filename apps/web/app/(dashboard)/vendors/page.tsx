@@ -5,6 +5,7 @@ import { Plus, Search } from "lucide-react";
 import { useVendors, useCreateVendor, Vendor } from "@/lib/procurement";
 import { hasPermission, useCurrentUser } from "@/lib/auth";
 import { Button, Card, Input, Label } from "@/components/ui";
+import { getPageLabel, getSectionForPage } from "@/lib/nav-labels";
 
 export default function VendorsPage() {
   const [search, setSearch] = useState("");
@@ -18,10 +19,10 @@ export default function VendorsPage() {
     <div className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-700">Fulfillment</p>
-          <h1 className="font-display mt-1 text-2xl font-semibold tracking-tight text-primary">Vendors</h1>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-700">{getSectionForPage("/vendors")}</p>
+          <h1 className="font-display mt-1 text-2xl font-semibold tracking-tight text-primary">{getPageLabel("/vendors")}</h1>
           <p className="mt-1 text-sm text-slate-500">
-            {data?.meta?.total ?? 0} vendor{data?.meta?.total === 1 ? "" : "s"} supplying your Procurement orders.
+            {data?.meta?.total ?? 0} vendor{data?.meta?.total === 1 ? "" : "s"} for your supplier orders.
           </p>
         </div>
         {canManage && (
@@ -47,7 +48,7 @@ export default function VendorsPage() {
         {!isLoading && !isError && vendors.length === 0 && (
           <div className="px-8 py-14 text-center">
             <p className="font-medium text-primary">No vendors yet</p>
-            <p className="mt-1 text-sm text-slate-500">Add one to start raising Procurement orders against it.</p>
+            <p className="mt-1 text-sm text-slate-500">Add one to start raising purchase orders.</p>
           </div>
         )}
         {vendors.length > 0 && (

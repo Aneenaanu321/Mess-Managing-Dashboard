@@ -6,6 +6,7 @@ import { Plus, Search } from "lucide-react";
 import { useCampaigns, Campaign } from "@/lib/campaigns";
 import { hasPermission, useCurrentUser } from "@/lib/auth";
 import { Button, Card, Input } from "@/components/ui";
+import { getPageLabel, getSectionForPage } from "@/lib/nav-labels";
 
 export default function CampaignsPage() {
   const [search, setSearch] = useState("");
@@ -17,8 +18,8 @@ export default function CampaignsPage() {
     <div className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-700">Marketing</p>
-          <h1 className="font-display mt-1 text-2xl font-semibold tracking-tight text-primary">Campaigns</h1>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-700">{getSectionForPage("/campaigns")}</p>
+          <h1 className="font-display mt-1 text-2xl font-semibold tracking-tight text-primary">{getPageLabel("/campaigns")}</h1>
           <p className="mt-1 text-sm text-slate-500">Track lead attribution back to the campaign that generated it.</p>
         </div>
         {hasPermission(user, "campaign:manage") && (

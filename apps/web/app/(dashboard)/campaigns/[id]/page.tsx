@@ -58,7 +58,7 @@ export default function CampaignDetailPage() {
               {campaign.leads?.map((lead) => (
                 <tr key={lead.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50">
                   <td className="px-4 py-3">
-                    <Link href={`/leads/${lead.id}`} className="font-medium text-brand-700 hover:underline">
+                    <Link href={`/new-inquiries/${lead.id}`} className="font-medium text-brand-700 hover:underline">
                       {lead.code}
                     </Link>
                   </td>

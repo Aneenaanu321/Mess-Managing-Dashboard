@@ -19,6 +19,10 @@ export async function scheduleRecurringJobs(queue: Queue) {
   await queue.upsertJobScheduler(JOB_NAMES.INVOICE_OVERDUE_CHECK, { pattern: "30 6 * * *" }, {
     name: JOB_NAMES.INVOICE_OVERDUE_CHECK,
   });
+
+  await queue.upsertJobScheduler(JOB_NAMES.COORDINATOR_DIGEST, { pattern: "0 7 * * *" }, {
+    name: JOB_NAMES.COORDINATOR_DIGEST,
+  });
 }
 
 export function createJobQueue() {

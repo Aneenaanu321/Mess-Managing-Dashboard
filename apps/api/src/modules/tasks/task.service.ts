@@ -12,7 +12,14 @@ interface ActorCtx {
 
 export const taskService = {
   async list(ctx: ActorCtx, query: ListTasksQuery) {
-    return taskRepository.list({ companyId: ctx.companyId, ...query });
+    const { mine, assignedByMe, ...rest } = query;
+    const assigneeId = mine ? ctx.userId : rest.assigneeId;
+    const createdById = assignedByMe ? ctx.userId : undefined;
+    return taskRepository.list({ companyId: ctx.companyId, ...rest, assigneeId, createdById });
+  },
+
+  assignableUsers(ctx: ActorCtx) {
+    return taskRepository.assignableUsers(ctx.companyId);
   },
 
   async getById(ctx: ActorCtx, id: string) {
@@ -25,6 +32,7 @@ export const taskService = {
     const task = await taskRepository.create({
       companyId: ctx.companyId,
       project: { connect: { id: input.projectId } },
+      createdBy: { connect: { id: ctx.userId } },
       title: input.title,
       ...(input.description ? { description: input.description } : {}),
       ...(input.dueAt ? { dueDate: input.dueAt } : {}),
@@ -40,13 +48,13 @@ export const taskService = {
       after: task,
     });
 
-    if (input.assigneeId) {
+    if (input.assigneeId && input.assigneeId !== ctx.userId) {
       await notificationService.notify({
         userId: input.assigneeId,
         type: "ASSIGNMENT",
         title: "New task assigned",
         body: `You've been assigned: ${task.title}`,
-        link: `/tasks/${task.id}`,
+        link: `/team-tasks/${task.id}`,
       });
     }
 
@@ -58,13 +66,18 @@ export const taskService = {
     if (!existing) throw ApiError.notFound("Task not found");
 
     const justCompleted = input.status === "DONE" && existing.status !== "DONE";
+    const assigneeChanged = input.assigneeId !== undefined && input.assigneeId !== existing.assigneeId;
 
     const updated = await taskRepository.update(id, {
       ...(input.title !== undefined ? { title: input.title } : {}),
       ...(input.status !== undefined ? { status: input.status } : {}),
       ...(input.description !== undefined ? { description: input.description } : {}),
       ...(input.dueAt !== undefined ? { dueDate: input.dueAt } : {}),
-      ...(input.assigneeId !== undefined ? { assignee: { connect: { id: input.assigneeId } } } : {}),
+      ...(input.assigneeId !== undefined
+        ? input.assigneeId
+          ? { assignee: { connect: { id: input.assigneeId } } }
+          : { assignee: { disconnect: true } }
+        : {}),
       ...(justCompleted ? { completedAt: new Date() } : {}),
     });
 
@@ -77,6 +90,29 @@ export const taskService = {
       before: existing,
       after: updated,
     });
+
+    if (assigneeChanged && input.assigneeId && input.assigneeId !== ctx.userId) {
+      await notificationService.notify({
+        userId: input.assigneeId,
+        type: "ASSIGNMENT",
+        title: "Task assigned to you",
+        body: updated.title,
+        link: `/team-tasks/${id}`,
+      });
+    }
+
+    if (justCompleted && existing.createdById && existing.createdById !== ctx.userId) {
+      const assigneeName = updated.assignee
+        ? `${updated.assignee.firstName} ${updated.assignee.lastName}`
+        : "The assignee";
+      await notificationService.notify({
+        userId: existing.createdById,
+        type: "SYSTEM",
+        title: "Task completed",
+        body: `${assigneeName} marked "${updated.title}" as done.`,
+        link: `/team-tasks/${id}`,
+      });
+    }
 
     return updated;
   },

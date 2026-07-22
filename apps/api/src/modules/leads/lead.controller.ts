@@ -7,6 +7,7 @@ import {
   disqualifyLeadSchema,
   listLeadsQuerySchema,
   bulkImportLeadsSchema,
+  bulkAssignLeadsSchema,
 } from "./lead.validation";
 import { ApiError } from "../../utils/ApiError";
 import { requireParam } from "../../utils/assert";
@@ -47,6 +48,17 @@ export const leadController = {
     const input = assignLeadSchema.parse(req.body);
     const lead = await leadService.assign(ctxFrom(req), id, input.ownerId);
     res.json({ success: true, data: lead });
+  },
+
+  async bulkAssign(req: Request, res: Response) {
+    const input = bulkAssignLeadsSchema.parse(req.body);
+    const result = await leadService.bulkAssign(ctxFrom(req), input);
+    res.json({ success: true, data: result });
+  },
+
+  async assignableOwners(req: Request, res: Response) {
+    const users = await leadService.assignableOwners(ctxFrom(req));
+    res.json({ success: true, data: users });
   },
 
   async disqualify(req: Request, res: Response) {

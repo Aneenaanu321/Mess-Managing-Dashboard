@@ -5,6 +5,9 @@ interface ListParams {
   companyId: string;
   status?: LeadStatus;
   ownerId?: string;
+  unassigned?: boolean;
+  slaBreached?: boolean;
+  slaHours?: number;
   industry?: Prisma.LeadWhereInput["industry"];
   search?: string;
   page: number;
@@ -13,12 +16,22 @@ interface ListParams {
 
 export const leadRepository = {
   async list(params: ListParams) {
-    const { companyId, status, ownerId, industry, search, page, pageSize } = params;
+    const { companyId, status, ownerId, unassigned, slaBreached, slaHours = 24, industry, search, page, pageSize } = params;
+
+    const slaCutoff = new Date(Date.now() - slaHours * 60 * 60 * 1000);
 
     const where: Prisma.LeadWhereInput = {
       companyId,
       ...(status ? { status } : {}),
       ...(ownerId ? { ownerId } : {}),
+      ...(unassigned ? { ownerId: null, status: { in: ["NEW", "CONTACTED", "QUALIFIED"] } } : {}),
+      ...(slaBreached
+        ? {
+            status: { in: ["NEW", "CONTACTED"] },
+            firstContactedAt: null,
+            createdAt: { lt: slaCutoff },
+          }
+        : {}),
       ...(industry ? { industry } : {}),
       ...(search
         ? {
@@ -67,6 +80,28 @@ export const leadRepository = {
     });
   },
 
+  findDuplicateCandidates(companyId: string) {
+    return prisma.lead.findMany({
+      where: {
+        companyId,
+        status: { notIn: ["DISQUALIFIED", "CONVERTED"] },
+        OR: [{ email: { not: null } }, { phone: { not: null } }],
+      },
+      select: {
+        id: true,
+        code: true,
+        companyName: true,
+        contactName: true,
+        email: true,
+        phone: true,
+        status: true,
+        createdAt: true,
+      },
+      orderBy: { createdAt: "desc" },
+      take: 500,
+    });
+  },
+
   create(data: Prisma.LeadCreateInput) {
     return prisma.lead.create({ data });
   },
@@ -75,8 +110,15 @@ export const leadRepository = {
     return prisma.lead.update({ where: { id }, data });
   },
 
-  assign(id: string, ownerId: string) {
-    return prisma.lead.update({ where: { id }, data: { ownerId, status: "CONTACTED" } });
+  assign(id: string, ownerId: string, firstContactedAt?: Date | null) {
+    return prisma.lead.update({
+      where: { id },
+      data: {
+        ownerId,
+        status: "CONTACTED",
+        ...(firstContactedAt === undefined ? {} : { firstContactedAt }),
+      },
+    });
   },
 
   disqualify(id: string, reason: DisqualifyReason, note?: string) {
@@ -95,5 +137,17 @@ export const leadRepository = {
 
   updateScore(id: string, score: number) {
     return prisma.lead.update({ where: { id }, data: { score, scoreUpdatedAt: new Date() } });
+  },
+
+  assignableUsers(companyId: string) {
+    return prisma.user.findMany({
+      where: {
+        companyId,
+        status: "ACTIVE",
+        role: { key: { in: ["SALES_EXECUTIVE", "SALES_MANAGER", "SALES_DIRECTOR", "SALES_COORDINATOR"] } },
+      },
+      select: { id: true, firstName: true, lastName: true, role: { select: { name: true, key: true } } },
+      orderBy: [{ firstName: "asc" }, { lastName: "asc" }],
+    });
   },
 };

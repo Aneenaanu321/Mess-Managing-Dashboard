@@ -21,7 +21,7 @@ export default function SignupPage() {
     setError(null);
     try {
       await register.mutateAsync({ firstName, lastName, email, password });
-      router.push("/leads");
+      router.push("/new-inquiries");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not create account");
     }

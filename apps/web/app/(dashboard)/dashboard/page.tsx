@@ -26,6 +26,7 @@ import { useReportsSummary } from "@/lib/reports";
 import { Badge, Card } from "@/components/ui";
 import { BranchFilter } from "@/components/BranchFilter";
 import { formatChartLabel } from "@/lib/chart-labels";
+import { getNewItemLabel, getPageLabel } from "@/lib/nav-labels";
 
 const DashboardCharts = dynamic(() => import("@/components/dashboard/DashboardCharts").then((m) => m.DashboardCharts), {
   ssr: false,
@@ -107,33 +108,33 @@ export default function ExecutiveDashboardPage() {
     hint: string;
   }[] = [
     {
-      label: "Leads",
+      label: getPageLabel("/new-inquiries"),
       value: String(summary?.leadCount ?? 0),
-      href: "/leads",
+      href: "/new-inquiries",
       icon: Users,
       tone: "blue",
       hint: `${summary?.newLeadCount7d ?? 0} new in last 7 days`,
     },
     {
-      label: "Unassigned Leads",
+      label: `Unassigned ${getPageLabel("/new-inquiries")}`,
       value: String(summary?.unassignedLeadCount ?? 0),
-      href: "/leads",
+      href: "/new-inquiries",
       icon: UserPlus,
       tone: "amber",
       hint: "Need an owner",
     },
     {
-      label: "Open Opportunities",
+      label: `Open ${getPageLabel("/active-deals")}`,
       value: String(summary?.openOpportunityCount ?? 0),
-      href: "/opportunities",
+      href: "/active-deals",
       icon: Target,
       tone: "brand",
-      hint: "Active in the pipeline",
+      hint: `Active on the ${getPageLabel("/deal-board").toLowerCase()}`,
     },
     {
-      label: "Pipeline Value",
+      label: `${getPageLabel("/deal-board")} Value`,
       value: formatCurrency(summary?.pipelineValue ?? 0, currency),
-      href: "/pipeline",
+      href: "/deal-board",
       icon: Wallet,
       tone: "emerald",
       hint: "Sum of open estimated value",
@@ -141,18 +142,18 @@ export default function ExecutiveDashboardPage() {
     {
       label: "Won Deals",
       value: String(summary?.wonOpportunityCount ?? 0),
-      href: "/opportunities",
+      href: "/active-deals",
       icon: Trophy,
       tone: "emerald",
-      hint: "Closed-won opportunities",
+      hint: `Closed-won ${getPageLabel("/active-deals").toLowerCase()}`,
     },
     {
-      label: "Pending Approvals",
+      label: getPageLabel("/pending-approvals"),
       value: String(summary?.pendingApprovalCount ?? 0),
-      href: "/approvals",
+      href: "/pending-approvals",
       icon: CheckSquare,
       tone: "violet",
-      hint: "Quotations awaiting decision",
+      hint: `${getPageLabel("/orders")} awaiting decision`,
     },
     {
       label: "Upcoming Follow-ups",
@@ -163,25 +164,25 @@ export default function ExecutiveDashboardPage() {
       hint: "Next 14 days",
     },
     {
-      label: "Quotations",
+      label: getPageLabel("/orders"),
       value: String(summary?.quotationCount ?? 0),
-      href: "/quotations",
+      href: "/orders",
       icon: FileText,
       tone: "violet",
-      hint: "Total quotations issued",
+      hint: `Total ${getPageLabel("/orders").toLowerCase()} issued`,
     },
     {
-      label: "Open Projects",
+      label: `Open ${getPageLabel("/customer-projects")}`,
       value: String(summary?.openProjectCount ?? 0),
-      href: "/projects",
+      href: "/customer-projects",
       icon: FolderKanban,
       tone: "cyan",
       hint: "In delivery, not yet closed",
     },
     {
-      label: "Open Support Tickets",
+      label: getPageLabel("/customer-support"),
       value: String(summary?.openTicketCount ?? 0),
-      href: "/support",
+      href: "/customer-support",
       icon: LifeBuoy,
       tone: "amber",
       hint: "Awaiting resolution",
@@ -189,15 +190,15 @@ export default function ExecutiveDashboardPage() {
     {
       label: "Overdue Invoices",
       value: String(summary?.overdueInvoiceCount ?? 0),
-      href: "/finance",
+      href: "/invoices-payments",
       icon: Receipt,
       tone: "red",
       hint: "Past due date, unpaid",
     },
     {
-      label: "AMC Expiring Soon",
+      label: `${getPageLabel("/service-contracts")} Expiring`,
       value: String(summary?.amcExpiringSoonCount ?? 0),
-      href: "/amc",
+      href: "/service-contracts",
       icon: ShieldCheck,
       tone: "slate",
       hint: "Renewing within 90 days",
@@ -208,54 +209,54 @@ export default function ExecutiveDashboardPage() {
     {
       show: (summary?.unassignedLeadCount ?? 0) > 0,
       tone: "amber" as const,
-      title: `${summary?.unassignedLeadCount ?? 0} unassigned lead${summary?.unassignedLeadCount === 1 ? "" : "s"}`,
+      title: `${summary?.unassignedLeadCount ?? 0} unassigned ${getPageLabel("/new-inquiries").toLowerCase().replace(/s$/, "")}${summary?.unassignedLeadCount === 1 ? "" : "s"}`,
       body: "Assign owners so follow-ups aren’t missed.",
-      href: "/leads",
+      href: "/new-inquiries",
     },
     {
       show: (summary?.pendingApprovalCount ?? 0) > 0,
       tone: "violet" as const,
-      title: `${summary?.pendingApprovalCount ?? 0} quotation approval${summary?.pendingApprovalCount === 1 ? "" : "s"} pending`,
+      title: `${summary?.pendingApprovalCount ?? 0} ${getPageLabel("/orders").toLowerCase()} approval${summary?.pendingApprovalCount === 1 ? "" : "s"} pending`,
       body: "Discount / price overrides waiting for a decision.",
-      href: "/approvals",
+      href: "/pending-approvals",
     },
     {
       show: (summary?.overdueInvoiceCount ?? 0) > 0,
       tone: "red" as const,
       title: `${summary?.overdueInvoiceCount ?? 0} overdue invoice${summary?.overdueInvoiceCount === 1 ? "" : "s"}`,
       body: "Collections risk — chase payments.",
-      href: "/finance",
+      href: "/invoices-payments",
     },
     {
       show: (summary?.amcExpiringSoonCount ?? 0) > 0,
       tone: "slate" as const,
-      title: `${summary?.amcExpiringSoonCount ?? 0} AMC contract${summary?.amcExpiringSoonCount === 1 ? "" : "s"} expiring`,
+      title: `${summary?.amcExpiringSoonCount ?? 0} ${getPageLabel("/service-contracts").toLowerCase()} expiring`,
       body: "Start renewal conversations within 90 days.",
-      href: "/amc",
+      href: "/service-contracts",
     },
     {
       show: (summary?.openTicketCount ?? 0) > 0,
       tone: "amber" as const,
-      title: `${summary?.openTicketCount ?? 0} open support ticket${summary?.openTicketCount === 1 ? "" : "s"}`,
+      title: `${summary?.openTicketCount ?? 0} open ${getPageLabel("/customer-support").toLowerCase()} ticket${summary?.openTicketCount === 1 ? "" : "s"}`,
       body: "Check SLA response windows.",
-      href: "/support",
+      href: "/customer-support",
     },
   ].filter((item) => item.show);
 
   const quickLinks = [
-    { href: "/leads/new", label: "New Lead" },
-    { href: "/opportunities/new", label: "New Opportunity" },
-    { href: "/quotations/new", label: "New Quotation" },
+    { href: "/new-inquiries/new", label: getNewItemLabel("/new-inquiries") },
+    { href: "/active-deals/new", label: getNewItemLabel("/active-deals") },
+    { href: "/orders/new", label: getNewItemLabel("/orders") },
     { href: "/calendar/new", label: "Schedule Follow-up" },
-    { href: "/approvals", label: "Approvals Inbox" },
-    { href: "/ai-assistant", label: "Ask AI Assistant" },
+    { href: "/pending-approvals", label: `${getPageLabel("/pending-approvals")} Inbox` },
+    { href: "/sales-assistant", label: `Ask ${getPageLabel("/sales-assistant")}` },
   ];
 
   return (
     <div>
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-xl font-semibold text-primary">Executive Dashboard</h1>
+          <h1 className="text-xl font-semibold text-primary">{getPageLabel("/dashboard")}</h1>
           <p className="text-sm text-slate-500">
             Real-time snapshot across sales, delivery, finance, and support
             {user?.company ? ` for ${user.company.name}` : ""}.
@@ -299,7 +300,7 @@ export default function ExecutiveDashboardPage() {
           </p>
         </Card>
         <Card className="p-5">
-          <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Won opportunity value</p>
+          <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Won deals value</p>
           <p className="mt-2 text-2xl font-semibold text-primary">
             {reportsLoading ? "…" : formatCurrency(reports?.revenue.wonOpportunities ?? 0, currency)}
           </p>
@@ -368,20 +369,20 @@ export default function ExecutiveDashboardPage() {
       <div className="mt-6 grid grid-cols-1 gap-4 xl:grid-cols-2">
         <Card className="overflow-hidden">
           <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-700 px-5 py-4">
-            <h2 className="text-sm font-semibold text-primary">Recent leads</h2>
-            <Link href="/leads" className="text-xs font-medium text-brand-700 hover:underline">
+            <h2 className="text-sm font-semibold text-primary">Recent {getPageLabel("/new-inquiries").toLowerCase()}</h2>
+            <Link href="/new-inquiries" className="text-xs font-medium text-brand-700 hover:underline">
               View all
             </Link>
           </div>
           {spotlightLoading && <p className="p-5 text-sm text-slate-400">Loading…</p>}
           {!spotlightLoading && (spotlight?.recentLeads.length ?? 0) === 0 && (
-            <p className="p-5 text-sm text-slate-400">No leads yet.</p>
+            <p className="p-5 text-sm text-slate-400">No inquiries yet.</p>
           )}
           {(spotlight?.recentLeads.length ?? 0) > 0 && (
             <ul className="divide-y divide-slate-100 dark:divide-slate-700">
               {spotlight!.recentLeads.map((lead) => (
                 <li key={lead.id}>
-                  <Link href={`/leads/${lead.id}`} className="flex items-center justify-between gap-3 px-5 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50">
+                  <Link href={`/new-inquiries/${lead.id}`} className="flex items-center justify-between gap-3 px-5 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50">
                     <div className="min-w-0">
                       <p className="truncate text-sm font-medium text-primary">
                         {lead.companyName}{" "}
@@ -401,20 +402,20 @@ export default function ExecutiveDashboardPage() {
 
         <Card className="overflow-hidden">
           <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-700 px-5 py-4">
-            <h2 className="text-sm font-semibold text-primary">Top open opportunities</h2>
-            <Link href="/opportunities" className="text-xs font-medium text-brand-700 hover:underline">
+            <h2 className="text-sm font-semibold text-primary">Top open {getPageLabel("/active-deals").toLowerCase()}</h2>
+            <Link href="/active-deals" className="text-xs font-medium text-brand-700 hover:underline">
               View all
             </Link>
           </div>
           {spotlightLoading && <p className="p-5 text-sm text-slate-400">Loading…</p>}
           {!spotlightLoading && (spotlight?.topOpportunities.length ?? 0) === 0 && (
-            <p className="p-5 text-sm text-slate-400">No open opportunities yet.</p>
+            <p className="p-5 text-sm text-slate-400">No open deals yet.</p>
           )}
           {(spotlight?.topOpportunities.length ?? 0) > 0 && (
             <ul className="divide-y divide-slate-100 dark:divide-slate-700">
               {spotlight!.topOpportunities.map((opp) => (
                 <li key={opp.id}>
-                  <Link href={`/opportunities/${opp.id}`} className="flex items-center justify-between gap-3 px-5 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50">
+                  <Link href={`/active-deals/${opp.id}`} className="flex items-center justify-between gap-3 px-5 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50">
                     <div className="min-w-0">
                       <p className="truncate text-sm font-medium text-primary">
                         {opp.title}{" "}
@@ -438,7 +439,7 @@ export default function ExecutiveDashboardPage() {
           <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-700 px-5 py-4">
             <h2 className="text-sm font-semibold text-primary">Upcoming follow-ups</h2>
             <Link href="/calendar" className="text-xs font-medium text-brand-700 hover:underline">
-              Calendar
+              {getPageLabel("/calendar")}
             </Link>
           </div>
           {spotlightLoading && <p className="p-5 text-sm text-slate-400">Loading…</p>}
@@ -465,8 +466,8 @@ export default function ExecutiveDashboardPage() {
 
         <Card className="overflow-hidden">
           <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-700 px-5 py-4">
-            <h2 className="text-sm font-semibold text-primary">Pending approvals</h2>
-            <Link href="/approvals" className="text-xs font-medium text-brand-700 hover:underline">
+            <h2 className="text-sm font-semibold text-primary">{getPageLabel("/pending-approvals")}</h2>
+            <Link href="/pending-approvals" className="text-xs font-medium text-brand-700 hover:underline">
               Inbox
             </Link>
           </div>
@@ -478,10 +479,10 @@ export default function ExecutiveDashboardPage() {
             <ul className="divide-y divide-slate-100 dark:divide-slate-700">
               {spotlight!.pendingApprovals.map((approval) => (
                 <li key={approval.id}>
-                  <Link href="/approvals" className="flex items-center justify-between gap-3 px-5 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50">
+                  <Link href="/pending-approvals" className="flex items-center justify-between gap-3 px-5 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50">
                     <div className="min-w-0">
                       <p className="truncate text-sm font-medium text-primary">
-                        {approval.quotationCode ?? "Quotation"}{" "}
+                        {approval.quotationCode ?? getPageLabel("/orders")}{" "}
                         <span className="font-normal text-slate-400">{approval.customerName ?? ""}</span>
                       </p>
                       <p className="truncate text-xs text-slate-500">{approval.reason ?? "Approval required"}</p>
@@ -503,10 +504,10 @@ export default function ExecutiveDashboardPage() {
         <Card className="mt-6 overflow-hidden">
           <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-700 px-5 py-4">
             <div>
-              <h2 className="text-sm font-semibold text-primary">AMC renewals due</h2>
+              <h2 className="text-sm font-semibold text-primary">{getPageLabel("/service-contracts")} renewals due</h2>
               <p className="text-xs text-slate-500">Contracts ending within 90 days</p>
             </div>
-            <Link href="/amc" className="text-xs font-medium text-brand-700 hover:underline">
+            <Link href="/service-contracts" className="text-xs font-medium text-brand-700 hover:underline">
               View contracts
             </Link>
           </div>
@@ -523,7 +524,7 @@ export default function ExecutiveDashboardPage() {
               {spotlight!.expiringAmcs.map((contract) => (
                 <tr key={contract.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50">
                   <td className="px-5 py-3">
-                    <Link href={`/amc/${contract.id}`} className="font-medium text-brand-600 hover:underline">
+                    <Link href={`/service-contracts/${contract.id}`} className="font-medium text-brand-600 hover:underline">
                       {contract.code}
                     </Link>
                   </td>

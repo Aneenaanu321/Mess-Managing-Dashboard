@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import clsx from "clsx";
-import { Building2, Hash, ScrollText, ShieldCheck, Timer, Users as UsersIcon } from "lucide-react";
+import { Building2, ClipboardList, Hash, ScrollText, ShieldCheck, Timer, Users as UsersIcon } from "lucide-react";
 import {
   useOrgSettings,
   useRoleSettings,
@@ -13,13 +13,16 @@ import {
   useUpsertSlaPolicy,
   TicketPriority,
 } from "@/lib/settings";
+import { useLeadOpsSettings, useUpdateLeadOpsSettings } from "@/lib/sales-ops";
 import { hasPermission, useCurrentUser } from "@/lib/auth";
 import { Badge, Button, Card, Input, Select } from "@/components/ui";
+import { getPageLabel } from "@/lib/nav-labels";
 
-type Tab = "org" | "roles" | "users" | "sequences" | "sla" | "audit-log";
+type Tab = "org" | "lead-ops" | "roles" | "users" | "sequences" | "sla" | "audit-log";
 
 const TABS: { key: Tab; label: string; icon: typeof Building2 }[] = [
   { key: "org", label: "Organization", icon: Building2 },
+  { key: "lead-ops", label: "Lead Ops", icon: ClipboardList },
   { key: "roles", label: "Roles", icon: ShieldCheck },
   { key: "users", label: "Users", icon: UsersIcon },
   { key: "sequences", label: "Number Sequences", icon: Hash },
@@ -39,7 +42,7 @@ export default function SettingsPage() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-xl font-semibold text-primary">Settings</h1>
+        <h1 className="text-xl font-semibold text-primary">{getPageLabel("/settings")}</h1>
         <p className="text-sm text-slate-500">Organization details, roles, and user administration.</p>
       </div>
 
@@ -64,12 +67,79 @@ export default function SettingsPage() {
       </div>
 
       {tab === "org" && <OrgSection />}
+      {tab === "lead-ops" && <LeadOpsSection />}
       {tab === "roles" && <RolesSection />}
       {tab === "users" && <UsersSection />}
       {tab === "sequences" && <SequencesSection />}
       {tab === "sla" && <SlaPoliciesSection />}
       {tab === "audit-log" && <AuditLogSection />}
     </div>
+  );
+}
+
+function LeadOpsSection() {
+  const { data: user } = useCurrentUser();
+  const { data, isLoading, isError } = useLeadOpsSettings();
+  const update = useUpdateLeadOpsSettings();
+  const [mode, setMode] = useState("MANUAL");
+  const [slaHours, setSlaHours] = useState("24");
+  const [chaseDays, setChaseDays] = useState("7");
+
+  useEffect(() => {
+    if (!data) return;
+    setMode(data.leadAssignMode ?? "MANUAL");
+    setSlaHours(String(data.leadSlaHours ?? 24));
+    setChaseDays(String(data.quoteChaseDays ?? 7));
+  }, [data]);
+
+  const canEdit = hasPermission(user, "settings:manage_org") || hasPermission(user, "lead:assign");
+
+  if (isError) {
+    return <Card className="p-4 text-sm text-red-600 dark:text-red-400">Couldn&apos;t load lead ops settings.</Card>;
+  }
+
+  return (
+    <Card className="max-w-lg space-y-4 p-6">
+      <div>
+        <h2 className="text-sm font-semibold text-primary">Lead assignment & chase</h2>
+        <p className="mt-1 text-xs text-slate-500">Controls round-robin, response SLA, and quote chase windows.</p>
+      </div>
+      {isLoading ? (
+        <p className="text-sm text-slate-500">Loading…</p>
+      ) : (
+        <>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-slate-500">Assign mode</label>
+            <Select value={mode} onChange={(e) => setMode(e.target.value)} disabled={!canEdit}>
+              <option value="MANUAL">Manual</option>
+              <option value="ROUND_ROBIN">Round-robin</option>
+            </Select>
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-slate-500">Lead response SLA (hours)</label>
+            <Input type="number" min={1} value={slaHours} onChange={(e) => setSlaHours(e.target.value)} disabled={!canEdit} />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-slate-500">Quote chase after (days)</label>
+            <Input type="number" min={1} value={chaseDays} onChange={(e) => setChaseDays(e.target.value)} disabled={!canEdit} />
+          </div>
+          {canEdit && (
+            <Button
+              disabled={update.isPending}
+              onClick={() =>
+                update.mutate({
+                  leadAssignMode: mode,
+                  leadSlaHours: Number(slaHours),
+                  quoteChaseDays: Number(chaseDays),
+                })
+              }
+            >
+              {update.isPending ? "Saving…" : "Save"}
+            </Button>
+          )}
+        </>
+      )}
+    </Card>
   );
 }
 
@@ -120,7 +190,7 @@ function OrgSection() {
         </p>
         {!isLoading && org && (
           <pre className="overflow-x-auto rounded-lg bg-slate-900 p-3 text-xs text-slate-100">
-{`POST ${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api/v1"}/public/leads
+{`POST ${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api/v1"}/public/new-inquiries
 Content-Type: application/json
 
 {

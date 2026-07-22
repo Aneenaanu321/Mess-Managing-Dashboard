@@ -29,7 +29,7 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
     } else if (!user.portalCustomer) {
       // An internal-staff account has no portal data to see — send it back
       // to the real app instead of an empty portal shell.
-      router.replace("/leads");
+      router.replace("/dashboard");
     }
   }, [isLoading, isError, user, router]);
 

@@ -4,12 +4,12 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 const SHORTCUTS: Record<string, string> = {
-  l: "/leads",
+  l: "/new-inquiries",
   c: "/customers",
-  o: "/opportunities",
-  q: "/quotations",
+  o: "/active-deals",
+  q: "/orders",
   d: "/dashboard",
-  p: "/pipeline",
+  p: "/deal-board",
   r: "/reports",
   s: "/settings",
 };

@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation";
 import clsx from "clsx";
 import {
   LayoutDashboard,
+  ClipboardList,
   Users,
   Building2,
   Target,
@@ -23,69 +24,55 @@ import {
   Cpu,
   ListChecks,
   Receipt,
-  LifeBuoy,
-  ShieldCheck,
   BarChart3,
   Sparkles,
   Settings,
   Menu,
-  Megaphone,
   CalendarDays,
   CheckSquare,
+  ArrowLeftRight,
+  Filter,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import { NAV_GROUPS } from "@/lib/nav-labels";
 
-const NAV = [
-  { section: "Overview", items: [{ href: "/dashboard", label: "Executive Dashboard", icon: LayoutDashboard }] },
-  {
-    section: "Sales",
-    items: [
-      { href: "/leads", label: "Leads", icon: Users },
-      { href: "/customers", label: "Customers", icon: Building2 },
-      { href: "/opportunities", label: "Opportunities", icon: Target },
-      { href: "/pipeline", label: "Pipeline", icon: Kanban },
-      { href: "/quotations", label: "Quotations", icon: FileText },
-      { href: "/approvals", label: "Approvals", icon: CheckSquare },
-      { href: "/campaigns", label: "Campaigns", icon: Megaphone },
-      { href: "/calendar", label: "Calendar", icon: CalendarDays },
-    ],
-  },
-  {
-    section: "Fulfillment",
-    items: [
-      { href: "/purchase-orders", label: "Purchase Orders", icon: ShoppingCart },
-      { href: "/sales-orders", label: "Sales Orders", icon: ClipboardCheck },
-      { href: "/inventory", label: "Inventory & Catalog", icon: Package },
-      { href: "/warehouse", label: "Warehouse", icon: Warehouse },
-      { href: "/procurement", label: "Procurement", icon: Truck },
-      { href: "/vendors", label: "Vendors", icon: Handshake },
-    ],
-  },
-  {
-    section: "Delivery",
-    items: [
-      { href: "/projects", label: "Projects", icon: FolderKanban },
-      { href: "/installations", label: "Installations", icon: Wrench },
-      { href: "/devices", label: "Devices", icon: Cpu },
-      { href: "/tasks", label: "Engineer Tasks", icon: ListChecks },
-    ],
-  },
-  {
-    section: "Operations",
-    items: [
-      { href: "/finance", label: "Finance", icon: Receipt },
-      { href: "/support", label: "Support Tickets", icon: LifeBuoy },
-      { href: "/amc", label: "AMC & Contracts", icon: ShieldCheck },
-    ],
-  },
-  {
-    section: "Insights",
-    items: [
-      { href: "/reports", label: "Reports & Analytics", icon: BarChart3 },
-      { href: "/ai-assistant", label: "AI Assistant", icon: Sparkles },
-    ],
-  },
-  { section: "System", items: [{ href: "/settings", label: "Settings", icon: Settings }] },
-];
+const NAV_ICONS: Record<string, LucideIcon> = {
+  "/dashboard": LayoutDashboard,
+  "/coordinator": ClipboardList,
+  "/new-inquiries": Users,
+  "/customers": Building2,
+  "/active-deals": Target,
+  "/deal-board": Kanban,
+  "/orders": FileText,
+  "/pending-approvals": CheckSquare,
+  "/handoffs": ArrowLeftRight,
+  "/sales-ops/hygiene": Filter,
+  "/calendar": CalendarDays,
+  "/customer-orders": ShoppingCart,
+  "/order-completed": ClipboardCheck,
+  "/products-stock": Package,
+  "/stock-locations": Warehouse,
+  "/purchase-orders": Truck,
+  "/vendors": Handshake,
+  "/customer-projects": FolderKanban,
+  "/site-installations": Wrench,
+  "/installed-equipment": Cpu,
+  "/team-tasks": ListChecks,
+  "/invoices-payments": Receipt,
+  "/reports": BarChart3,
+  "/sales-assistant": Sparkles,
+  "/settings": Settings,
+};
+
+const NAV = NAV_GROUPS.map((group) => ({
+  section: group.section,
+  items: group.items
+    .filter((item) => item.href in NAV_ICONS)
+    .map((item) => ({
+      ...item,
+      icon: NAV_ICONS[item.href]!,
+    })),
+}));
 
 type SidebarProps = {
   open: boolean;
@@ -147,7 +134,7 @@ export function Sidebar({ open, onClose, onToggle }: SidebarProps) {
         >
           {!collapsed && (
             <Link
-              href="/leads"
+              href="/new-inquiries"
               className="min-w-0 flex-1"
               aria-label="ibTech home"
               onClick={closeIfMobile}
@@ -181,7 +168,7 @@ export function Sidebar({ open, onClose, onToggle }: SidebarProps) {
                   {group.section}
                 </p>
               )}
-              {collapsed && group.section !== "Overview" && (
+              {collapsed && group.section !== "Home" && (
                 <div className="mx-auto mb-2 h-px w-6 bg-slate-200 dark:bg-slate-700" aria-hidden />
               )}
               <div className="space-y-0.5">

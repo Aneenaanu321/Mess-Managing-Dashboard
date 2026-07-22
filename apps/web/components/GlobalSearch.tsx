@@ -6,6 +6,7 @@ import { Search } from "lucide-react";
 import { useLeads } from "@/lib/leads";
 import { useCustomers } from "@/lib/customers";
 import { useOpportunities } from "@/lib/opportunities";
+import { getPageLabel } from "@/lib/nav-labels";
 
 export function GlobalSearch() {
   const [query, setQuery] = useState("");
@@ -48,7 +49,7 @@ export function GlobalSearch() {
           setOpen(true);
         }}
         onFocus={() => setOpen(true)}
-        placeholder="Search leads, customers, opportunities…"
+        placeholder={`Search ${getPageLabel("/new-inquiries").toLowerCase()}, ${getPageLabel("/customers").toLowerCase()}, ${getPageLabel("/active-deals").toLowerCase()}…`}
         aria-label="Global search"
         className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm text-primary placeholder:text-slate-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:border-slate-600 dark:bg-slate-800 dark:placeholder:text-slate-500"
       />
@@ -57,9 +58,9 @@ export function GlobalSearch() {
           {!hasResults && <p className="p-4 text-sm text-muted">No results for &ldquo;{query}&rdquo;</p>}
           {leads.length > 0 && (
             <div className="border-b border-slate-100 p-2 dark:border-slate-700">
-              <p className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted">Leads</p>
+              <p className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted">{getPageLabel("/new-inquiries")}</p>
               {leads.map((l) => (
-                <button key={l.id} type="button" className="block w-full rounded-lg px-2 py-2 text-left text-sm hover:bg-slate-50 dark:hover:bg-slate-800/50" onClick={() => navigate(`/leads/${l.id}`)}>
+                <button key={l.id} type="button" className="block w-full rounded-lg px-2 py-2 text-left text-sm hover:bg-slate-50 dark:hover:bg-slate-800/50" onClick={() => navigate(`/new-inquiries/${l.id}`)}>
                   <span className="font-medium text-primary">{l.companyName}</span>
                   <span className="ml-2 text-xs text-muted">{l.code}</span>
                 </button>
@@ -68,7 +69,7 @@ export function GlobalSearch() {
           )}
           {customers.length > 0 && (
             <div className="border-b border-slate-100 p-2 dark:border-slate-700">
-              <p className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted">Customers</p>
+              <p className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted">{getPageLabel("/customers")}</p>
               {customers.map((c) => (
                 <button key={c.id} type="button" className="block w-full rounded-lg px-2 py-2 text-left text-sm hover:bg-slate-50 dark:hover:bg-slate-800/50" onClick={() => navigate(`/customers/${c.id}`)}>
                   <span className="font-medium text-primary">{c.name}</span>
@@ -79,9 +80,9 @@ export function GlobalSearch() {
           )}
           {opportunities.length > 0 && (
             <div className="p-2">
-              <p className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted">Opportunities</p>
+              <p className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted">{getPageLabel("/active-deals")}</p>
               {opportunities.map((o) => (
-                <button key={o.id} type="button" className="block w-full rounded-lg px-2 py-2 text-left text-sm hover:bg-slate-50 dark:hover:bg-slate-800/50" onClick={() => navigate(`/opportunities/${o.id}`)}>
+                <button key={o.id} type="button" className="block w-full rounded-lg px-2 py-2 text-left text-sm hover:bg-slate-50 dark:hover:bg-slate-800/50" onClick={() => navigate(`/active-deals/${o.id}`)}>
                   <span className="font-medium text-primary">{o.title}</span>
                   <span className="ml-2 text-xs text-muted">{o.code}</span>
                 </button>

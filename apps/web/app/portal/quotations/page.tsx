@@ -29,7 +29,7 @@ export default function PortalQuotationsPage() {
               <thead className="border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50/80 dark:bg-slate-800/50 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">
                 <tr>
                   <th className="px-4 py-3">Code</th>
-                  <th className="px-4 py-3">Opportunity</th>
+                  <th className="px-4 py-3">Deal</th>
                   <th className="px-4 py-3">Grand Total</th>
                   <th className="px-4 py-3">Valid Until</th>
                   <th className="px-4 py-3">Status</th>

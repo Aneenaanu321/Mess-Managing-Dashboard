@@ -8,6 +8,7 @@ import { hasPermission, useCurrentUser } from "@/lib/auth";
 import { Button, Input, Select, Card } from "@/components/ui";
 import { downloadCsv } from "@/lib/csv";
 import { useConfirm } from "@/components/ConfirmDialog";
+import { getNewItemLabel, getPageLabel } from "@/lib/nav-labels";
 
 export default function CustomersPage() {
   const [industry, setIndustry] = useState("");
@@ -45,7 +46,7 @@ export default function CustomersPage() {
     <div>
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-primary">Customers</h1>
+          <h1 className="text-xl font-semibold text-primary">{getPageLabel("/customers")}</h1>
           <p className="text-sm text-slate-500">
             {data?.meta?.total ?? 0} total customer{data?.meta?.total === 1 ? "" : "s"}
           </p>
@@ -64,7 +65,7 @@ export default function CustomersPage() {
           )}
           {hasPermission(user, "customer:create") && (
             <Link href="/customers/new">
-              <Button>+ New Customer</Button>
+              <Button>+ {getNewItemLabel("/customers")}</Button>
             </Link>
           )}
         </div>

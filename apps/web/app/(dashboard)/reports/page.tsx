@@ -8,6 +8,9 @@ import { useReportsSummary, useReceivablesAging, AgingBucket } from "@/lib/repor
 import { Badge, Button, Card } from "@/components/ui";
 import { downloadCsv } from "@/lib/csv";
 import { BranchFilter } from "@/components/BranchFilter";
+import { getPageLabel } from "@/lib/nav-labels";
+import { downloadReportsExport } from "@/lib/reports-export";
+import { toast } from "@/lib/toast";
 
 const ReportsCharts = dynamic(
   () => import("@/components/reports/ReportsCharts").then((m) => m.ReportsCharts),
@@ -61,10 +64,23 @@ export default function ReportsPage() {
     <div>
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-xl font-semibold text-primary">Reports &amp; Analytics</h1>
+          <h1 className="text-xl font-semibold text-primary">{getPageLabel("/reports")}</h1>
           <p className="text-sm text-muted">Funnel, pipeline, revenue and collections at a glance.</p>
         </div>
-        <BranchFilter value={branchId} onChange={setBranchId} />
+        <div className="flex flex-wrap items-center gap-3">
+          <Button
+            variant="secondary"
+            disabled={isLoading || agingLoading || isError}
+            onClick={() => {
+              downloadReportsExport(data, aging, currency, branchId ? `Branch ${branchId}` : "All branches");
+              toast.success("Report downloaded");
+            }}
+          >
+            <Download size={16} />
+            Download Report
+          </Button>
+          <BranchFilter value={branchId} onChange={setBranchId} />
+        </div>
       </div>
 
       {isError && (
@@ -81,7 +97,7 @@ export default function ReportsPage() {
           </p>
         </Card>
         <Card className="p-5">
-          <p className="text-xs font-medium uppercase tracking-wide text-muted">Won Opportunities</p>
+          <p className="text-xs font-medium uppercase tracking-wide text-muted">Won Deals Value</p>
           <p className="mt-2 text-2xl font-semibold text-primary">
             {isLoading ? "…" : formatCurrency(data?.revenue.wonOpportunities ?? 0, currency)}
           </p>

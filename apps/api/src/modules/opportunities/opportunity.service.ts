@@ -88,7 +88,15 @@ export const opportunityService = {
     const existing = await opportunityRepository.findById(ctx.companyId, id);
     if (!existing) throw ApiError.notFound("Opportunity not found");
 
-    const updated = await opportunityRepository.update(id, input);
+    const { ownerId, ...rest } = input;
+    const updated = await opportunityRepository.update(id, {
+      ...rest,
+      ...(ownerId !== undefined
+        ? ownerId
+          ? { owner: { connect: { id: ownerId } } }
+          : { owner: { disconnect: true } }
+        : {}),
+    });
 
     await writeAuditLog({
       companyId: ctx.companyId,
@@ -110,6 +118,18 @@ export const opportunityService = {
       throw ApiError.conflict(`Opportunity is already ${existing.stage} and cannot change stage further`);
     }
 
+    // Document checklist: advancing past Site Survey requires a site survey record.
+    const fromIdx = STAGE_ORDER.indexOf(existing.stage);
+    const toIdx = STAGE_ORDER.indexOf(input.stage);
+    if (toIdx > STAGE_ORDER.indexOf("SITE_SURVEY") && fromIdx <= STAGE_ORDER.indexOf("SITE_SURVEY") && input.stage !== "WON" && input.stage !== "LOST") {
+      const surveys = await prisma.siteSurvey.count({ where: { opportunityId: id } });
+      if (surveys === 0) {
+        throw ApiError.badRequest(
+          "Add a Site Survey under Pre-sales before advancing past Site Survey.",
+        );
+      }
+    }
+
     const regression = isRegression(existing.stage, input.stage);
     const now = new Date();
 
@@ -129,6 +149,22 @@ export const opportunityService = {
       changedById: ctx.userId,
       isRegression: regression,
     });
+
+    // Auto follow-up: schedule a calendar reminder 2 business days out for the owner.
+    if (!["WON", "LOST"].includes(input.stage) && !regression) {
+      const followUpAt = new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000);
+      await prisma.calendarEvent.create({
+        data: {
+          companyId: ctx.companyId,
+          type: "FOLLOW_UP",
+          title: `Follow up: ${existing.title} (${input.stage.replaceAll("_", " ")})`,
+          startAt: followUpAt,
+          ownerId: existing.ownerId ?? ctx.userId,
+          opportunityId: id,
+          reminderAt: followUpAt,
+        },
+      });
+    }
 
     await writeAuditLog({
       companyId: ctx.companyId,

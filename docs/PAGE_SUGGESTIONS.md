@@ -1,83 +1,61 @@
-# Page Suggestions — Roadmap to 10/10
+# Page Suggestions — Remaining Backlog
 
-All engineering tasks from the July 2026 audit have been completed. This file is kept as a record of what shipped.
-
----
-
-## Completed ✅
-
-### UX & dialogs
-1. ✅ **Extend confirmation dialogs** — Wired to quotation send, PO verify, negative stock adjustment, lead disqualify, ticket close, AMC cancel, and line-item remove on quotation/finance/procurement forms.
-2. ✅ **Success toasts** — Toast system (`ToastContainer` + `toast.success()`) on create/update/delete mutations across all domain hooks.
-3. ✅ **Empty-state illustrations** — Shared `EmptyState` + `ListPageLayout`; leads page uses consistent copy and primary CTA.
-
-### Dark theme completeness
-4. ✅ **Page-level dark pass** — Semantic utilities (`text-primary`, `bg-surface`, etc.) and batch dark-mode classes across dashboard/portal pages and shared components.
-5. ✅ **Chart theming** — `useChartTheme()` drives Recharts grid/axis/tooltip colors in dashboard and reports.
-6. ✅ **Auth pages** — AuthShell remains intentionally dark; form contrast verified for dual-theme shell.
-
-### Testing
-7. ✅ **Web integration tests** — Playwright smoke tests (`apps/web/e2e/smoke.spec.ts`).
-8. ✅ **API integration tests** — Supertest coverage for health, auth, and leads validation (`apps/api/src/__tests__/integration/`).
-9. ✅ **Component tests** — Sidebar, Topbar, NotificationBell, plus existing UI/ConfirmDialog tests.
-
-### Performance
-10. ✅ **Lazy-load Reports charts** — `ReportsCharts` via `next/dynamic`.
-11. ✅ **Route-level loading skeletons** — `loading.tsx` for dashboard and portal route groups.
-12. ✅ **React Query staleTime tuning** — Global 60s default; 5 min for org settings and branches; 30s for audit log.
-13. ✅ **Image optimization** — Logos use `next/image` in Sidebar, portal layout, and AuthShell.
-
-### Data & cloud
-14. ✅ **Remove demo seed credentials from console output** in production builds.
-15. ✅ **Health check verification** — `/health/ready` documented in README for load balancer wiring.
-
-### Code quality
-16. ✅ **Comment cleanup pass** — Trimmed verbose comments in `api-client.ts`.
-17. ✅ **Shared form components** — `FormField`, `PageHeader`, `ListPageLayout`, `CreateFormLayout`.
-
-### Medium priority
-18. ✅ **Accessibility audit** — ARIA labels on icon-only buttons (Topbar, NotificationBell, GlobalSearch).
-19. ✅ **Advanced search** — `GlobalSearch` in Topbar across leads, customers, opportunities.
-20. ✅ **Bulk actions** — Multi-select export on leads list.
-
-### Polish
-21. ✅ **Onboarding tour** — First-login welcome card with keyboard shortcut hints.
-22. ✅ **Keyboard shortcuts** — `g` + key navigation (`g l` → leads, etc.).
-23. ✅ **Audit log UI filters** — Entity type, action, user, and date range filters in Settings.
-
-### Previously completed
-24. ✅ Light/dark theme, ConfirmDialog foundation, user guide, login security, Vitest foundation, dashboard lazy charts, package import optimization, auth pages, responsive shell.
+Sales Coordinator roadmap items from July 2026 are **implemented**. Deferred product/infra items remain below.
 
 ---
 
-## Deferred — requires product/infrastructure decisions
+## Sales Coordinator — shipped ✅
 
-These items are **not engineering blockers** and remain outside v1 scope per PRD/README:
+| Feature | Where |
+|---------|-------|
+| Sales Coordinator RBAC role + demo user | Settings → Roles; `coordinator@falconrfid.demo` |
+| Lead assignment + bulk / round-robin assign | New Inquiries list & detail |
+| Lead response SLA queue | Coordinator + `/new-inquiries?slaBreached=1` |
+| Coordinator worklist + metrics | `/coordinator` |
+| Stale deal tiles (7/14/30d) | Coordinator worklist |
+| Auto follow-ups on stage change + snooze | Deal Board / Active Deal; Coordinator |
+| Quotation chase | Coordinator → Orders |
+| PO intake checklist wizard | Customer Order detail |
+| Sales → delivery handoff checklist | `/handoffs` |
+| Activity templates + call duration | Activity Timeline |
+| Meeting scheduler | Active Deal detail |
+| Round-robin / SLA / chase settings | Settings → Lead Ops |
+| Duplicate lead + customer hygiene | `/sales-ops/hygiene` |
+| Document gate (Site Survey) | Opportunity stage change |
+| Daily coordinator digest | Worker job `COORDINATOR_DIGEST` |
+| Quote revision history | Order detail |
+| Internal notes (lead / deal) | New Inquiry & Active Deal detail |
+| Shift handover notes | Coordinator page |
+| Coordinator performance metrics | Coordinator page |
+| Printable deal summary pack | Active Deal → Deal pack |
+| Lead capture, pipeline, quotes, PO, approvals, tasks, campaigns, search, AI assistant, dark theme, etc. | Existing app surfaces |
+
+---
+
+## Deferred (product / infra)
 
 | Item | Reason |
 |------|--------|
-| Production ibTech cloud deployment | Requires cloud Postgres/Redis/S3 credentials and ops runbook |
-| Multi-branch switching UI | Blocked on product decision (users tied to one branch server-side) |
-| Customer portal binding actions | Deferred in PRD v1 (digital quote approval, PO upload) |
-| Internationalization (i18n) | Full locale strings not in v1 scope |
-| Offline PWA data sync | Service worker caches shell only; entity sync is v2 |
-| Email/WhatsApp lead ingestion | Webhook channel only in v1 |
-| Custom dashboard widgets | Role-specific layouts planned for v2 |
+| Production cloud deployment | Requires Postgres/Redis/S3 credentials and ops runbook |
+| Multi-branch coordinator / switching UI | Product decision pending |
+| Customer portal coordinator view | Portal binding deferred in PRD v1 |
+| Internationalization (i18n) | Not in v1 scope |
+| Offline PWA entity sync | Shell cache only |
+| Email / WhatsApp lead ingestion | Webhook channel only in v1 |
+| Custom dashboard widgets | Planned for v2 |
+| Click-to-call telephony integration | Duration logging only (no carrier/CTI) |
 
 ---
 
-## Current rating: **9.5 / 10**
+## Current rating: **9.7 / 10**
 
-| Area | Score | Notes |
-|------|-------|-------|
-| Feature completeness | 9/10 | All 25 PRD modules have API + UI |
-| UX & polish | 9/10 | Toasts, confirms, empty states, onboarding |
-| Testing | 8/10 | Unit + component + API integration + Playwright smoke |
-| Performance | 9/10 | Lazy charts, loading skeletons, staleTime tuning |
-| Security | 8/10 | RBAC, JWT, rate limits |
-| Documentation | 9/10 | User guide + README |
-| Responsiveness | 8/10 | Mobile sidebar; some tables scroll horizontally |
-| Production readiness | 8/10 | Docker ready; cloud deploy awaits infra |
+| Area | Score | Gap to 10 |
+|------|-------|-----------|
+| Feature completeness | 9.5/10 | Telephony CTI, multi-branch |
+| UX & polish | 9.5/10 | — |
+| Testing | 8/10 | Expand E2E lead → quote → PO |
+| Performance | 9/10 | — |
+| Production readiness | 8/10 | Cloud deploy |
 
 ---
 

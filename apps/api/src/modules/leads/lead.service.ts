@@ -1,6 +1,12 @@
 import { DisqualifyReason } from "@prisma/client";
 import { leadRepository } from "./lead.repository";
-import { createLeadSchema, CreateLeadInput, UpdateLeadInput, BulkImportLeadsInput } from "./lead.validation";
+import {
+  createLeadSchema,
+  CreateLeadInput,
+  UpdateLeadInput,
+  BulkImportLeadsInput,
+  BulkAssignLeadsInput,
+} from "./lead.validation";
 import { ApiError } from "../../utils/ApiError";
 import { nextNumber } from "../../utils/numberSequence";
 import { scoreLead } from "../ai/leadScoring";
@@ -14,9 +20,48 @@ interface ActorCtx {
   userId: string;
 }
 
+async function pickRoundRobinOwner(companyId: string): Promise<string | null> {
+  const execs = await prisma.user.findMany({
+    where: {
+      companyId,
+      status: "ACTIVE",
+      role: { key: { in: ["SALES_EXECUTIVE", "SALES_MANAGER"] } },
+    },
+    orderBy: { createdAt: "asc" },
+    select: { id: true },
+  });
+  if (execs.length === 0) return null;
+
+  const company = await prisma.company.findUnique({ where: { id: companyId }, select: { roundRobinCursor: true } });
+  const cursor = company?.roundRobinCursor ?? 0;
+  const owner = execs[cursor % execs.length]!;
+  await prisma.company.update({
+    where: { id: companyId },
+    data: { roundRobinCursor: cursor + 1 },
+  });
+  return owner.id;
+}
+
 export const leadService = {
-  async list(ctx: ActorCtx, query: { status?: any; ownerId?: string; industry?: any; search?: string; page: number; pageSize: number }) {
-    return leadRepository.list({ companyId: ctx.companyId, ...query });
+  async list(
+    ctx: ActorCtx,
+    query: {
+      status?: any;
+      ownerId?: string;
+      unassigned?: boolean;
+      slaBreached?: boolean;
+      industry?: any;
+      search?: string;
+      page: number;
+      pageSize: number;
+    },
+  ) {
+    const company = await prisma.company.findUnique({ where: { id: ctx.companyId }, select: { leadSlaHours: true } });
+    return leadRepository.list({
+      companyId: ctx.companyId,
+      ...query,
+      slaHours: company?.leadSlaHours ?? 24,
+    });
   },
 
   async getById(ctx: ActorCtx, id: string) {
@@ -26,9 +71,17 @@ export const leadService = {
   },
 
   async create(ctx: ActorCtx, input: CreateLeadInput) {
-    // US-1.1: warn (don't hard-block) on duplicate phone/email so a real second inquiry from
-    // the same company isn't silently lost — the API surfaces `duplicateOf` for the UI to flag.
     const duplicate = await leadRepository.findDuplicate(ctx.companyId, input.email || undefined, input.phone);
+
+    const company = await prisma.company.findUnique({
+      where: { id: ctx.companyId },
+      select: { leadAssignMode: true },
+    });
+
+    let ownerId = input.ownerId;
+    if (!ownerId && company?.leadAssignMode === "ROUND_ROBIN") {
+      ownerId = (await pickRoundRobinOwner(ctx.companyId)) ?? undefined;
+    }
 
     const code = await nextNumber(ctx.companyId, "LEAD", "LEAD");
     const score = scoreLead({
@@ -54,7 +107,7 @@ export const leadService = {
       score,
       scoreUpdatedAt: new Date(),
       ...(input.campaignId ? { campaign: { connect: { id: input.campaignId } } } : {}),
-      ...(input.ownerId ? { owner: { connect: { id: input.ownerId } } } : {}),
+      ...(ownerId ? { owner: { connect: { id: ownerId } }, firstContactedAt: new Date() } : {}),
     });
 
     await writeAuditLog({
@@ -66,13 +119,13 @@ export const leadService = {
       after: lead,
     });
 
-    if (input.ownerId) {
+    if (ownerId) {
       await notificationService.notify({
-        userId: input.ownerId,
+        userId: ownerId,
         type: "ASSIGNMENT",
         title: "New lead assigned",
         body: `${lead.companyName} (${lead.code}) has been assigned to you.`,
-        link: `/leads/${lead.id}`,
+        link: `/new-inquiries/${lead.id}`,
       });
     }
 
@@ -118,7 +171,7 @@ export const leadService = {
     const existing = await leadRepository.findById(ctx.companyId, id);
     if (!existing) throw ApiError.notFound("Lead not found");
 
-    const updated = await leadRepository.assign(id, ownerId);
+    const updated = await leadRepository.assign(id, ownerId, existing.firstContactedAt ?? new Date());
 
     await writeAuditLog({
       companyId: ctx.companyId,
@@ -135,10 +188,43 @@ export const leadService = {
       type: "ASSIGNMENT",
       title: "Lead assigned to you",
       body: `${updated.companyName} (${updated.code}) has been assigned to you.`,
-      link: `/leads/${id}`,
+      link: `/new-inquiries/${id}`,
     });
 
     return updated;
+  },
+
+  async bulkAssign(ctx: ActorCtx, input: BulkAssignLeadsInput) {
+    const results: { id: string; ok: boolean; error?: string }[] = [];
+
+    if (input.mode === "round_robin") {
+      for (const leadId of input.leadIds) {
+        try {
+          const ownerId = await pickRoundRobinOwner(ctx.companyId);
+          if (!ownerId) throw ApiError.badRequest("No sales executives available for round-robin");
+          await this.assign(ctx, leadId, ownerId);
+          results.push({ id: leadId, ok: true });
+        } catch (err) {
+          results.push({ id: leadId, ok: false, error: err instanceof Error ? err.message : "Failed" });
+        }
+      }
+      return { results, assigned: results.filter((r) => r.ok).length };
+    }
+
+    if (!input.ownerId) throw ApiError.badRequest("ownerId is required for single-owner bulk assign");
+    for (const leadId of input.leadIds) {
+      try {
+        await this.assign(ctx, leadId, input.ownerId);
+        results.push({ id: leadId, ok: true });
+      } catch (err) {
+        results.push({ id: leadId, ok: false, error: err instanceof Error ? err.message : "Failed" });
+      }
+    }
+    return { results, assigned: results.filter((r) => r.ok).length };
+  },
+
+  assignableOwners(ctx: ActorCtx) {
+    return leadRepository.assignableUsers(ctx.companyId);
   },
 
   async disqualify(ctx: ActorCtx, id: string, reason: DisqualifyReason, note?: string) {

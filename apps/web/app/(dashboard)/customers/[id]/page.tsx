@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useCustomer } from "@/lib/customers";
 import { Badge, Card } from "@/components/ui";
 import { ActivityTimeline } from "@/components/ActivityTimeline";
+import { getPageLabel } from "@/lib/nav-labels";
 
 export default function CustomerDetailPage() {
   const params = useParams<{ id: string }>();
@@ -34,14 +35,14 @@ export default function CustomerDetailPage() {
         </Card>
 
         <Card className="p-5">
-          <h2 className="mb-3 text-sm font-semibold text-primary">Opportunities</h2>
+          <h2 className="mb-3 text-sm font-semibold text-primary">{getPageLabel("/active-deals")}</h2>
           {!customer.opportunities || customer.opportunities.length === 0 ? (
-            <p className="text-sm text-slate-500">No opportunities yet.</p>
+            <p className="text-sm text-slate-500">No {getPageLabel("/active-deals").toLowerCase()} yet.</p>
           ) : (
             <ul className="space-y-2 text-sm">
               {customer.opportunities.map((opp) => (
                 <li key={opp.id} className="flex items-center justify-between border-b border-slate-100 dark:border-slate-700 pb-2 last:border-0 last:pb-0">
-                  <Link href={`/opportunities/${opp.id}`} className="font-medium text-brand-600 hover:underline">
+                  <Link href={`/active-deals/${opp.id}`} className="font-medium text-brand-600 hover:underline">
                     {opp.code}
                   </Link>
                   <span className="text-slate-500">{opp.title}</span>

@@ -6,6 +6,7 @@ interface ListParams {
   status?: TaskStatus;
   projectId?: string;
   assigneeId?: string;
+  createdById?: string;
   search?: string;
   page: number;
   pageSize: number;
@@ -14,17 +15,19 @@ interface ListParams {
 const detailInclude = {
   project: { select: { id: true, code: true, name: true, customer: { select: { id: true, name: true } } } },
   assignee: { select: { id: true, firstName: true, lastName: true } },
+  createdBy: { select: { id: true, firstName: true, lastName: true } },
 } satisfies Prisma.EngineerTaskInclude;
 
 export const taskRepository = {
   async list(params: ListParams) {
-    const { companyId, status, projectId, assigneeId, search, page, pageSize } = params;
+    const { companyId, status, projectId, assigneeId, createdById, search, page, pageSize } = params;
 
     const where: Prisma.EngineerTaskWhereInput = {
       companyId,
       ...(status ? { status } : {}),
       ...(projectId ? { projectId } : {}),
       ...(assigneeId ? { assigneeId } : {}),
+      ...(createdById ? { createdById } : {}),
       ...(search ? { title: { contains: search, mode: "insensitive" } } : {}),
     };
 
@@ -56,5 +59,17 @@ export const taskRepository = {
 
   update(id: string, data: Prisma.EngineerTaskUpdateInput) {
     return prisma.engineerTask.update({ where: { id }, data, include: detailInclude });
+  },
+
+  assignableUsers(companyId: string) {
+    return prisma.user.findMany({
+      where: {
+        companyId,
+        status: "ACTIVE",
+        role: { key: { not: "CUSTOMER_PORTAL_USER" } },
+      },
+      select: { id: true, firstName: true, lastName: true, role: { select: { name: true, key: true } } },
+      orderBy: [{ firstName: "asc" }, { lastName: "asc" }],
+    });
   },
 };

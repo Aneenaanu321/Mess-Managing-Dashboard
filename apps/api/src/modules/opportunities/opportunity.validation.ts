@@ -33,6 +33,7 @@ export const updateOpportunitySchema = z.object({
   expectedCloseDate: z.coerce.date().optional(),
   ownerId: z.string().optional(),
   competitor: z.string().optional(),
+  internalNotes: z.string().optional(),
 });
 export type UpdateOpportunityInput = z.infer<typeof updateOpportunitySchema>;
 

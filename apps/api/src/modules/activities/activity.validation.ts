@@ -7,6 +7,7 @@ export const createActivitySchema = z
     type: activityTypeEnum,
     subject: z.string().min(1, "Subject is required"),
     body: z.string().optional(),
+    durationMins: z.coerce.number().int().nonnegative().optional(),
     occurredAt: z.coerce.date().optional(),
     leadId: z.string().optional(),
     customerId: z.string().optional(),

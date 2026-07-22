@@ -16,6 +16,9 @@ export interface Lead {
   status: "NEW" | "CONTACTED" | "QUALIFIED" | "DISQUALIFIED" | "CONVERTED";
   score: number;
   owner: { id: string; firstName: string; lastName: string } | null;
+  notes?: string | null;
+  internalNotes?: string | null;
+  firstContactedAt?: string | null;
   createdAt: string;
 }
 
@@ -29,11 +32,15 @@ export interface CreateLeadInput {
   notes?: string;
 }
 
-export function useLeads(params: { status?: string; search?: string; page?: number } = {}) {
+export function useLeads(
+  params: { status?: string; search?: string; page?: number; unassigned?: boolean; slaBreached?: boolean } = {},
+) {
   const query = new URLSearchParams();
   if (params.status) query.set("status", params.status);
   if (params.search) query.set("search", params.search);
   if (params.page) query.set("page", String(params.page));
+  if (params.unassigned) query.set("unassigned", "true");
+  if (params.slaBreached) query.set("slaBreached", "true");
 
   return useQuery({
     queryKey: ["leads", params],
@@ -74,6 +81,56 @@ export function useCreateLead() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["leads"] });
       toast.success("Lead created");
+    },
+  });
+}
+
+export function useAssignableLeadOwners() {
+  return useQuery({
+    queryKey: ["leads", "assignable-owners"],
+    queryFn: async () =>
+      (await apiClient.get<{ id: string; firstName: string; lastName: string; role: { name: string; key: string } }[]>(
+        "/leads/assignable-owners",
+      )).data,
+  });
+}
+
+export function useAssignLead() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ownerId }: { id: string; ownerId: string }) =>
+      (await apiClient.post<Lead>(`/leads/${id}/assign`, { ownerId })).data,
+    onSuccess: (_, { id }) => {
+      queryClient.invalidateQueries({ queryKey: ["leads"] });
+      queryClient.invalidateQueries({ queryKey: ["leads", id] });
+      queryClient.invalidateQueries({ queryKey: ["sales-ops"] });
+      toast.success("Lead assigned");
+    },
+  });
+}
+
+export function useBulkAssignLeads() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { leadIds: string[]; ownerId?: string; mode?: "single" | "round_robin" }) =>
+      (await apiClient.post<{ assigned: number }>("/leads/bulk-assign", input)).data,
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["leads"] });
+      queryClient.invalidateQueries({ queryKey: ["sales-ops"] });
+      toast.success(`Assigned ${data.assigned} lead${data.assigned === 1 ? "" : "s"}`);
+    },
+  });
+}
+
+export function useUpdateLead() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, input }: { id: string; input: Partial<CreateLeadInput> & { internalNotes?: string } }) =>
+      (await apiClient.patch<Lead>(`/leads/${id}`, input)).data,
+    onSuccess: (_, { id }) => {
+      queryClient.invalidateQueries({ queryKey: ["leads"] });
+      queryClient.invalidateQueries({ queryKey: ["leads", id] });
+      toast.success("Lead updated");
     },
   });
 }

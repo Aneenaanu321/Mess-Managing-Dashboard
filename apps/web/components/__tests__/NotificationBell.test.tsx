@@ -9,7 +9,7 @@ const markAllRead = vi.fn();
 
 vi.mock("@/lib/notifications", () => ({
   useNotifications: () => ({
-    data: [{ id: "1", title: "New lead", body: "Acme Corp", link: "/leads/1", readAt: null, createdAt: new Date().toISOString(), type: "ASSIGNMENT" }],
+    data: [{ id: "1", title: "New lead", body: "Acme Corp", link: "/new-inquiries/1", readAt: null, createdAt: new Date().toISOString(), type: "ASSIGNMENT" }],
     isLoading: false,
   }),
   useUnreadCount: () => ({ data: 1 }),

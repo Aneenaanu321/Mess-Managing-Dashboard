@@ -34,4 +34,9 @@ export const taskController = {
     const task = await taskService.update(ctxFrom(req), id, input);
     res.json({ success: true, data: task });
   },
+
+  async assignableUsers(req: Request, res: Response) {
+    const users = await taskService.assignableUsers(ctxFrom(req));
+    res.json({ success: true, data: users });
+  },
 };

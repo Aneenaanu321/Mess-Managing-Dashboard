@@ -27,10 +27,10 @@ export function OnboardingTour() {
         <div>
           <p className="text-sm font-semibold text-primary">Welcome to ibTech</p>
           <p className="mt-1 text-sm text-muted">
-            Start with <Link href="/leads/new" className="font-medium text-brand-700 hover:underline dark:text-brand-400">a new lead</Link>, move it through the{" "}
-            <Link href="/pipeline" className="font-medium text-brand-700 hover:underline dark:text-brand-400">pipeline</Link>, and send a quotation. Press{" "}
+            Start with <Link href="/new-inquiries/new" className="font-medium text-brand-700 hover:underline dark:text-brand-400">a new inquiry</Link>, move it through the{" "}
+            <Link href="/deal-board" className="font-medium text-brand-700 hover:underline dark:text-brand-400">deal board</Link>, and send an order. Press{" "}
             <kbd className="rounded bg-slate-100 px-1 py-0.5 text-xs dark:bg-slate-800">g</kbd> then{" "}
-            <kbd className="rounded bg-slate-100 px-1 py-0.5 text-xs dark:bg-slate-800">l</kbd> to jump to leads anytime.
+            <kbd className="rounded bg-slate-100 px-1 py-0.5 text-xs dark:bg-slate-800">l</kbd> to jump to new inquiries anytime.
           </p>
         </div>
         <button type="button" onClick={dismiss} className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800" aria-label="Dismiss welcome tour">

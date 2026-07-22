@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCreateCustomer, INDUSTRIES } from "@/lib/customers";
 import { Button, Input, Label, Select, Card } from "@/components/ui";
+import { getNewItemLabel } from "@/lib/nav-labels";
 
 export default function NewCustomerPage() {
   const router = useRouter();
@@ -47,7 +48,7 @@ export default function NewCustomerPage() {
 
   return (
     <div className="mx-auto max-w-2xl">
-      <h1 className="mb-6 text-xl font-semibold text-primary">New Customer</h1>
+      <h1 className="mb-6 text-xl font-semibold text-primary">{getNewItemLabel("/customers")}</h1>
 
       <Card className="p-6">
         <form onSubmit={handleSubmit} className="space-y-4">
