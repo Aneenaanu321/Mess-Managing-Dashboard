@@ -2,7 +2,8 @@
 const nextConfig = {
   reactStrictMode: true,
   eslint: { ignoreDuringBuilds: false },
-  output: "standalone",
+  // Docker images use standalone; Vercel Hobby uses the default Next output.
+  ...(process.env.VERCEL ? {} : { output: "standalone" }),
   experimental: {
     optimizePackageImports: ["recharts", "lucide-react"],
   },

@@ -46,7 +46,14 @@ export function createApp() {
   const app = express();
 
   app.use(helmet());
-  app.use(cors({ origin: env.CORS_ORIGIN, credentials: true }));
+  // CORS_ORIGIN may be a comma-separated list (e.g. local + Vercel preview + prod).
+  const corsOrigins = env.CORS_ORIGIN.split(",").map((o) => o.trim()).filter(Boolean);
+  app.use(
+    cors({
+      origin: corsOrigins.length === 1 ? corsOrigins[0] : corsOrigins,
+      credentials: true,
+    }),
+  );
   app.use(compression());
   app.use(express.json({ limit: "2mb" }));
   app.use(express.urlencoded({ extended: true }));

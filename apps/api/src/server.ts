@@ -4,9 +4,12 @@ import { prisma } from "./config/prisma";
 
 const app = createApp();
 
-const server = app.listen(env.API_PORT, () => {
+// Hosting platforms (Render, Railway, Fly) inject PORT; fall back to API_PORT locally.
+const port = Number(process.env.PORT) || env.API_PORT;
+
+const server = app.listen(port, () => {
   // eslint-disable-next-line no-console
-  console.log(`RFIDCore API listening on :${env.API_PORT} [${env.NODE_ENV}]`);
+  console.log(`RFIDCore API listening on :${port} [${env.NODE_ENV}]`);
 });
 
 async function shutdown(signal: string) {

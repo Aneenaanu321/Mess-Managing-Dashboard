@@ -1,5 +1,6 @@
-import PDFDocument from "pdfkit";
 import { Response } from "express";
+import { COLORS } from "../../utils/pdf/theme";
+import { createPdf, drawBrandHeader, drawContinuationHeader, drawKeyValueCard, drawSectionLabel, drawTable, drawWatermark, finalizePdf, money } from "../../utils/pdf/layout";
 
 interface QuotationLineItemView {
   description: string;
@@ -33,89 +34,94 @@ interface CompanyView {
   taxId: string | null;
 }
 
-function money(value: unknown, currency: string) {
-  return `${Number(value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${currency}`;
-}
+const STATUS_TONE: Record<string, "slate" | "green" | "amber" | "red" | "blue"> = {
+  DRAFT: "slate",
+  PENDING_APPROVAL: "amber",
+  APPROVED_INTERNAL: "blue",
+  SENT: "blue",
+  CUSTOMER_APPROVED: "green",
+  CUSTOMER_REJECTED: "red",
+  REVISION_REQUESTED: "amber",
+  SUPERSEDED: "slate",
+  EXPIRED: "red",
+};
+
+const WATERMARK_BY_STATUS: Record<string, string> = {
+  DRAFT: "DRAFT",
+  CUSTOMER_REJECTED: "REJECTED",
+  EXPIRED: "EXPIRED",
+  SUPERSEDED: "SUPERSEDED",
+};
 
 /** Streams a branded PDF for a quotation directly to the HTTP response. */
 export function streamQuotationPdf(res: Response, quotation: QuotationView, company: CompanyView) {
-  const doc = new PDFDocument({ size: "A4", margin: 50 });
-  res.setHeader("Content-Type", "application/pdf");
-  res.setHeader("Content-Disposition", `inline; filename="${quotation.code}.pdf"`);
-  doc.pipe(res);
+  const companyName = company.legalName || company.name;
+  const doc = createPdf(res, quotation.code);
 
-  doc.fontSize(20).font("Helvetica-Bold").text(company.legalName || company.name, { continued: false });
-  if (company.taxId) doc.fontSize(9).font("Helvetica").fillColor("#64748b").text(`Tax ID: ${company.taxId}`);
-  doc.moveDown(1.5);
+  const watermarkText = WATERMARK_BY_STATUS[quotation.status];
+  if (watermarkText) drawWatermark(doc, watermarkText);
 
-  doc.fillColor("#0f172a").fontSize(16).font("Helvetica-Bold").text(`Quotation ${quotation.code}`);
-  doc.fontSize(9).font("Helvetica").fillColor("#64748b").text(`Version ${quotation.version} — ${quotation.status.replaceAll("_", " ")}`);
-  doc.moveDown();
+  drawBrandHeader(doc, {
+    companyName,
+    taxId: company.taxId,
+    eyebrow: "Quotation",
+    title: quotation.code,
+    subtitle: `Version ${quotation.version}`,
+    tone: STATUS_TONE[quotation.status] ?? "slate",
+    toneLabel: quotation.status.replaceAll("_", " "),
+  });
 
-  const infoTop = doc.y;
-  doc.fontSize(10).fillColor("#0f172a").font("Helvetica-Bold").text("Customer", 50, infoTop);
-  doc.font("Helvetica").text(`${quotation.customer.name} (${quotation.customer.code})`, 50, doc.y);
-  doc.font("Helvetica-Bold").text("Opportunity", 300, infoTop);
-  doc.font("Helvetica").text(`${quotation.opportunity.title} (${quotation.opportunity.code})`, 300, doc.y);
-  doc.moveDown();
+  drawKeyValueCard(doc, [
+    { label: "Customer", value: `${quotation.customer.name} (${quotation.customer.code})` },
+    { label: "Opportunity", value: `${quotation.opportunity.title} (${quotation.opportunity.code})` },
+    { label: "Issued", value: new Date(quotation.createdAt).toLocaleDateString() },
+    { label: "Valid Until", value: quotation.validUntil ? new Date(quotation.validUntil).toLocaleDateString() : "—" },
+  ]);
 
-  doc.font("Helvetica-Bold").text("Issued", 50, doc.y);
-  doc.font("Helvetica").text(new Date(quotation.createdAt).toLocaleDateString(), 50, doc.y);
-  if (quotation.validUntil) {
-    doc.font("Helvetica-Bold").text("Valid Until", 300, doc.y - doc.currentLineHeight());
-    doc.font("Helvetica").text(new Date(quotation.validUntil).toLocaleDateString(), 300, doc.y);
-  }
-  doc.moveDown(1.5);
+  drawSectionLabel(doc, "Line Items");
+  drawTable(doc, {
+    columns: [
+      { key: "description", label: "Description", width: 215 },
+      { key: "qty", label: "Qty", width: 45, align: "right" },
+      { key: "price", label: "Unit Price", width: 75, align: "right" },
+      { key: "disc", label: "Disc %", width: 55, align: "right" },
+      { key: "tax", label: "Tax %", width: 55, align: "right" },
+      { key: "total", label: "Total", width: 50, align: "right" },
+    ],
+    rows: quotation.lineItems.map((line) => ({
+      description: line.description,
+      qty: String(line.quantity),
+      price: Number(line.unitPrice).toLocaleString(),
+      disc: `${Number(line.discountPct)}%`,
+      tax: `${Number(line.taxPct)}%`,
+      total: Number(line.lineTotal).toLocaleString(),
+    })),
+    onNewPage: () => drawContinuationHeader(doc, companyName, `Quotation ${quotation.code}`),
+  });
 
-  // Line items table
-  const tableTop = doc.y;
-  const cols = { desc: 50, qty: 260, price: 320, disc: 390, tax: 440, total: 490 };
-  doc.font("Helvetica-Bold").fontSize(9).fillColor("#475569");
-  doc.text("Description", cols.desc, tableTop);
-  doc.text("Qty", cols.qty, tableTop, { width: 50, align: "right" });
-  doc.text("Unit Price", cols.price, tableTop, { width: 60, align: "right" });
-  doc.text("Disc %", cols.disc, tableTop, { width: 40, align: "right" });
-  doc.text("Tax %", cols.tax, tableTop, { width: 40, align: "right" });
-  doc.text("Total", cols.total, tableTop, { width: 60, align: "right" });
-  doc.moveTo(50, doc.y + 3).lineTo(550, doc.y + 3).strokeColor("#e2e8f0").stroke();
-  doc.moveDown(0.5);
-
-  doc.font("Helvetica").fillColor("#0f172a");
-  for (const line of quotation.lineItems) {
-    const rowTop = doc.y;
-    doc.fontSize(9);
-    doc.text(line.description, cols.desc, rowTop, { width: 200 });
-    doc.text(String(line.quantity), cols.qty, rowTop, { width: 50, align: "right" });
-    doc.text(Number(line.unitPrice).toLocaleString(), cols.price, rowTop, { width: 60, align: "right" });
-    doc.text(`${Number(line.discountPct)}%`, cols.disc, rowTop, { width: 40, align: "right" });
-    doc.text(`${Number(line.taxPct)}%`, cols.tax, rowTop, { width: 40, align: "right" });
-    doc.text(Number(line.lineTotal).toLocaleString(), cols.total, rowTop, { width: 60, align: "right" });
-    doc.moveDown(0.7);
-  }
-
-  doc.moveTo(50, doc.y + 3).lineTo(550, doc.y + 3).strokeColor("#e2e8f0").stroke();
-  doc.moveDown(0.8);
-
-  const totalsX = 330;
-  const totalsValueX = totalsX + 100;
-  const totalsValueWidth = 120;
-  doc.fontSize(9).font("Helvetica").fillColor("#475569");
+  const totalsX = 335;
+  const totalsValueWidth = 160;
+  doc.fontSize(9.5).font("Helvetica").fillColor(COLORS.subtle);
   doc.text("Subtotal", totalsX, doc.y, { width: 100 });
-  doc.text(money(quotation.subtotal, quotation.currency), totalsValueX, doc.y - doc.currentLineHeight(), { width: totalsValueWidth, align: "right" });
+  doc.text(money(quotation.subtotal, quotation.currency), totalsX + 100, doc.y - doc.currentLineHeight(), { width: totalsValueWidth, align: "right" });
   doc.text("Discount", totalsX, doc.y, { width: 100 });
-  doc.text(`- ${money(quotation.discountTotal, quotation.currency)}`, totalsValueX, doc.y - doc.currentLineHeight(), { width: totalsValueWidth, align: "right" });
+  doc.text(`- ${money(quotation.discountTotal, quotation.currency)}`, totalsX + 100, doc.y - doc.currentLineHeight(), { width: totalsValueWidth, align: "right" });
   doc.text("Tax", totalsX, doc.y, { width: 100 });
-  doc.text(money(quotation.taxTotal, quotation.currency), totalsValueX, doc.y - doc.currentLineHeight(), { width: totalsValueWidth, align: "right" });
-  doc.moveDown(0.3);
-  doc.font("Helvetica-Bold").fontSize(11).fillColor("#0f172a");
-  doc.text("Grand Total", totalsX, doc.y, { width: 100 });
-  doc.text(money(quotation.grandTotal, quotation.currency), totalsValueX, doc.y - doc.currentLineHeight(), { width: totalsValueWidth, align: "right" });
+  doc.text(money(quotation.taxTotal, quotation.currency), totalsX + 100, doc.y - doc.currentLineHeight(), { width: totalsValueWidth, align: "right" });
+  doc.moveDown(0.4);
+
+  const grandTop = doc.y;
+  doc.roundedRect(totalsX - 10, grandTop - 4, totalsValueWidth + 110, 26, 5).fill(COLORS.brand50);
+  doc.font("Helvetica-Bold").fontSize(11.5).fillColor(COLORS.brand800);
+  doc.text("Grand Total", totalsX, grandTop + 3, { width: 100 });
+  doc.text(money(quotation.grandTotal, quotation.currency), totalsX + 100, grandTop + 3, { width: totalsValueWidth, align: "right" });
+  doc.y = grandTop + 30;
 
   if (quotation.paymentTerms) {
-    doc.moveDown(1.5);
-    doc.fontSize(9).font("Helvetica-Bold").fillColor("#475569").text("Payment Terms", 50, doc.y, { width: 495 });
-    doc.font("Helvetica").fillColor("#0f172a").text(quotation.paymentTerms, 50, doc.y, { width: 495 });
+    doc.moveDown(1);
+    drawSectionLabel(doc, "Payment Terms");
+    doc.font("Helvetica").fontSize(9.5).fillColor(COLORS.ink).text(quotation.paymentTerms, 50, doc.y, { width: 495 });
   }
 
-  doc.end();
+  finalizePdf(doc, companyName);
 }

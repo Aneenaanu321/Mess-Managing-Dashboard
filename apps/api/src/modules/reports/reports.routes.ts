@@ -15,5 +15,6 @@ router.get(
 );
 router.get("/summary", authorize(PERMISSIONS.REPORTS_VIEW), asyncHandler(reportsController.summary));
 router.get("/receivables-aging", authorize(PERMISSIONS.REPORTS_VIEW), asyncHandler(reportsController.receivablesAging));
+router.get("/pdf", authorize(PERMISSIONS.REPORTS_VIEW), asyncHandler(reportsController.pdf));
 
 export default router;

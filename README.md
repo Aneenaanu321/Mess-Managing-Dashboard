@@ -35,6 +35,11 @@ Demo login: any seeded email (e.g. `admin@falconrfid.demo`, `ravi@falconrfid.dem
 
 See **`docs/11-user-guide.md`** for a page-by-page walkthrough of the entire app.
 
+## Host on Vercel (free Hobby)
+
+The UI deploys to **Vercel**; the API/worker/DB need free companions (Neon + Render + Upstash).  
+Step-by-step: **`docs/12-hosting-vercel-free.md`**. Config files: root `vercel.json`, `render.yaml`.
+
 ## Technology stack
 
 | Layer | Technologies |

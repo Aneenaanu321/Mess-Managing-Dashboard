@@ -36,7 +36,7 @@ Sales Coordinator roadmap items from July 2026 are **implemented**. Deferred pro
 
 | Item | Reason |
 |------|--------|
-| Production cloud deployment | Requires Postgres/Redis/S3 credentials and ops runbook |
+| Production cloud deployment | Guide ready: `docs/12-hosting-vercel-free.md` (Vercel + Neon + Render + Upstash). Still needs your accounts & secrets. |
 | Multi-branch coordinator / switching UI | Product decision pending |
 | Customer portal coordinator view | Portal binding deferred in PRD v1 |
 | Internationalization (i18n) | Not in v1 scope |

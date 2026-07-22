@@ -15,10 +15,13 @@ const REMEMBER_COOKIE = "rfidcore_remember";
 const REMEMBER_MS = 7 * 24 * 60 * 60 * 1000;
 
 function baseCookieOptions() {
+  // Cross-site (Vercel web → Render API) needs SameSite=None + Secure so the
+  // refresh cookie is sent with credentials: "include".
+  const crossSite = env.NODE_ENV === "production";
   return {
     httpOnly: true,
-    secure: env.NODE_ENV === "production",
-    sameSite: "lax" as const,
+    secure: crossSite,
+    sameSite: (crossSite ? "none" : "lax") as "none" | "lax",
     path: "/api/v1/auth",
   };
 }

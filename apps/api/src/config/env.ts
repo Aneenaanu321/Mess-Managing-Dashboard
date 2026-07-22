@@ -18,7 +18,7 @@ const envSchema = z.object({
   JWT_REFRESH_EXPIRES_IN: z.string().default("7d"),
   REDIS_URL: z.string().default("redis://localhost:6379"),
   CORS_ORIGIN: z.string().default("http://localhost:3000"),
-  S3_ENDPOINT: z.string().default("http://localhost:9000"),
+  S3_ENDPOINT: z.string().optional().default(""),
   S3_ACCESS_KEY: z.string().optional(),
   S3_SECRET_KEY: z.string().optional(),
   S3_BUCKET: z.string().optional(),
