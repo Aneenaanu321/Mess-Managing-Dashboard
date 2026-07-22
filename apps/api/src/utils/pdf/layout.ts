@@ -150,23 +150,32 @@ export interface KeyValuePair {
   value: string;
 }
 
-/** A bordered, light-grey "meta info" card of label/value pairs laid out in N columns — mirrors the web app's Card + dl pattern. */
+/** A bordered, light-grey "meta info" card of label/value pairs laid out in N columns — mirrors the web app's Card + dl pattern. Row heights are measured per row (not fixed), so a wrapping value never overlaps the row below it. */
 export function drawKeyValueCard(doc: Doc, pairs: KeyValuePair[], columns = 2) {
   const colWidth = (PAGE.contentRight - PAGE.margin) / columns;
-  const rows = Math.ceil(pairs.length / columns);
-  const rowHeight = 32;
-  const cardHeight = rows * rowHeight + 20;
+  const valueWidth = colWidth - 24;
+  const rowCount = Math.ceil(pairs.length / columns);
+
+  doc.font("Helvetica-Bold").fontSize(10.5);
+  const rowHeights: number[] = [];
+  for (let row = 0; row < rowCount; row++) {
+    const cellsInRow = pairs.slice(row * columns, row * columns + columns);
+    const tallest = Math.max(...cellsInRow.map((p) => doc.heightOfString(p.value, { width: valueWidth })));
+    rowHeights.push(Math.max(32, tallest + 21));
+  }
+  const cardHeight = rowHeights.reduce((sum, h) => sum + h, 0) + 16;
   const top = doc.y;
 
   doc.roundedRect(PAGE.margin, top, PAGE.contentRight - PAGE.margin, cardHeight, 6).fillAndStroke(COLORS.surfaceAlt, COLORS.border);
 
+  let rowTop = top + 12;
   pairs.forEach((pair, i) => {
     const col = i % columns;
     const row = Math.floor(i / columns);
     const x = PAGE.margin + 16 + col * colWidth;
-    const y = top + 12 + row * rowHeight;
-    doc.fillColor(COLORS.muted).font("Helvetica").fontSize(8).text(pair.label.toUpperCase(), x, y, { width: colWidth - 24, characterSpacing: 0.4 });
-    doc.fillColor(COLORS.ink).font("Helvetica-Bold").fontSize(10.5).text(pair.value, x, y + 11, { width: colWidth - 24 });
+    doc.fillColor(COLORS.muted).font("Helvetica").fontSize(8).text(pair.label.toUpperCase(), x, rowTop, { width: valueWidth, characterSpacing: 0.4 });
+    doc.fillColor(COLORS.ink).font("Helvetica-Bold").fontSize(10.5).text(pair.value, x, rowTop + 11, { width: valueWidth });
+    if (col === columns - 1 || i === pairs.length - 1) rowTop += rowHeights[row] ?? 32;
   });
 
   doc.y = top + cardHeight + 18;
