@@ -39,3 +39,8 @@ export const resetPasswordSchema = z.object({
     .regex(/[0-9]/, "Password must include a number"),
 });
 export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
+
+export const updatePreferencesSchema = z.object({
+  emailNotifications: z.boolean(),
+});
+export type UpdatePreferencesInput = z.infer<typeof updatePreferencesSchema>;

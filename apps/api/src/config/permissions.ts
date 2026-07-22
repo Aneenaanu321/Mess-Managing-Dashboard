@@ -258,11 +258,13 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<RoleKey, PermissionKey[]> = {
 
   PROCUREMENT: [PERMISSIONS.PROCUREMENT_VIEW, PERMISSIONS.PROCUREMENT_MANAGE, PERMISSIONS.INVENTORY_VIEW],
 
-  CUSTOMER_PORTAL_USER: [
-    PERMISSIONS.QUOTATION_VIEW,
-    PERMISSIONS.CUSTOMER_PO_VIEW,
-    PERMISSIONS.PROJECT_VIEW,
-    PERMISSIONS.FINANCE_VIEW,
-    PERMISSIONS.SUPPORT_VIEW,
-  ],
+  // Deliberately empty: a portal user's access is bounded entirely by the
+  // /api/v1/portal/* namespace (gated on req.auth.customerId being set, see
+  // modules/portal/portal.routes.ts), not by these RBAC permission flags.
+  // Internal-module view permissions (QUOTATION_VIEW etc.) were granted here
+  // previously, which would have let a portal user call the *internal*,
+  // company-wide /quotations, /purchase-orders, /projects, /finance,
+  // /support endpoints and see every customer's data, not just their own —
+  // those endpoints only scope by companyId, never by customerId.
+  CUSTOMER_PORTAL_USER: [],
 };

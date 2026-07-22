@@ -4,6 +4,7 @@ import { dashboardService, ExecutiveSummary } from "../dashboard/dashboard.servi
 
 interface Ctx {
   companyId: string;
+  branchId?: string;
 }
 
 export interface ReportsSummary {
@@ -44,19 +45,24 @@ export const reportsService = {
   },
 
   async getSummary(ctx: Ctx): Promise<ReportsSummary> {
-    const { companyId } = ctx;
+    const { companyId, branchId } = ctx;
+    const branchFilter = branchId ? { branchId } : {};
 
     const [leadGroups, oppGroups, paidInvoiceAgg, wonOppAgg, payments] = await Promise.all([
-      prisma.lead.groupBy({ by: ["status"], where: { companyId }, _count: { _all: true } }),
+      prisma.lead.groupBy({ by: ["status"], where: { companyId, ...branchFilter }, _count: { _all: true } }),
       prisma.opportunity.groupBy({
         by: ["stage"],
-        where: { companyId },
+        where: { companyId, ...branchFilter },
         _count: { _all: true },
         _sum: { estimatedValue: true },
       }),
-      prisma.invoice.aggregate({ where: { companyId, status: "PAID" }, _sum: { totalAmount: true } }),
-      prisma.opportunity.aggregate({ where: { companyId, stage: "WON" }, _sum: { estimatedValue: true } }),
-      prisma.payment.findMany({ where: { companyId }, select: { amount: true, receivedAt: true } }),
+      prisma.invoice.aggregate({ where: { companyId, ...branchFilter, status: "PAID" }, _sum: { totalAmount: true } }),
+      prisma.opportunity.aggregate({ where: { companyId, ...branchFilter, stage: "WON" }, _sum: { estimatedValue: true } }),
+      // Payment has no branchId of its own — filtered via its Invoice's branch instead.
+      prisma.payment.findMany({
+        where: { companyId, ...(branchId ? { invoice: { branchId } } : {}) },
+        select: { amount: true, receivedAt: true },
+      }),
     ]);
 
     const paidInvoices = Number(paidInvoiceAgg._sum.totalAmount ?? 0);
@@ -90,11 +96,11 @@ export const reportsService = {
 
   /** US-7.2: outstanding-balance buckets for unpaid invoices, oldest-first. */
   async getReceivablesAging(ctx: Ctx): Promise<ReceivablesAging> {
-    const { companyId } = ctx;
+    const { companyId, branchId } = ctx;
     const now = new Date();
 
     const unpaid = await prisma.invoice.findMany({
-      where: { companyId, status: { in: ["SENT", "PARTIALLY_PAID", "OVERDUE"] } },
+      where: { companyId, ...(branchId ? { branchId } : {}), status: { in: ["SENT", "PARTIALLY_PAID", "OVERDUE"] } },
       include: { customer: { select: { name: true } } },
       orderBy: { dueDate: "asc" },
     });

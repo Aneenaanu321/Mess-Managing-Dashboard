@@ -38,6 +38,7 @@ function toAccessPayload(user: UserWithRole): AccessTokenPayload {
     branchId: user.branchId,
     roleKey: user.role.key,
     permissions: buildPermissionKeys(user),
+    customerId: user.customerId,
   };
 }
 
@@ -52,6 +53,8 @@ function toPublicUser(user: UserWithRole) {
     permissions: buildPermissionKeys(user),
     company: { id: user.company.id, name: user.company.name, currency: user.company.currency },
     branch: user.branch ? { id: user.branch.id, name: user.branch.name } : null,
+    emailNotifications: user.emailNotifications,
+    portalCustomer: user.portalCustomer ? { id: user.portalCustomer.id, name: user.portalCustomer.name } : null,
   };
 }
 
@@ -208,6 +211,11 @@ export const authService = {
   async me(userId: string) {
     const user = await authRepository.findUserById(userId);
     if (!user) throw ApiError.notFound("User not found");
+    return toPublicUser(user);
+  },
+
+  async updateEmailNotifications(userId: string, emailNotifications: boolean) {
+    const user = await authRepository.updateEmailNotifications(userId, emailNotifications);
     return toPublicUser(user);
   },
 };

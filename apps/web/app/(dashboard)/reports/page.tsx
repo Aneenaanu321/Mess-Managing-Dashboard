@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   Bar,
   BarChart,
@@ -20,6 +21,7 @@ import { useCurrentUser } from "@/lib/auth";
 import { useReportsSummary, useReceivablesAging, AgingBucket } from "@/lib/reports";
 import { Badge, Button, Card } from "@/components/ui";
 import { downloadCsv } from "@/lib/csv";
+import { BranchFilter } from "@/components/BranchFilter";
 
 const PIE_COLORS = ["#2563eb", "#1d4ed8", "#0ea5e9", "#22c55e", "#f59e0b", "#ef4444", "#8b5cf6", "#0f766e", "#64748b", "#be123c", "#65a30d"];
 
@@ -49,8 +51,9 @@ function formatCurrency(amount: number, currency: string) {
 
 export default function ReportsPage() {
   const { data: user } = useCurrentUser();
-  const { data, isLoading, isError } = useReportsSummary();
-  const { data: aging, isLoading: agingLoading } = useReceivablesAging();
+  const [branchId, setBranchId] = useState("");
+  const { data, isLoading, isError } = useReportsSummary(branchId || undefined);
+  const { data: aging, isLoading: agingLoading } = useReceivablesAging(branchId || undefined);
   const currency = user?.company?.currency ?? "AED";
 
   const leadFunnel = (data?.leadFunnel ?? []).map((row) => ({ ...row, name: label(row.status) }));
@@ -59,9 +62,12 @@ export default function ReportsPage() {
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-slate-900">Reports &amp; Analytics</h1>
-        <p className="text-sm text-slate-500">Funnel, pipeline, revenue and collections at a glance.</p>
+      <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 className="text-xl font-semibold text-slate-900">Reports &amp; Analytics</h1>
+          <p className="text-sm text-slate-500">Funnel, pipeline, revenue and collections at a glance.</p>
+        </div>
+        <BranchFilter value={branchId} onChange={setBranchId} />
       </div>
 
       {isError && (

@@ -24,10 +24,10 @@ export async function notify(params: NotifyParams) {
         link: params.link,
       },
     }),
-    prisma.user.findUnique({ where: { id: params.userId }, select: { email: true } }),
+    prisma.user.findUnique({ where: { id: params.userId }, select: { email: true, emailNotifications: true } }),
   ]);
 
-  if (user) {
+  if (user?.emailNotifications) {
     const link = params.link ? `${env.CORS_ORIGIN}${params.link}` : undefined;
     sendEmail({ to: user.email, subject: params.title, text: link ? `${params.body}\n\n${link}` : params.body }).catch(() => {});
   }

@@ -1,8 +1,8 @@
 "use client";
 
-import { Building2, ChevronDown, LogOut, Menu } from "lucide-react";
+import { Bell, Building2, ChevronDown, LogOut, Menu } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { useCurrentUser, useLogout } from "@/lib/auth";
+import { useCurrentUser, useLogout, useUpdateEmailNotifications } from "@/lib/auth";
 import { useRouter } from "next/navigation";
 import { NotificationBell } from "@/components/NotificationBell";
 
@@ -14,6 +14,7 @@ type TopbarProps = {
 export function Topbar({ sidebarOpen, onMenuClick }: TopbarProps) {
   const { data: user } = useCurrentUser();
   const logout = useLogout();
+  const updateEmailNotifications = useUpdateEmailNotifications();
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -122,6 +123,24 @@ export function Topbar({ sidebarOpen, onMenuClick }: TopbarProps) {
                   <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">Signed in as</p>
                   <p className="mt-1 truncate text-sm text-slate-700">{user.email}</p>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => updateEmailNotifications.mutate(!user.emailNotifications)}
+                  disabled={updateEmailNotifications.isPending}
+                  className="flex w-full items-center justify-between border-t border-slate-100 px-3.5 py-2.5 text-left text-sm text-slate-600 transition-colors hover:bg-slate-50 disabled:opacity-60"
+                >
+                  <span className="flex items-center gap-2">
+                    <Bell size={14} className="text-slate-400" />
+                    Email notifications
+                  </span>
+                  <span
+                    className={`relative h-5 w-9 rounded-full transition-colors ${user.emailNotifications ? "bg-brand-600" : "bg-slate-200"}`}
+                  >
+                    <span
+                      className={`absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${user.emailNotifications ? "translate-x-4" : "translate-x-0"}`}
+                    />
+                  </span>
+                </button>
                 <div className="border-t border-slate-100 p-1.5">
                   <button
                     type="button"

@@ -8,6 +8,9 @@ export interface AccessTokenPayload {
   branchId: string | null;
   roleKey: string;
   permissions: string[];
+  // Only set for CUSTOMER_PORTAL_USER — every portal route requires this and
+  // scopes its queries to it. Null for every internal-staff role.
+  customerId: string | null;
 }
 
 export function signAccessToken(payload: AccessTokenPayload): string {

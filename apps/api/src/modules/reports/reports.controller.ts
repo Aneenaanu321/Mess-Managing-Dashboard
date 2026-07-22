@@ -4,7 +4,8 @@ import { ApiError } from "../../utils/ApiError";
 
 function ctxFrom(req: Request) {
   if (!req.auth) throw ApiError.unauthorized();
-  return { companyId: req.auth.companyId };
+  const branchId = typeof req.query.branchId === "string" && req.query.branchId ? req.query.branchId : undefined;
+  return { companyId: req.auth.companyId, branchId };
 }
 
 export const reportsController = {

@@ -48,6 +48,7 @@ async function main() {
     roleRecords.set(roleKey, role);
 
     const permKeys = DEFAULT_ROLE_PERMISSIONS[roleKey].filter((k) => k !== PERMISSIONS.ALL);
+    const grantedPermissionIds: string[] = [];
     for (const permKey of permKeys) {
       const permission = await prisma.permission.findUnique({ where: { key: permKey } });
       if (!permission) continue;
@@ -55,6 +56,15 @@ async function main() {
         where: { roleId_permissionId: { roleId: role.id, permissionId: permission.id } },
         create: { roleId: role.id, permissionId: permission.id },
         update: {},
+      });
+      grantedPermissionIds.push(permission.id);
+    }
+    // Upsert only ever adds — a permission removed from DEFAULT_ROLE_PERMISSIONS
+    // since the last seed run would otherwise stay granted in the DB forever.
+    // Super Admin is handled separately below (it always gets every permission).
+    if (roleKey !== RoleKey.SUPER_ADMIN) {
+      await prisma.rolePermission.deleteMany({
+        where: { roleId: role.id, permissionId: { notIn: grantedPermissionIds } },
       });
     }
   }
@@ -278,6 +288,14 @@ async function main() {
     });
     const siteId = customer.sites[0]?.id ?? (await prisma.site.create({ data: { customerId: customer.id, label: spec.site.label, city: spec.site.city, country: spec.site.country } })).id;
     customers.push({ id: customer.id, code: customer.code, siteId });
+  }
+
+  // Link the demo portal user to the first seeded customer now that customers
+  // exist — CUSTOMER_PORTAL_USER was created earlier (users are seeded before
+  // customers) without a customerId, so it needs a follow-up update here.
+  const portalUserId = userIds.get("CUSTOMER_PORTAL_USER");
+  if (portalUserId && customers[0]) {
+    await prisma.user.update({ where: { id: portalUserId }, data: { customerId: customers[0].id } });
   }
 
   const oppStages = ["REQUIREMENT_GATHERING", "DEMO", "QUOTATION_SENT", "NEGOTIATION"] as const;

@@ -15,8 +15,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const toggleSidebar = useCallback(() => setSidebarOpen((open) => !open), []);
 
   useEffect(() => {
-    if (!isLoading && (isError || !user)) {
+    if (isLoading) return;
+    if (isError || !user) {
       router.replace("/login");
+    } else if (user.portalCustomer) {
+      // A portal account has no permissions on any internal route — send it
+      // to its own section instead of letting it land on a page that'll
+      // just 403 on every request.
+      router.replace("/portal");
     }
   }, [isLoading, isError, user, router]);
 
@@ -45,7 +51,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     return <div className="flex min-h-screen items-center justify-center text-sm text-slate-500">Loading…</div>;
   }
 
-  if (!user) return null;
+  if (!user || user.portalCustomer) return null;
 
   return (
     <div className="flex min-h-screen bg-[var(--background)]">

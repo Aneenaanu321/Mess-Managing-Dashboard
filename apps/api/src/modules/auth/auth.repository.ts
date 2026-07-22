@@ -4,14 +4,24 @@ export const authRepository = {
   findUserByEmail(email: string) {
     return prisma.user.findUnique({
       where: { email },
-      include: { role: { include: { permissions: { include: { permission: true } } } }, company: true, branch: true },
+      include: {
+        role: { include: { permissions: { include: { permission: true } } } },
+        company: true,
+        branch: true,
+        portalCustomer: { select: { id: true, name: true } },
+      },
     });
   },
 
   findUserById(id: string) {
     return prisma.user.findUnique({
       where: { id },
-      include: { role: { include: { permissions: { include: { permission: true } } } }, company: true, branch: true },
+      include: {
+        role: { include: { permissions: { include: { permission: true } } } },
+        company: true,
+        branch: true,
+        portalCustomer: { select: { id: true, name: true } },
+      },
     });
   },
 
@@ -34,7 +44,12 @@ export const authRepository = {
   }) {
     return prisma.user.create({
       data,
-      include: { role: { include: { permissions: { include: { permission: true } } } }, company: true, branch: true },
+      include: {
+        role: { include: { permissions: { include: { permission: true } } } },
+        company: true,
+        branch: true,
+        portalCustomer: { select: { id: true, name: true } },
+      },
     });
   },
 
@@ -82,5 +97,18 @@ export const authRepository = {
 
   touchLastLogin(userId: string) {
     return prisma.user.update({ where: { id: userId }, data: { lastLoginAt: new Date() } });
+  },
+
+  updateEmailNotifications(userId: string, emailNotifications: boolean) {
+    return prisma.user.update({
+      where: { id: userId },
+      data: { emailNotifications },
+      include: {
+        role: { include: { permissions: { include: { permission: true } } } },
+        company: true,
+        branch: true,
+        portalCustomer: { select: { id: true, name: true } },
+      },
+    });
   },
 };

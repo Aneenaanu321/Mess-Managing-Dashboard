@@ -141,6 +141,11 @@ model User {
   passwordHash         String
   status               UserStatus @default(ACTIVE)
   avatarUrl            String?
+  emailNotifications   Boolean    @default(true)
+  // Only set for CUSTOMER_PORTAL_USER role — scopes every portal query to this
+  // one customer account. Null for every internal-staff role.
+  customerId           String?
+  portalCustomer       Customer?  @relation("PortalUser", fields: [customerId], references: [id])
   passwordResetToken   String?
   passwordResetExpires DateTime?
   lastLoginAt          DateTime?
@@ -370,6 +375,7 @@ model Customer {
   tickets       Ticket[]
   amcContracts  AmcContract[]
   activities    Activity[]
+  portalUsers   User[]        @relation("PortalUser")
 
   @@unique([companyId, code])
   @@map("customers")

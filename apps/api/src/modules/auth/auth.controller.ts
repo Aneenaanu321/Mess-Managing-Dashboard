@@ -5,6 +5,7 @@ import {
   registerSchema,
   forgotPasswordSchema,
   resetPasswordSchema,
+  updatePreferencesSchema,
 } from "./auth.validation";
 import { env } from "../../config/env";
 import { ApiError } from "../../utils/ApiError";
@@ -83,6 +84,12 @@ export const authController = {
 
   async me(req: Request, res: Response) {
     const user = await authService.me(req.auth!.sub);
+    res.json({ success: true, data: user });
+  },
+
+  async updatePreferences(req: Request, res: Response) {
+    const input = updatePreferencesSchema.parse(req.body);
+    const user = await authService.updateEmailNotifications(req.auth!.sub, input.emailNotifications);
     res.json({ success: true, data: user });
   },
 };

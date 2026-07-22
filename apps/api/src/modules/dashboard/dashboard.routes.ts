@@ -13,5 +13,15 @@ router.get(
   authorize(PERMISSIONS.REPORTS_VIEW, PERMISSIONS.REPORTS_EXECUTIVE),
   asyncHandler(dashboardController.summary),
 );
+router.get(
+  "/spotlight",
+  authorize(PERMISSIONS.REPORTS_VIEW, PERMISSIONS.REPORTS_EXECUTIVE),
+  asyncHandler(dashboardController.spotlight),
+);
+router.get(
+  "/branches",
+  authorize(PERMISSIONS.REPORTS_VIEW, PERMISSIONS.REPORTS_EXECUTIVE),
+  asyncHandler(dashboardController.branches),
+);
 
 export default router;

@@ -29,6 +29,7 @@ import activityRoutes from "./modules/activities/activity.routes";
 import presalesRoutes from "./modules/presales/presales.routes";
 import fileRoutes from "./modules/files/file.routes";
 import publicRoutes from "./modules/public/public.routes";
+import portalRoutes from "./modules/portal/portal.routes";
 import inventoryRoutes from "./modules/inventory/inventory.routes";
 import warehouseRoutes from "./modules/warehouse/warehouse.routes";
 import procurementRoutes from "./modules/procurement/procurement.routes";
@@ -97,6 +98,7 @@ export function createApp() {
   v1.use("/presales", presalesRoutes);
   v1.use("/files", fileRoutes);
   v1.use("/public", publicRoutes);
+  v1.use("/portal", portalRoutes);
   v1.use("/inventory", inventoryRoutes);
   v1.use("/warehouse", warehouseRoutes);
   v1.use("/procurement", procurementRoutes);

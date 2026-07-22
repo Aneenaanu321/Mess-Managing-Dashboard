@@ -13,6 +13,8 @@ export interface CurrentUser {
   permissions: string[];
   company: { id: string; name: string; currency: string };
   branch: { id: string; name: string } | null;
+  emailNotifications: boolean;
+  portalCustomer: { id: string; name: string } | null;
 }
 
 const REMEMBERED_EMAIL_KEY = "rfidcore_remembered_email";
@@ -33,6 +35,15 @@ export function useCurrentUser() {
     queryKey: ["me"],
     queryFn: async () => (await apiClient.get<CurrentUser>("/auth/me")).data,
     retry: false,
+  });
+}
+
+export function useUpdateEmailNotifications() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (emailNotifications: boolean) =>
+      (await apiClient.patch<CurrentUser>("/auth/preferences", { emailNotifications })).data,
+    onSuccess: (user) => queryClient.setQueryData(["me"], user),
   });
 }
 

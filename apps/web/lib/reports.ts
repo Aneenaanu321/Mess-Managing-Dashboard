@@ -10,10 +10,13 @@ export interface ReportsSummary {
   collections: { total: number; byMonth: { month: string; amount: number }[] };
 }
 
-export function useReportsSummary() {
+export function useReportsSummary(branchId?: string) {
+  const query = new URLSearchParams();
+  if (branchId) query.set("branchId", branchId);
+
   return useQuery({
-    queryKey: ["reports", "summary"],
-    queryFn: async () => (await apiClient.get<ReportsSummary>("/reports/summary")).data,
+    queryKey: ["reports", "summary", branchId],
+    queryFn: async () => (await apiClient.get<ReportsSummary>(`/reports/summary?${query.toString()}`)).data,
   });
 }
 
@@ -33,9 +36,12 @@ export interface ReceivablesAging {
   }[];
 }
 
-export function useReceivablesAging() {
+export function useReceivablesAging(branchId?: string) {
+  const query = new URLSearchParams();
+  if (branchId) query.set("branchId", branchId);
+
   return useQuery({
-    queryKey: ["reports", "receivables-aging"],
-    queryFn: async () => (await apiClient.get<ReceivablesAging>("/reports/receivables-aging")).data,
+    queryKey: ["reports", "receivables-aging", branchId],
+    queryFn: async () => (await apiClient.get<ReceivablesAging>(`/reports/receivables-aging?${query.toString()}`)).data,
   });
 }
