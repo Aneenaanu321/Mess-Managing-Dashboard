@@ -1,11 +1,9 @@
 # Free-tier backend blueprint for Render.com
 # Docs: https://render.com/docs/blueprint-spec
 #
-# Background workers are NOT available on Render Free.
-#
-# After first successful deploy, open Shell on rfidcore-api and run:
-#   npm run prisma:deploy -w apps/api
-#   npm run prisma:seed -w apps/api
+# Free plan has no interactive Shell. Migrations run via preDeployCommand.
+# Seed once from your laptop (see docs/12-hosting-vercel-free.md) OR use
+# initialDeployHook on the first successful deploy.
 
 services:
   - type: web
@@ -13,9 +11,12 @@ services:
     runtime: node
     plan: free
     rootDir: .
-    # NODE_ENV=production is set for runtime, so default npm ci skips
-    # devDependencies (prisma CLI + typescript). Force them in for the build.
+    # NODE_ENV=production skips devDependencies unless --include=dev.
     buildCommand: npm ci --include=dev && npm run prisma:generate -w apps/api && npm run build -w apps/api
+    # Runs after build, before traffic switches — works without Shell.
+    preDeployCommand: npm run prisma:deploy -w apps/api
+    # First successful deploy only — creates demo users / sample data.
+    initialDeployHook: npm run prisma:seed -w apps/api
     startCommand: npm run start -w apps/api
     healthCheckPath: /health
     envVars:

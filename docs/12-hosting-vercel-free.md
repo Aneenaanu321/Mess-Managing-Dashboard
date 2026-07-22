@@ -48,9 +48,14 @@ Repo: https://github.com/Aneenaanu321/P11_Sales-Operations-Managing-Dashboard
 
 5. Deploy. Note the API URL, e.g. `https://rfidcore-api.onrender.com`.
 
-6. In Render → API service → **Shell** (or one-off job), run migrations + seed:
+6. **Migrate + seed (Free plan has no Shell)**
+
+Migrations run automatically on each deploy via `preDeployCommand` in `render.yaml`.
+
+Seed demo data **once from your laptop** (uses Neon directly — no Render Shell):
 
 ```bash
+export DATABASE_URL='postgresql://USER:PASS@HOST/neondb?sslmode=require'
 npm run prisma:deploy -w apps/api
 npm run prisma:seed -w apps/api
 ```
