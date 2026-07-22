@@ -45,7 +45,13 @@ import salesOpsRoutes from "./modules/sales-ops/salesOps.routes";
 export function createApp() {
   const app = express();
 
-  app.use(helmet());
+  // Allow browser clients on another origin (Vercel) to read API responses.
+  app.use(
+    helmet({
+      crossOriginResourcePolicy: { policy: "cross-origin" },
+      crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" },
+    }),
+  );
   // CORS_ORIGIN may be a comma-separated list (e.g. local + Vercel preview + prod).
   const corsOrigins = env.CORS_ORIGIN.split(",").map((o) => o.trim()).filter(Boolean);
   app.use(
