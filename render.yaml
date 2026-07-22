@@ -4,8 +4,8 @@
 # Background workers are NOT available on Render Free.
 #
 # After deploy, Shell on rfidcore-api:
-#   npx prisma migrate deploy -w apps/api
-#   npx prisma db seed -w apps/api
+#   npm run prisma:deploy -w apps/api
+#   npm run prisma:seed -w apps/api
 
 services:
   - type: web
@@ -13,7 +13,8 @@ services:
     runtime: node
     plan: free
     rootDir: .
-    buildCommand: npm ci && npx prisma generate -w apps/api && npm run build -w apps/api
+    # Use workspace scripts — `npx prisma generate -w` does NOT work and breaks tsc.
+    buildCommand: npm ci && npm run prisma:generate -w apps/api && npm run build -w apps/api
     startCommand: npm run start -w apps/api
     healthCheckPath: /health
     envVars:
