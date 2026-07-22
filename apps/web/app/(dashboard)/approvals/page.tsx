@@ -4,15 +4,26 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePendingApprovals, useDecideApproval, Approval } from "@/lib/approvals";
 import { Button, Card } from "@/components/ui";
+import { useConfirm } from "@/components/ConfirmDialog";
 
 export default function ApprovalsPage() {
   const { data: approvals, isLoading, isError } = usePendingApprovals();
   const decide = useDecideApproval();
+  const confirm = useConfirm();
   const [commentById, setCommentById] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
 
   async function handleDecide(approval: Approval, action: "APPROVE" | "REJECT") {
     setError(null);
+    if (action === "REJECT") {
+      const ok = await confirm({
+        title: "Reject approval?",
+        message: `Reject the discount/price override request for ${approval.quotation?.code ?? "this item"}? The quotation stays in draft until revised.`,
+        confirmLabel: "Reject",
+        variant: "danger",
+      });
+      if (!ok) return;
+    }
     try {
       await decide.mutateAsync({ id: approval.id, action, comment: commentById[approval.id] });
     } catch (err) {

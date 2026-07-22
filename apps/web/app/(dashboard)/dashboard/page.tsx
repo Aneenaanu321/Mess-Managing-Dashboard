@@ -19,25 +19,25 @@ import {
   Sparkles,
 } from "lucide-react";
 import { useState } from "react";
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  Line,
-  LineChart,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
+import dynamic from "next/dynamic";
 import { useCurrentUser } from "@/lib/auth";
 import { useDashboardSpotlight, useExecutiveSummary } from "@/lib/dashboard";
 import { useReportsSummary } from "@/lib/reports";
 import { Badge, Card } from "@/components/ui";
 import { BranchFilter } from "@/components/BranchFilter";
+
+const DashboardCharts = dynamic(() => import("@/components/dashboard/DashboardCharts").then((m) => m.DashboardCharts), {
+  ssr: false,
+  loading: () => (
+    <div className="mt-6 space-y-4">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <Card className="h-72 animate-pulse bg-slate-100 dark:bg-slate-800 lg:col-span-2" />
+        <Card className="h-72 animate-pulse bg-slate-100 dark:bg-slate-800" />
+      </div>
+      <Card className="h-72 animate-pulse bg-slate-100 dark:bg-slate-800" />
+    </div>
+  ),
+});
 
 function label(value: string) {
   return value.replaceAll("_", " ");
@@ -59,8 +59,6 @@ function formatWhen(iso: string) {
     minute: "2-digit",
   });
 }
-
-const PIE_COLORS = ["#2563eb", "#0ea5e9", "#22c55e", "#f59e0b", "#ef4444", "#8b5cf6", "#64748b"];
 
 const STATUS_TONE: Record<string, "slate" | "green" | "amber" | "red" | "blue"> = {
   NEW: "blue",
@@ -309,21 +307,21 @@ export default function ExecutiveDashboardPage() {
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-4">
         {cards.map((card) => {
           const Icon = card.icon;
           const tone = TONES[card.tone];
           return (
             <Link key={card.label} href={card.href} className="group">
-              <Card className="flex h-full flex-col justify-between p-5 transition-shadow group-hover:shadow-md">
+              <Card className="flex h-full flex-col justify-between p-4 transition-shadow group-hover:shadow-md">
                 <div className="flex items-start justify-between">
-                  <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${tone.bg} ${tone.text}`}>
-                    <Icon size={20} />
+                  <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${tone.bg} ${tone.text}`}>
+                    <Icon size={16} />
                   </div>
                   <ArrowRight size={16} className="mt-1 text-slate-300 transition-colors group-hover:text-slate-500" />
                 </div>
-                <div className="mt-4">
-                  <p className="text-2xl font-semibold text-slate-900">{isLoading ? "…" : card.value}</p>
+                <div className="mt-3">
+                  <p className="text-xl font-semibold text-slate-900">{isLoading ? "…" : card.value}</p>
                   <p className="mt-1 text-sm font-medium text-slate-600">{card.label}</p>
                   <p className="mt-0.5 text-xs text-slate-400">{card.hint}</p>
                 </div>
@@ -333,90 +331,27 @@ export default function ExecutiveDashboardPage() {
         })}
       </div>
 
-      <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <Card className="p-5 lg:col-span-2">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-slate-900">Open Pipeline by Stage</h2>
-            <Link href="/pipeline" className="text-xs font-medium text-brand-700 hover:underline">
-              View pipeline
-            </Link>
-          </div>
-          <div className="h-60">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={pipelineByStage} margin={{ left: -16 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                <XAxis dataKey="name" tick={{ fontSize: 10, fill: "#64748b" }} interval={0} angle={-20} textAnchor="end" height={54} />
-                <YAxis tick={{ fontSize: 11, fill: "#64748b" }} allowDecimals={false} />
-                <Tooltip cursor={{ fill: "#f1f5f9" }} formatter={(value: number) => [value, "Opportunities"]} />
-                <Bar dataKey="count" name="Opportunities" fill="#38a169" radius={[4, 4, 0, 0]} maxBarSize={36} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-          {!reportsLoading && pipelineByStage.length === 0 && (
-            <p className="mt-2 text-center text-sm text-slate-400">No open opportunities yet.</p>
-          )}
-        </Card>
+      <DashboardCharts
+        pipelineByStage={pipelineByStage}
+        leadFunnel={leadFunnel}
+        collectionsByMonth={collectionsByMonth}
+        reportsLoading={reportsLoading}
+        currency={currency}
+        formatCurrency={formatCurrency}
+      />
 
+      <div className="mt-6">
         <Card className="p-5">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-slate-900">Lead Funnel</h2>
-            <Link href="/leads" className="text-xs font-medium text-brand-700 hover:underline">
-              View leads
-            </Link>
-          </div>
-          <div className="h-60">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie data={leadFunnel} dataKey="count" nameKey="name" outerRadius={80} label={(entry) => entry.count}>
-                  {leadFunnel.map((_, index) => (
-                    <Cell key={index} fill={PIE_COLORS[index % PIE_COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-          {!reportsLoading && leadFunnel.length === 0 && (
-            <p className="mt-2 text-center text-sm text-slate-400">No leads yet.</p>
-          )}
-        </Card>
-      </div>
-
-      <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <Card className="p-5">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-slate-900">Collections Trend</h2>
-            <Link href="/reports" className="text-xs font-medium text-brand-700 hover:underline">
-              Full reports
-            </Link>
-          </div>
-          <div className="h-60">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={collectionsByMonth} margin={{ left: -16 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                <XAxis dataKey="month" tick={{ fontSize: 11, fill: "#64748b" }} />
-                <YAxis tick={{ fontSize: 11, fill: "#64748b" }} />
-                <Tooltip formatter={(value: number) => formatCurrency(value, currency)} />
-                <Line type="monotone" dataKey="amount" name="Collected" stroke="#2f855a" strokeWidth={2} dot={{ r: 3, fill: "#2f855a" }} />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-          {!reportsLoading && collectionsByMonth.length === 0 && (
-            <p className="mt-2 text-center text-sm text-slate-400">No payments recorded yet.</p>
-          )}
-        </Card>
-
-        <Card className="p-5">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-slate-900">Quick actions</h2>
+            <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Quick actions</h2>
             <Sparkles size={14} className="text-brand-600" />
           </div>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
             {quickLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
-                className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:border-brand-200 hover:bg-brand-50 hover:text-brand-800"
+                className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:border-brand-200 hover:bg-brand-50 hover:text-brand-800 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-brand-700 dark:hover:bg-brand-900/30 dark:hover:text-brand-300"
               >
                 {link.label}
               </Link>

@@ -7,6 +7,7 @@ import { useCustomers, useMergeCustomers, INDUSTRIES, Customer } from "@/lib/cus
 import { hasPermission, useCurrentUser } from "@/lib/auth";
 import { Button, Input, Select, Card } from "@/components/ui";
 import { downloadCsv } from "@/lib/csv";
+import { useConfirm } from "@/components/ConfirmDialog";
 
 export default function CustomersPage() {
   const [industry, setIndustry] = useState("");
@@ -139,6 +140,7 @@ export default function CustomersPage() {
 
 function MergePanel({ customers, onDone }: { customers: Customer[]; onDone: () => void }) {
   const mergeCustomers = useMergeCustomers();
+  const confirm = useConfirm();
   const [sourceId, setSourceId] = useState("");
   const [targetId, setTargetId] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -155,9 +157,13 @@ function MergePanel({ customers, onDone }: { customers: Customer[]; onDone: () =
     }
     const source = customers.find((c) => c.id === sourceId);
     const target = customers.find((c) => c.id === targetId);
-    if (!window.confirm(`Merge "${source?.name}" into "${target?.name}"? This deletes the duplicate record — its contacts, sites, opportunities, and other records move to the surviving customer. This can't be undone.`)) {
-      return;
-    }
+    const ok = await confirm({
+      title: "Merge customers?",
+      message: `Merge "${source?.name}" into "${target?.name}"? The duplicate record will be deleted — its contacts, sites, opportunities, and other records move to the surviving customer. This can't be undone.`,
+      confirmLabel: "Merge",
+      variant: "danger",
+    });
+    if (!ok) return;
     try {
       await mergeCustomers.mutateAsync({ sourceId, targetId });
       onDone();

@@ -230,6 +230,8 @@ async function main() {
     { companyName: "Al Noor Retail Group", contactName: "Yasmin Ali", email: "yasmin@alnoorretail.demo", phone: "+971501234567", source: "EXHIBITION", industry: "RETAIL", score: 78 },
     { companyName: "MedLife Pharmaceuticals", contactName: "Dr. Rashid Khan", email: "rashid@medlife.demo", phone: "+971502345678", source: "REFERRAL", industry: "PHARMACEUTICALS", score: 82 },
     { companyName: "Silk Road Logistics", contactName: "Chen Wei", email: "chen@silkroadlog.demo", phone: "+971503456789", source: "WEBSITE", industry: "LOGISTICS", score: 55 },
+    { companyName: "Desert Crown Hospitality", contactName: "Mariam Saeed", email: "mariam@desertcrown.demo", phone: "+971504567891", source: "PARTNER", industry: "HOSPITALITY", score: 66 },
+    { companyName: "Vertex Manufacturing LLC", contactName: "Arjun Patel", email: "arjun@vertexmfg.demo", phone: "+971505678912", source: "INBOUND_CALL", industry: "MANUFACTURING", score: 73 },
   ] as const;
 
   for (const [i, lead] of demoLeads.entries()) {
@@ -263,6 +265,8 @@ async function main() {
     { code: "CUST-2026-0001", name: "Al Noor Retail Group", industry: "RETAIL", contact: { firstName: "Yasmin", lastName: "Ali", email: "yasmin@alnoorretail.demo", phone: "+971501234567" }, site: { label: "Dubai Mall Flagship", city: "Dubai", country: "UAE" } },
     { code: "CUST-2026-0002", name: "MedLife Pharmaceuticals", industry: "PHARMACEUTICALS", contact: { firstName: "Rashid", lastName: "Khan", email: "rashid@medlife.demo", phone: "+971502345678" }, site: { label: "Jebel Ali Warehouse", city: "Dubai", country: "UAE" } },
     { code: "CUST-2026-0003", name: "Silk Road Logistics", industry: "LOGISTICS", contact: { firstName: "Chen", lastName: "Wei", email: "chen@silkroadlog.demo", phone: "+971503456789" }, site: { label: "Main Hub", city: "Sharjah", country: "UAE" } },
+    { code: "CUST-2026-0004", name: "Desert Crown Hospitality", industry: "HOSPITALITY", contact: { firstName: "Mariam", lastName: "Saeed", email: "mariam@desertcrown.demo", phone: "+971504567891" }, site: { label: "Palm Resort Central Store", city: "Dubai", country: "UAE" } },
+    { code: "CUST-2026-0005", name: "Vertex Manufacturing LLC", industry: "MANUFACTURING", contact: { firstName: "Arjun", lastName: "Patel", email: "arjun@vertexmfg.demo", phone: "+971505678912" }, site: { label: "Industrial Zone Plant", city: "Abu Dhabi", country: "UAE" } },
   ] as const;
 
   const customers: Array<{ id: string; code: string; siteId: string }> = [];
@@ -298,7 +302,7 @@ async function main() {
     await prisma.user.update({ where: { id: portalUserId }, data: { customerId: customers[0].id } });
   }
 
-  const oppStages = ["REQUIREMENT_GATHERING", "DEMO", "QUOTATION_SENT", "NEGOTIATION"] as const;
+  const oppStages = ["REQUIREMENT_GATHERING", "DEMO", "QUOTATION_SENT", "NEGOTIATION", "INTERNAL_REVIEW"] as const;
   const opportunities: Array<{ id: string; customerId: string }> = [];
   for (const [i, cust] of customers.entries()) {
     const code = `OPP-2026-${String(i + 1).padStart(4, "0")}`;
@@ -326,26 +330,46 @@ async function main() {
   const antenna = allProducts.find((p) => p.sku === "RFID-ANT-200");
   const gate = allProducts.find((p) => p.sku === "RFID-GATE-300");
 
-  if (reader && antenna && gate && opportunities[0]) {
-    const qtCode = "QT-2026-0001";
-    const existingQt = await prisma.quotation.findFirst({ where: { companyId: company.id, code: qtCode, version: 1 } });
-    if (!existingQt) {
-      const line1 = { description: reader.name, quantity: 4, unitPrice: 1200, discountPct: 5, taxPct: 5, lineTotal: 4 * 1200 * 0.95 * 1.05 };
-      const line2 = { description: antenna.name, quantity: 8, unitPrice: 320, discountPct: 0, taxPct: 5, lineTotal: 8 * 320 * 1.05 };
-      const line3 = { description: gate.name, quantity: 2, unitPrice: 4800, discountPct: 10, taxPct: 5, lineTotal: 2 * 4800 * 0.9 * 1.05 };
-      const subtotal = 4 * 1200 + 8 * 320 + 2 * 4800;
-      const discountTotal = 4 * 1200 * 0.05 + 2 * 4800 * 0.1;
+  if (reader && antenna && gate) {
+    const quotationSpecs = [
+      { code: "QT-2026-0001", qtyReader: 4, qtyAntenna: 8, qtyGate: 2, discountPct: 7, status: "SENT" },
+      { code: "QT-2026-0002", qtyReader: 3, qtyAntenna: 6, qtyGate: 1, discountPct: 5, status: "SENT" },
+      { code: "QT-2026-0003", qtyReader: 5, qtyAntenna: 10, qtyGate: 2, discountPct: 12, status: "PENDING_APPROVAL" },
+      { code: "QT-2026-0004", qtyReader: 2, qtyAntenna: 4, qtyGate: 1, discountPct: 9, status: "SENT" },
+      { code: "QT-2026-0005", qtyReader: 6, qtyAntenna: 12, qtyGate: 3, discountPct: 18, status: "PENDING_APPROVAL" },
+    ] as const;
+
+    for (const [i, spec] of quotationSpecs.entries()) {
+      const opportunity = opportunities[i];
+      if (!opportunity) continue;
+
+      const existingQt = await prisma.quotation.findFirst({
+        where: { companyId: company.id, code: spec.code, version: 1 },
+      });
+      if (existingQt) continue;
+
+      const taxPct = 5;
+      const line1Gross = spec.qtyReader * 1200;
+      const line2Gross = spec.qtyAntenna * 320;
+      const line3Gross = spec.qtyGate * 4800;
+      const subtotal = line1Gross + line2Gross + line3Gross;
+      const discountTotal = subtotal * (spec.discountPct / 100);
       const taxable = subtotal - discountTotal;
-      const taxTotal = taxable * 0.05;
+      const taxTotal = taxable * (taxPct / 100);
+
+      const line1Taxable = line1Gross * (1 - spec.discountPct / 100);
+      const line2Taxable = line2Gross * (1 - spec.discountPct / 100);
+      const line3Taxable = line3Gross * (1 - spec.discountPct / 100);
+
       await prisma.quotation.create({
         data: {
           companyId: company.id,
           branchId: branch.id,
-          code: qtCode,
+          code: spec.code,
           version: 1,
-          opportunityId: opportunities[0].id,
-          customerId: opportunities[0].customerId,
-          status: "SENT",
+          opportunityId: opportunity.id,
+          customerId: opportunity.customerId,
+          status: spec.status as never,
           currency: "AED",
           subtotal,
           discountTotal,
@@ -353,12 +377,12 @@ async function main() {
           grandTotal: taxable + taxTotal,
           paymentTerms: "40% advance / 40% on delivery / 20% on go-live",
           createdById: raviId!,
-          sentAt: new Date(),
+          sentAt: spec.status === "SENT" ? new Date() : null,
           lineItems: {
             create: [
-              { productId: reader.id, description: line1.description, quantity: line1.quantity, unitPrice: line1.unitPrice, discountPct: line1.discountPct, taxPct: line1.taxPct, lineTotal: line1.lineTotal, sortOrder: 0 },
-              { productId: antenna.id, description: line2.description, quantity: line2.quantity, unitPrice: line2.unitPrice, discountPct: line2.discountPct, taxPct: line2.taxPct, lineTotal: line2.lineTotal, sortOrder: 1 },
-              { productId: gate.id, description: line3.description, quantity: line3.quantity, unitPrice: line3.unitPrice, discountPct: line3.discountPct, taxPct: line3.taxPct, lineTotal: line3.lineTotal, sortOrder: 2 },
+              { productId: reader.id, description: reader.name, quantity: spec.qtyReader, unitPrice: 1200, discountPct: spec.discountPct, taxPct, lineTotal: line1Taxable * (1 + taxPct / 100), sortOrder: 0 },
+              { productId: antenna.id, description: antenna.name, quantity: spec.qtyAntenna, unitPrice: 320, discountPct: spec.discountPct, taxPct, lineTotal: line2Taxable * (1 + taxPct / 100), sortOrder: 1 },
+              { productId: gate.id, description: gate.name, quantity: spec.qtyGate, unitPrice: 4800, discountPct: spec.discountPct, taxPct, lineTotal: line3Taxable * (1 + taxPct / 100), sortOrder: 2 },
             ],
           },
         },
@@ -383,55 +407,71 @@ async function main() {
     });
   }
 
-  if (customers[0] && gate) {
-    const device = await prisma.device.upsert({
-      where: { companyId_serialNumber: { companyId: company.id, serialNumber: "GX300-DEMO-001" } },
-      create: {
-        companyId: company.id,
-        productId: gate.id,
-        serialNumber: "GX300-DEMO-001",
-        type: "GATE",
-        status: "INSTALLED",
-        siteId: customers[0].siteId,
-        location: "Entrance Gate 1",
-        firmwareVersion: "2.4.1",
-        installedAt: new Date(Date.now() - 120 * 86400000),
-      },
-      update: {},
-    });
+  if (gate && reader) {
+    const ticketSpecs = [
+      { code: "TKT-2026-0001", priority: "HIGH", status: "ASSIGNED", subject: "Gate reader intermittent disconnects", description: "Customer reports GX-300 drops offline every few hours." },
+      { code: "TKT-2026-0002", priority: "MEDIUM", status: "IN_PROGRESS", subject: "Reader not detecting specific tags", description: "Some pallet tags fail to read at dock door 2." },
+      { code: "TKT-2026-0003", priority: "LOW", status: "NEW", subject: "Firmware upgrade scheduling request", description: "Customer asks for firmware upgrade window next week." },
+      { code: "TKT-2026-0004", priority: "CRITICAL", status: "ESCALATED", subject: "Main gate completely offline", description: "Primary security gate is down during peak hours." },
+      { code: "TKT-2026-0005", priority: "HIGH", status: "ASSIGNED", subject: "False alarm events at exit", description: "Exit gate raises false alarms for cleared items." },
+    ] as const;
 
-    await prisma.ticket.upsert({
-      where: { companyId_code: { companyId: company.id, code: "TKT-2026-0001" } },
-      create: {
-        companyId: company.id,
-        code: "TKT-2026-0001",
-        subject: "Gate reader intermittent disconnects",
-        description: "Customer reports GX-300 drops offline every few hours.",
-        priority: "HIGH",
-        status: "ASSIGNED",
-        customerId: customers[0].id,
-        deviceId: device.id,
-        assigneeId: userIds.get("SUPPORT_ENGINEER"),
-      },
-      update: {},
-    });
+    for (const [i, customer] of customers.slice(0, 5).entries()) {
+      const deviceProduct = i % 2 === 0 ? gate : reader;
+      const serial = `${deviceProduct.sku === "RFID-GATE-300" ? "GX300" : "RX100"}-DEMO-${String(i + 1).padStart(3, "0")}`;
+      const device = await prisma.device.upsert({
+        where: { companyId_serialNumber: { companyId: company.id, serialNumber: serial } },
+        create: {
+          companyId: company.id,
+          productId: deviceProduct.id,
+          serialNumber: serial,
+          type: deviceProduct.sku === "RFID-GATE-300" ? "GATE" : "READER",
+          status: "INSTALLED",
+          siteId: customer.siteId,
+          location: `Zone ${i + 1}`,
+          firmwareVersion: i % 2 === 0 ? "2.4.1" : "3.1.0",
+          installedAt: new Date(Date.now() - (120 - i * 10) * 86400000),
+        },
+        update: {},
+      });
 
-    const amcEnd = new Date(Date.now() + 45 * 86400000);
-    await prisma.amcContract.upsert({
-      where: { companyId_code: { companyId: company.id, code: "AMC-2026-0001" } },
-      create: {
-        companyId: company.id,
-        code: "AMC-2026-0001",
-        customerId: customers[0].id,
-        startDate: new Date(Date.now() - 320 * 86400000),
-        endDate: amcEnd,
-        contractValue: 18000,
-        status: "ACTIVE",
-        currency: "AED",
-        devices: { create: [{ deviceId: device.id }] },
-      },
-      update: {},
-    });
+      const ticket = ticketSpecs[i];
+      if (ticket) {
+        await prisma.ticket.upsert({
+          where: { companyId_code: { companyId: company.id, code: ticket.code } },
+          create: {
+            companyId: company.id,
+            code: ticket.code,
+            subject: ticket.subject,
+            description: ticket.description,
+            priority: ticket.priority as never,
+            status: ticket.status as never,
+            customerId: customer.id,
+            deviceId: device.id,
+            assigneeId: userIds.get("SUPPORT_ENGINEER"),
+          },
+          update: {},
+        });
+      }
+
+      const amcCode = `AMC-2026-${String(i + 1).padStart(4, "0")}`;
+      const amcEnd = new Date(Date.now() + (45 + i * 20) * 86400000);
+      await prisma.amcContract.upsert({
+        where: { companyId_code: { companyId: company.id, code: amcCode } },
+        create: {
+          companyId: company.id,
+          code: amcCode,
+          customerId: customer.id,
+          startDate: new Date(Date.now() - (320 - i * 15) * 86400000),
+          endDate: amcEnd,
+          contractValue: 18000 + i * 2500,
+          status: "ACTIVE",
+          currency: "AED",
+          devices: { create: [{ deviceId: device.id }] },
+        },
+        update: {},
+      });
+    }
   }
 
   // Soft-reference unused vars so TS stays quiet if roles missing

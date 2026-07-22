@@ -1,15 +1,6 @@
 import clsx from "clsx";
 import { ButtonHTMLAttributes, InputHTMLAttributes, LabelHTMLAttributes, SelectHTMLAttributes } from "react";
 
-/**
- * Small, hand-rolled UI primitives styled to look like a ShadCN component
- * set (Tailwind + consistent radius/shadow/focus-ring tokens). We didn't
- * pull the shadcn CLI because it fetches component source from a registry
- * this sandbox's network allowlist blocks — these are deliberately
- * equivalent in API shape so swapping in real shadcn/ui components later is
- * a drop-in replacement, not a rewrite.
- */
-
 export function Button({
   className,
   variant = "primary",
@@ -19,11 +10,12 @@ export function Button({
   return (
     <button
       className={clsx(
-        "inline-flex items-center justify-center gap-2 rounded-xl font-semibold transition-all disabled:pointer-events-none disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2",
+        "inline-flex items-center justify-center gap-2 rounded-xl font-semibold transition-all disabled:pointer-events-none disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900",
         size === "sm" ? "px-3 py-1.5 text-xs" : "px-4 py-2.5 text-sm",
         variant === "primary" && "bg-brand-600 text-white shadow-sm hover:bg-brand-700 hover:shadow",
-        variant === "secondary" && "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50",
-        variant === "ghost" && "text-slate-600 hover:bg-slate-100",
+        variant === "secondary" &&
+          "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700",
+        variant === "ghost" && "text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800",
         variant === "danger" && "bg-red-600 text-white hover:bg-red-700",
         className,
       )}
@@ -36,7 +28,7 @@ export function Input({ className, ...props }: InputHTMLAttributes<HTMLInputElem
   return (
     <input
       className={clsx(
-        "block w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 shadow-sm placeholder:text-slate-400 transition-colors focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20",
+        "block w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 shadow-sm placeholder:text-slate-400 transition-colors focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500",
         className,
       )}
       {...props}
@@ -48,7 +40,7 @@ export function Select({ className, children, ...props }: SelectHTMLAttributes<H
   return (
     <select
       className={clsx(
-        "block w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 shadow-sm transition-colors focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20",
+        "block w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 shadow-sm transition-colors focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100",
         className,
       )}
       {...props}
@@ -59,11 +51,19 @@ export function Select({ className, children, ...props }: SelectHTMLAttributes<H
 }
 
 export function Label({ className, ...props }: LabelHTMLAttributes<HTMLLabelElement>) {
-  return <label className={clsx("mb-1.5 block text-sm font-medium text-slate-700", className)} {...props} />;
+  return <label className={clsx("mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300", className)} {...props} />;
 }
 
 export function Card({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={clsx("rounded-2xl border border-slate-200/80 bg-white shadow-card", className)} {...props} />;
+  return (
+    <div
+      className={clsx(
+        "rounded-2xl border border-slate-200/80 bg-white shadow-card dark:border-slate-700/80 dark:bg-[var(--surface)]",
+        className,
+      )}
+      {...props}
+    />
+  );
 }
 
 export function Badge({
@@ -72,11 +72,11 @@ export function Badge({
   ...props
 }: React.HTMLAttributes<HTMLSpanElement> & { tone?: "slate" | "green" | "amber" | "red" | "blue" }) {
   const tones: Record<string, string> = {
-    slate: "bg-slate-100 text-slate-700",
-    green: "bg-emerald-100 text-emerald-800",
-    amber: "bg-amber-100 text-amber-800",
-    red: "bg-red-100 text-red-700",
-    blue: "bg-sky-100 text-sky-800",
+    slate: "bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-200",
+    green: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300",
+    amber: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300",
+    red: "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300",
+    blue: "bg-sky-100 text-sky-800 dark:bg-sky-900/40 dark:text-sky-300",
   };
   return (
     <span

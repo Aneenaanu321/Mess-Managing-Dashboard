@@ -20,8 +20,6 @@ export default function LoginPage() {
     if (remembered) {
       setEmail(remembered);
       setRememberMe(true);
-    } else {
-      setEmail("aneena.antony@ibtechintl.com");
     }
   }, []);
 

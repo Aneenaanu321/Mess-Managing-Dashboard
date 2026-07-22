@@ -3,6 +3,8 @@ import { DM_Sans, Sora } from "next/font/google";
 import "./globals.css";
 import { QueryProvider } from "@/lib/QueryProvider";
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
+import { ThemeProvider } from "@/lib/ThemeProvider";
+import { ConfirmProvider } from "@/components/ConfirmDialog";
 
 const sans = DM_Sans({
   subsets: ["latin"],
@@ -32,10 +34,14 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${sans.variable} ${display.variable}`}>
+    <html lang="en" className={`${sans.variable} ${display.variable}`} suppressHydrationWarning>
       <body className="font-sans antialiased">
         <ServiceWorkerRegister />
-        <QueryProvider>{children}</QueryProvider>
+        <ThemeProvider>
+          <QueryProvider>
+            <ConfirmProvider>{children}</ConfirmProvider>
+          </QueryProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

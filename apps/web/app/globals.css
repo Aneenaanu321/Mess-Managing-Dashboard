@@ -6,13 +6,36 @@
   --background: #f3f5f4;
   --foreground: #0f172a;
   --surface: #ffffff;
+  --surface-muted: #f8fafc;
+  --border: rgba(226, 232, 240, 0.8);
+  --muted: #64748b;
   --ring: #44b86b;
+}
+
+.dark {
+  color-scheme: dark;
+  --background: #0b1120;
+  --foreground: #f1f5f9;
+  --surface: #1e293b;
+  --surface-muted: #0f172a;
+  --border: rgba(51, 65, 85, 0.8);
+  --muted: #94a3b8;
 }
 
 body {
   background-color: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
+@layer utilities {
+  .text-primary {
+    color: var(--foreground);
+  }
+
+  .text-muted {
+    color: var(--muted);
+  }
 }
 
 @keyframes auth-fade-in {

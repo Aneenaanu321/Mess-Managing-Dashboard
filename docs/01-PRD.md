@@ -95,8 +95,11 @@ Full state-machine mapping per entity is in `04-process-mapping.md`.
 
 Built incrementally, module by module, each validated (schema → API → UI → tests) before the next starts. See project task list. Order: foundation (auth/RBAC) → Lead → Customer → Opportunity/Pipeline → Quotation → PO/Sales Order/Inventory/Warehouse/Procurement → Project/Installation/Device/Engineer Tasks → Finance → Support/AMC → Dashboards/Reports → Notifications/AI/Settings → Testing → Deployment.
 
-## 11. Open Questions (to revisit with business stakeholders)
+## 11. Launch Decisions (locked for v1)
 
-- Which accounting system (if any) does Finance need to integrate/export to?
-- Approval thresholds for quotation discounts (e.g., >15% requires Sales Director approval) — placeholder rules defined in `04-process-mapping.md`, to be confirmed.
-- Which currencies and tax regimes (VAT/GST) must be supported at launch?
+- **Accounting integration/export:** No direct accounting system API integration in v1. Finance uses standardized invoice/payment export (CSV) for Tally import. QuickBooks/Zoho Books native integration is deferred to post-v1.
+- **Quotation approval thresholds:** Keep implemented rule as the v1 policy: discount <=10% can be sent directly, >10% and <=20% requires Sales Manager approval, >20% requires Sales Director approval, and any below-catalog line-item price override always requires approval.
+- **Currencies at launch:** AED (default), SAR, USD, INR.
+- **Tax regimes at launch:** UAE VAT (5%), KSA VAT (15%), India GST (IGST/CGST/SGST via branch/company tax profile).
+- **Customer Portal quote/PO actions:** For v1 launch, the portal remains read-only for quotations/POs/projects/invoices (plus support tickets). Binding actions (digital quote approval and PO upload) remain internal through Sales Operations and are planned for a later release.
+- **Inbound lead channels:** v1 launch supports the webhook channel (`POST /api/v1/public/leads`) only. Email parsing and WhatsApp ingestion are deferred.

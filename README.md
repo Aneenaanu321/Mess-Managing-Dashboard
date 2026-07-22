@@ -33,6 +33,29 @@ npm run dev                       # runs web (:3000), api (:4000), worker via tu
 
 Demo login: any seeded email (e.g. `admin@falconrfid.demo`, `ravi@falconrfid.demo`) / `Password123!`. Full list in `apps/api/prisma/seed.ts`.
 
+See **`docs/11-user-guide.md`** for a page-by-page walkthrough of the entire app.
+
+## Technology stack
+
+| Layer | Technologies |
+|-------|-------------|
+| **Monorepo** | npm workspaces, Turborepo |
+| **Frontend** | Next.js 15 (App Router), React 19, TypeScript, Tailwind CSS 3 |
+| **UI & data** | Hand-rolled UI primitives, TanStack Query, TanStack Table, Recharts, Lucide icons, clsx, Zod, js-cookie |
+| **Backend API** | Node.js 20+, Express 4, TypeScript, Zod validation |
+| **Database** | PostgreSQL 16, Prisma ORM 5 |
+| **Cache & jobs** | Redis 7, BullMQ (worker app) |
+| **Auth** | JWT access tokens + httpOnly refresh cookies, bcrypt, 15-role RBAC |
+| **Storage** | AWS S3 SDK (MinIO locally) for file attachments |
+| **Email** | Nodemailer (optional SMTP) |
+| **PDF** | PDFKit (quotation export) |
+| **AI** | Anthropic API (lead scoring, sales assistant) |
+| **PWA** | Web manifest + service worker |
+| **Testing** | Vitest (API, worker, web), Testing Library (web), Supertest (API) |
+| **Lint & format** | ESLint, Prettier, TypeScript strict |
+| **CI/CD** | GitHub Actions (lint, typecheck, test, build) |
+| **Containers** | Docker multi-stage builds, Docker Compose (Postgres, Redis, MinIO) |
+
 Verify everything's wired up correctly:
 
 ```bash

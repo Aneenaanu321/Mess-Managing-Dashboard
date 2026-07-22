@@ -134,14 +134,14 @@ export function Sidebar({ open, onClose, onToggle }: SidebarProps) {
 
       <aside
         className={clsx(
-          "fixed inset-y-0 left-0 z-50 flex shrink-0 flex-col border-r border-slate-200/80 bg-white transition-[width,transform] duration-200 ease-out lg:static lg:z-auto",
+          "fixed inset-y-0 left-0 z-50 flex shrink-0 flex-col border-r border-slate-200/80 bg-white transition-[width,transform] duration-200 ease-out dark:border-slate-700/80 dark:bg-slate-900 lg:static lg:z-auto",
           open ? "w-[17rem] translate-x-0" : "-translate-x-full w-[17rem] lg:translate-x-0 lg:w-[4.5rem]",
         )}
         aria-hidden={!open && !isDesktop}
       >
         <div
           className={clsx(
-            "flex items-start border-b border-slate-200/80",
+            "flex items-start border-b border-slate-200/80 dark:border-slate-700/80",
             collapsed ? "h-16 items-center justify-center px-2" : "gap-2 px-4 py-3",
           )}
         >
@@ -153,7 +153,7 @@ export function Sidebar({ open, onClose, onToggle }: SidebarProps) {
               onClick={closeIfMobile}
             >
               <Image src="/ibtech-logo.png" alt="ibTech" width={140} height={49} className="h-8 w-auto" priority />
-              <p className="mt-1.5 text-[11px] font-medium leading-snug tracking-wide text-slate-500">
+              <p className="mt-1.5 text-[11px] font-medium leading-snug tracking-wide text-slate-500 dark:text-slate-400">
                 Sales Operations Dashboard
               </p>
             </Link>
@@ -161,7 +161,7 @@ export function Sidebar({ open, onClose, onToggle }: SidebarProps) {
           <button
             type="button"
             onClick={onToggle}
-            className="shrink-0 rounded-lg p-2 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
+            className="shrink-0 rounded-lg p-2 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200"
             aria-label={open ? "Collapse menu" : "Expand menu"}
           >
             <Menu size={18} />
@@ -172,12 +172,12 @@ export function Sidebar({ open, onClose, onToggle }: SidebarProps) {
           {NAV.map((group) => (
             <div key={group.section}>
               {!collapsed && (
-                <p className="mb-1.5 px-2.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+                <p className="mb-1.5 px-2.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400 dark:text-slate-500">
                   {group.section}
                 </p>
               )}
               {collapsed && group.section !== "Overview" && (
-                <div className="mx-auto mb-2 h-px w-6 bg-slate-200" aria-hidden />
+                <div className="mx-auto mb-2 h-px w-6 bg-slate-200 dark:bg-slate-700" aria-hidden />
               )}
               <div className="space-y-0.5">
                 {group.items.map((item) => {
@@ -194,8 +194,8 @@ export function Sidebar({ open, onClose, onToggle }: SidebarProps) {
                         "group flex items-center rounded-xl text-sm font-medium transition-colors",
                         collapsed ? "justify-center px-0 py-2.5" : "gap-2.5 px-2.5 py-2",
                         active
-                          ? "bg-brand-50 text-brand-800 shadow-sm ring-1 ring-brand-100"
-                          : "text-slate-600 hover:bg-slate-50 hover:text-slate-900",
+                          ? "bg-brand-50 text-brand-800 shadow-sm ring-1 ring-brand-100 dark:bg-brand-900/30 dark:text-brand-200 dark:ring-brand-800"
+                          : "text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100",
                       )}
                     >
                       <Icon
