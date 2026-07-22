@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "./api-client";
+import { toast } from "./toast";
 
 export interface Vendor {
   id: string;
@@ -34,7 +35,10 @@ export function useCreateVendor() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (input: CreateVendorInput) => (await apiClient.post<Vendor>("/procurement/vendors", input)).data,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["vendors"] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["vendors"] });
+      toast.success("Saved");
+    },
   });
 }
 
@@ -101,7 +105,10 @@ export function useCreateSupplierPO() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (input: CreateSupplierPOInput) => (await apiClient.post<SupplierPO>("/procurement", input)).data,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["supplier-pos"] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["supplier-pos"] });
+      toast.success("Saved");
+    },
   });
 }
 

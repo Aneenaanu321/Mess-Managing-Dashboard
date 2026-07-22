@@ -52,7 +52,7 @@ export default function OpportunityDetailPage() {
       <div className="mb-6 flex items-start justify-between">
         <div>
           <p className="text-xs font-medium text-slate-400">{opportunity.code}</p>
-          <h1 className="text-xl font-semibold text-slate-900">{opportunity.title}</h1>
+          <h1 className="text-xl font-semibold text-primary">{opportunity.title}</h1>
           <p className="text-sm text-slate-500">
             {opportunity.customer ? (
               <Link href={`/customers/${opportunity.customer.id}`} className="text-brand-600 hover:underline">
@@ -68,7 +68,7 @@ export default function OpportunityDetailPage() {
 
       <div className="grid grid-cols-2 gap-4">
         <Card className="p-5">
-          <h2 className="mb-3 text-sm font-semibold text-slate-900">Details</h2>
+          <h2 className="mb-3 text-sm font-semibold text-primary">Details</h2>
           <dl className="space-y-2 text-sm">
             <Row label="Estimated value" value={`${opportunity.currency} ${Number(opportunity.estimatedValue).toLocaleString()}`} />
             <Row label="Probability" value={`${opportunity.probability}%`} />
@@ -83,7 +83,7 @@ export default function OpportunityDetailPage() {
         </Card>
 
         <Card className="p-5">
-          <h2 className="mb-3 text-sm font-semibold text-slate-900">Change Stage</h2>
+          <h2 className="mb-3 text-sm font-semibold text-primary">Change Stage</h2>
           {isClosed ? (
             <p className="text-sm text-slate-500">This opportunity is {opportunity.stage.toLowerCase()} and cannot move further.</p>
           ) : canChangeStage ? (
@@ -121,7 +121,7 @@ export default function OpportunityDetailPage() {
                   </div>
                 </>
               )}
-              {error && <p className="text-sm text-red-600">{error}</p>}
+              {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
               <Button onClick={handleChangeStage} disabled={changeStage.isPending}>
                 {changeStage.isPending ? "Updating…" : "Update Stage"}
               </Button>
@@ -132,13 +132,13 @@ export default function OpportunityDetailPage() {
         </Card>
 
         <Card className="col-span-2 p-5">
-          <h2 className="mb-3 text-sm font-semibold text-slate-900">Stage History</h2>
+          <h2 className="mb-3 text-sm font-semibold text-primary">Stage History</h2>
           {!opportunity.stageHistory || opportunity.stageHistory.length === 0 ? (
             <p className="text-sm text-slate-500">No stage history yet.</p>
           ) : (
             <ul className="space-y-2 text-sm">
               {opportunity.stageHistory.map((entry) => (
-                <li key={entry.id} className="flex items-center justify-between border-b border-slate-100 pb-2 last:border-0 last:pb-0">
+                <li key={entry.id} className="flex items-center justify-between border-b border-slate-100 dark:border-slate-700 pb-2 last:border-0 last:pb-0">
                   <span className="text-slate-600">
                     {entry.fromStage ? entry.fromStage.replaceAll("_", " ") : "—"} → {entry.toStage.replaceAll("_", " ")}
                     {entry.isRegression && <span className="ml-2 text-amber-600">(regression)</span>}
@@ -164,9 +164,9 @@ export default function OpportunityDetailPage() {
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex justify-between border-b border-slate-100 pb-2">
+    <div className="flex justify-between border-b border-slate-100 dark:border-slate-700 pb-2">
       <dt className="text-slate-500">{label}</dt>
-      <dd className="font-medium text-slate-900">{value}</dd>
+      <dd className="font-medium text-primary">{value}</dd>
     </div>
   );
 }

@@ -7,6 +7,7 @@ import { useCustomerPO, useVerifyCustomerPO, useRecordAdvancePayment, CUSTOMER_P
 import { hasPermission, useCurrentUser } from "@/lib/auth";
 import { Badge, Button, Card } from "@/components/ui";
 import { FileAttachments } from "@/components/FileAttachments";
+import { useConfirm } from "@/components/ConfirmDialog";
 
 export default function PurchaseOrderDetailPage() {
   const params = useParams<{ id: string }>();
@@ -15,6 +16,7 @@ export default function PurchaseOrderDetailPage() {
   const verify = useVerifyCustomerPO(params.id);
   const recordAdvance = useRecordAdvancePayment(params.id);
   const [error, setError] = useState<string | null>(null);
+  const confirm = useConfirm();
 
   if (isLoading) return <p className="text-sm text-slate-500">Loading…</p>;
   if (!po) return <p className="text-sm text-slate-500">Purchase order not found.</p>;
@@ -35,26 +37,37 @@ export default function PurchaseOrderDetailPage() {
       <div className="mb-6 flex items-start justify-between">
         <div>
           <p className="text-xs font-medium text-slate-400">{po.code}</p>
-          <h1 className="text-xl font-semibold text-slate-900">{po.poNumber}</h1>
+          <h1 className="text-xl font-semibold text-primary">{po.poNumber}</h1>
           <p className="text-sm text-slate-500">{po.customer?.name}</p>
         </div>
         <Badge tone={CUSTOMER_PO_STATUS_TONE[po.status]}>{po.status}</Badge>
       </div>
 
       {po.amountMismatch && (
-        <div className="mb-4 rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="mb-4 rounded-md bg-red-50 dark:bg-red-950/40 px-4 py-3 text-sm text-red-700 dark:text-red-300">
           The PO amount doesn&apos;t match the linked quotation&apos;s grand total. Please reconcile before verifying.
         </div>
       )}
 
-      {error && <div className="mb-4 rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
+      {error && <div className="mb-4 rounded-md bg-red-50 dark:bg-red-950/40 px-4 py-3 text-sm text-red-700 dark:text-red-300">{error}</div>}
 
       {canManage && (po.status === "RECEIVED" || (po.status === "VERIFIED" && !po.advanceReceivedAt)) && (
         <Card className="mb-4 flex flex-wrap items-center justify-between gap-3 p-4">
           {po.status === "RECEIVED" ? (
             <>
               <p className="text-sm text-slate-600">Match this PO to its quotation and create the fulfillment sales order.</p>
-              <Button onClick={() => runAction(() => verify.mutateAsync())} disabled={verify.isPending}>
+              <Button
+                onClick={async () => {
+                  const ok = await confirm({
+                    title: "Verify purchase order?",
+                    message: "This matches the PO to its quotation and creates the fulfillment sales order.",
+                    confirmLabel: "Verify PO",
+                  });
+                  if (!ok) return;
+                  runAction(() => verify.mutateAsync());
+                }}
+                disabled={verify.isPending}
+              >
                 {verify.isPending ? "Verifying…" : "Verify PO"}
               </Button>
             </>
@@ -73,16 +86,16 @@ export default function PurchaseOrderDetailPage() {
 
       <div className="grid grid-cols-2 gap-4">
         <Card className="p-5">
-          <h2 className="mb-3 text-sm font-semibold text-slate-900">Details</h2>
+          <h2 className="mb-3 text-sm font-semibold text-primary">Details</h2>
           <dl className="space-y-2 text-sm">
             <Row label="PO Number" value={po.poNumber} />
             <Row label="Amount" value={`${Number(po.amount).toLocaleString()} ${po.currency}`} />
             <Row label="Advance Required" value={`${Number(po.advanceRequired).toLocaleString()} ${po.currency}`} />
             <Row label="Received At" value={new Date(po.receivedAt).toLocaleString()} />
             <Row label="Opportunity" value={po.opportunity ? `${po.opportunity.code} — ${po.opportunity.title}` : "—"} />
-            <div className="flex justify-between border-b border-slate-100 pb-2">
+            <div className="flex justify-between border-b border-slate-100 dark:border-slate-700 pb-2">
               <dt className="text-slate-500">Sales Order</dt>
-              <dd className="font-medium text-slate-900">
+              <dd className="font-medium text-primary">
                 {po.salesOrder ? (
                   <Link href={`/sales-orders/${po.salesOrder.id}`} className="text-brand-700 hover:underline">
                     {po.salesOrder.code} ({po.salesOrder.status.replaceAll("_", " ")})
@@ -96,7 +109,7 @@ export default function PurchaseOrderDetailPage() {
         </Card>
 
         <Card className="p-5">
-          <h2 className="mb-3 text-sm font-semibold text-slate-900">Quotation</h2>
+          <h2 className="mb-3 text-sm font-semibold text-primary">Quotation</h2>
           <dl className="space-y-2 text-sm">
             <Row label="Code" value={po.quotation?.code ?? "—"} />
             <Row label="Grand Total" value={po.quotation ? `${Number(po.quotation.grandTotal).toLocaleString()} ${po.quotation.currency}` : "—"} />
@@ -114,9 +127,9 @@ export default function PurchaseOrderDetailPage() {
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex justify-between border-b border-slate-100 pb-2">
+    <div className="flex justify-between border-b border-slate-100 dark:border-slate-700 pb-2">
       <dt className="text-slate-500">{label}</dt>
-      <dd className="font-medium text-slate-900">{value}</dd>
+      <dd className="font-medium text-primary">{value}</dd>
     </div>
   );
 }

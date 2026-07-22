@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "./api-client";
+import { toast } from "./toast";
 
 export interface Lead {
   id: string;
@@ -59,7 +60,10 @@ export function useBulkImportLeads() {
   return useMutation({
     mutationFn: async (rows: Record<string, unknown>[]) =>
       (await apiClient.post<BulkImportResult>("/leads/bulk-import", { rows })).data,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["leads"] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["leads"] });
+      toast.success("Leads imported");
+    },
   });
 }
 
@@ -67,7 +71,10 @@ export function useCreateLead() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (input: CreateLeadInput) => (await apiClient.post<Lead>("/leads", input)).data,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["leads"] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["leads"] });
+      toast.success("Lead created");
+    },
   });
 }
 
@@ -76,7 +83,25 @@ export function useConvertLead() {
   return useMutation({
     mutationFn: async ({ id, estimatedValue }: { id: string; estimatedValue: number }) =>
       (await apiClient.post(`/leads/${id}/convert`, { estimatedValue })).data,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["leads"] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["leads"] });
+      toast.success("Lead converted to opportunity");
+    },
+  });
+}
+
+export const DISQUALIFY_REASONS = ["BUDGET", "TIMING", "NO_AUTHORITY", "NOT_INTERESTED", "COMPETITOR", "OTHER"] as const;
+
+export function useDisqualifyLead() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, reason, note }: { id: string; reason: string; note?: string }) =>
+      (await apiClient.post<Lead>(`/leads/${id}/disqualify`, { reason, note })).data,
+    onSuccess: (_, { id }) => {
+      queryClient.invalidateQueries({ queryKey: ["leads"] });
+      queryClient.invalidateQueries({ queryKey: ["leads", id] });
+      toast.success("Lead disqualified");
+    },
   });
 }
 

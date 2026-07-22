@@ -30,7 +30,7 @@ export default function NewCampaignPage() {
 
   return (
     <div className="mx-auto max-w-lg">
-      <h1 className="mb-6 text-xl font-semibold text-slate-900">New Campaign</h1>
+      <h1 className="mb-6 text-xl font-semibold text-primary">New Campaign</h1>
       <Card className="p-6">
         <form className="space-y-4" onSubmit={handleSubmit}>
           <div>
@@ -61,7 +61,7 @@ export default function NewCampaignPage() {
             <Label htmlFor="budget">Budget</Label>
             <Input id="budget" type="number" min={0} value={form.budget} onChange={(e) => setForm({ ...form, budget: e.target.value })} />
           </div>
-          {error && <p className="text-sm text-red-600">{error}</p>}
+          {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
           <Button type="submit" disabled={createCampaign.isPending}>
             {createCampaign.isPending ? "Creating…" : "Create Campaign"}
           </Button>

@@ -18,14 +18,14 @@ export default function PortalQuotationDetailPage() {
           <p className="text-xs font-medium text-slate-400">
             {quotation.code} · v{quotation.version}
           </p>
-          <h1 className="text-xl font-semibold text-slate-900">{quotation.opportunity?.title ?? "Quotation"}</h1>
+          <h1 className="text-xl font-semibold text-primary">{quotation.opportunity?.title ?? "Quotation"}</h1>
           <p className="text-sm text-slate-500">Prepared {new Date(quotation.createdAt).toLocaleDateString()}</p>
         </div>
         <Badge tone={QUOTATION_STATUS_TONE[quotation.status] ?? "slate"}>{quotation.status.replaceAll("_", " ")}</Badge>
       </div>
 
       <Card className="p-5">
-        <h2 className="mb-3 text-sm font-semibold text-slate-900">Summary</h2>
+        <h2 className="mb-3 text-sm font-semibold text-primary">Summary</h2>
         <dl className="space-y-2 text-sm">
           <Row label="Subtotal" value={`${Number(quotation.subtotal).toLocaleString()} ${quotation.currency}`} />
           <Row label="Discount" value={`${Number(quotation.discountTotal).toLocaleString()} ${quotation.currency}`} />
@@ -37,10 +37,10 @@ export default function PortalQuotationDetailPage() {
       </Card>
 
       <Card className="overflow-hidden">
-        <h2 className="p-5 pb-0 text-sm font-semibold text-slate-900">Line Items</h2>
+        <h2 className="p-5 pb-0 text-sm font-semibold text-primary">Line Items</h2>
         <div className="overflow-x-auto p-5 pt-3">
           <table className="w-full min-w-[560px] text-sm">
-            <thead className="border-b border-slate-200 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">
+            <thead className="border-b border-slate-200 dark:border-slate-700 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">
               <tr>
                 <th className="py-2">Description</th>
                 <th className="py-2">Qty</th>
@@ -48,13 +48,13 @@ export default function PortalQuotationDetailPage() {
                 <th className="py-2">Total</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
               {quotation.lineItems.map((li) => (
                 <tr key={li.id}>
-                  <td className="py-2.5 text-slate-800">{li.description}</td>
+                  <td className="py-2.5 text-primary">{li.description}</td>
                   <td className="py-2.5 text-slate-600">{li.quantity}</td>
                   <td className="py-2.5 text-slate-600">{Number(li.unitPrice).toLocaleString()}</td>
-                  <td className="py-2.5 font-medium text-slate-900">{Number(li.lineTotal).toLocaleString()}</td>
+                  <td className="py-2.5 font-medium text-primary">{Number(li.lineTotal).toLocaleString()}</td>
                 </tr>
               ))}
             </tbody>
@@ -67,9 +67,9 @@ export default function PortalQuotationDetailPage() {
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex justify-between border-b border-slate-100 pb-2">
+    <div className="flex justify-between border-b border-slate-100 dark:border-slate-700 pb-2">
       <dt className="text-slate-500">{label}</dt>
-      <dd className="font-medium text-slate-900">{value}</dd>
+      <dd className="font-medium text-primary">{value}</dd>
     </div>
   );
 }

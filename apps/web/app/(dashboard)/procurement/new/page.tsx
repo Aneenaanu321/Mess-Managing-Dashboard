@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useCreateSupplierPO, useVendors } from "@/lib/procurement";
 import { useProducts } from "@/lib/inventory";
 import { Button, Input, Label, Select, Card } from "@/components/ui";
+import { useConfirm } from "@/components/ConfirmDialog";
 
 interface LineItemForm {
   productId: string;
@@ -25,6 +26,7 @@ export default function NewSupplierPOPage() {
   const [expectedDate, setExpectedDate] = useState("");
   const [lineItems, setLineItems] = useState<LineItemForm[]>([{ productId: "", quantity: "1", unitCost: "" }]);
   const [error, setError] = useState<string | null>(null);
+  const confirm = useConfirm();
 
   function updateLineItem(index: number, patch: Partial<LineItemForm>) {
     setLineItems((items) => items.map((li, i) => (i === index ? { ...li, ...patch } : li)));
@@ -34,7 +36,15 @@ export default function NewSupplierPOPage() {
     setLineItems((items) => [...items, { productId: "", quantity: "1", unitCost: "" }]);
   }
 
-  function removeLineItem(index: number) {
+  async function removeLineItem(index: number) {
+    if (lineItems.length <= 1) return;
+    const ok = await confirm({
+      title: "Remove line item?",
+      message: "This product line will be removed from the purchase order.",
+      confirmLabel: "Remove",
+      variant: "danger",
+    });
+    if (!ok) return;
     setLineItems((items) => items.filter((_, i) => i !== index));
   }
 
@@ -62,7 +72,7 @@ export default function NewSupplierPOPage() {
 
   return (
     <div className="mx-auto max-w-3xl">
-      <h1 className="mb-6 text-xl font-semibold text-slate-900">New Supplier Purchase Order</h1>
+      <h1 className="mb-6 text-xl font-semibold text-primary">New Supplier Purchase Order</h1>
 
       <Card className="p-6">
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -99,7 +109,7 @@ export default function NewSupplierPOPage() {
 
             <div className="space-y-3">
               {lineItems.map((li, index) => (
-                <div key={index} className="grid grid-cols-12 gap-2 rounded-md border border-slate-200 p-3">
+                <div key={index} className="grid grid-cols-12 gap-2 rounded-md border border-slate-200 dark:border-slate-700 p-3">
                   <div className="col-span-6">
                     <Select
                       required
@@ -141,7 +151,7 @@ export default function NewSupplierPOPage() {
                       <button
                         type="button"
                         onClick={() => removeLineItem(index)}
-                        className="text-xs font-medium text-red-600 hover:underline"
+                        className="text-xs font-medium text-red-600 dark:text-red-400 hover:underline"
                       >
                         Remove
                       </button>
@@ -151,12 +161,12 @@ export default function NewSupplierPOPage() {
               ))}
             </div>
 
-            <p className="mt-2 text-right text-sm font-medium text-slate-900">
+            <p className="mt-2 text-right text-sm font-medium text-primary">
               Total: {total.toLocaleString()} {currency}
             </p>
           </div>
 
-          {error && <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
+          {error && <p className="rounded-md bg-red-50 dark:bg-red-950/40 px-3 py-2 text-sm text-red-700 dark:text-red-300">{error}</p>}
 
           <div className="flex justify-end gap-2">
             <Button type="button" variant="secondary" onClick={() => router.back()}>

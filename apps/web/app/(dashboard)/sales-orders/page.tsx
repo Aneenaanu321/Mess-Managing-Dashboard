@@ -20,7 +20,7 @@ export default function SalesOrdersPage() {
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-700">Fulfillment</p>
-          <h1 className="font-display mt-1 text-2xl font-semibold tracking-tight text-slate-900">Sales Orders</h1>
+          <h1 className="font-display mt-1 text-2xl font-semibold tracking-tight text-primary">Sales Orders</h1>
           <p className="mt-1 text-sm text-slate-500">
             {data?.meta?.total ?? 0} sales order{data?.meta?.total === 1 ? "" : "s"} created from verified customer POs
           </p>
@@ -44,13 +44,13 @@ export default function SalesOrdersPage() {
       <Card className="overflow-hidden">
         {isLoading && <p className="p-8 text-sm text-slate-500">Loading sales orders…</p>}
         {isError && (
-          <p className="p-8 text-sm text-red-600">
+          <p className="p-8 text-sm text-red-600 dark:text-red-400">
             Couldn&apos;t load sales orders. Is the API running at <code>NEXT_PUBLIC_API_URL</code>?
           </p>
         )}
         {!isLoading && !isError && salesOrders.length === 0 && (
           <div className="px-8 py-14 text-center">
-            <p className="font-medium text-slate-800">No sales orders match these filters</p>
+            <p className="font-medium text-primary">No sales orders match these filters</p>
             <p className="mt-1 text-sm text-slate-500">
               Sales orders are created automatically when a Purchase Order is verified against its quotation.
             </p>
@@ -59,7 +59,7 @@ export default function SalesOrdersPage() {
         {salesOrders.length > 0 && (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[680px] text-sm">
-              <thead className="border-b border-slate-200 bg-slate-50/80 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">
+              <thead className="border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50/80 dark:bg-slate-800/50 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">
                 <tr>
                   <th className="px-4 py-3">Code</th>
                   <th className="px-4 py-3">Customer</th>
@@ -68,7 +68,7 @@ export default function SalesOrdersPage() {
                   <th className="px-4 py-3">Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                 {salesOrders.map((so: SalesOrder) => (
                   <tr key={so.id} className="transition-colors hover:bg-brand-50/40">
                     <td className="px-4 py-3.5">
@@ -76,7 +76,7 @@ export default function SalesOrdersPage() {
                         {so.code}
                       </Link>
                     </td>
-                    <td className="px-4 py-3.5 font-medium text-slate-900">{so.customer?.name}</td>
+                    <td className="px-4 py-3.5 font-medium text-primary">{so.customer?.name}</td>
                     <td className="px-4 py-3.5 text-slate-600">{so.customerPO?.code}</td>
                     <td className="px-4 py-3.5 text-slate-600">
                       {Number(so.totalAmount).toLocaleString()} {so.currency}

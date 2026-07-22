@@ -13,6 +13,7 @@ import {
 } from "@/lib/support";
 import { hasPermission, useCurrentUser } from "@/lib/auth";
 import { Badge, Button, Card, Select } from "@/components/ui";
+import { useConfirm } from "@/components/ConfirmDialog";
 
 export default function TicketDetailPage() {
   const params = useParams<{ id: string }>();
@@ -23,6 +24,7 @@ export default function TicketDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [commentBody, setCommentBody] = useState("");
   const [posting, setPosting] = useState(false);
+  const confirm = useConfirm();
 
   if (isLoading) return <p className="text-sm text-slate-500">Loading…</p>;
   if (!ticket) return <p className="text-sm text-slate-500">Ticket not found.</p>;
@@ -30,6 +32,15 @@ export default function TicketDetailPage() {
   const canManage = hasPermission(user, "support:manage");
 
   async function handleStatusChange(status: string) {
+    if (status === "CLOSED" && ticket!.status !== "CLOSED") {
+      const ok = await confirm({
+        title: "Close ticket?",
+        message: "The customer will no longer be able to reopen this ticket without support.",
+        confirmLabel: "Close ticket",
+        variant: "danger",
+      });
+      if (!ok) return;
+    }
     setError(null);
     try {
       await updateTicket.mutateAsync({ id: ticket!.id, input: { status: status as TicketStatus } });
@@ -58,7 +69,7 @@ export default function TicketDetailPage() {
       <div className="mb-6 flex items-start justify-between">
         <div>
           <p className="text-xs font-medium text-slate-400">{ticket.code}</p>
-          <h1 className="text-xl font-semibold text-slate-900">{ticket.subject}</h1>
+          <h1 className="text-xl font-semibold text-primary">{ticket.subject}</h1>
           <p className="text-sm text-slate-500">{ticket.customer?.name}</p>
         </div>
         <div className="flex items-center gap-2">
@@ -77,11 +88,11 @@ export default function TicketDetailPage() {
         </div>
       </div>
 
-      {error && <p className="mb-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
+      {error && <p className="mb-4 rounded-md bg-red-50 dark:bg-red-950/40 px-3 py-2 text-sm text-red-700 dark:text-red-300">{error}</p>}
 
       <div className="grid grid-cols-2 gap-4">
         <Card className="p-5">
-          <h2 className="mb-3 text-sm font-semibold text-slate-900">Details</h2>
+          <h2 className="mb-3 text-sm font-semibold text-primary">Details</h2>
           <dl className="space-y-2 text-sm">
             <Row label="Device" value={ticket.device?.serialNumber ?? "—"} />
             <Row label="Raised by" value={ticket.raisedBy ? `${ticket.raisedBy.firstName} ${ticket.raisedBy.lastName}` : "—"} />
@@ -93,24 +104,24 @@ export default function TicketDetailPage() {
         </Card>
 
         <Card className="p-5">
-          <h2 className="mb-3 text-sm font-semibold text-slate-900">Description</h2>
-          <p className="text-sm text-slate-700">{ticket.description || "No description provided."}</p>
+          <h2 className="mb-3 text-sm font-semibold text-primary">Description</h2>
+          <p className="text-sm text-slate-700 dark:text-slate-300">{ticket.description || "No description provided."}</p>
           {ticket.resolutionNote && (
-            <div className="mt-3 border-t border-slate-100 pt-3">
+            <div className="mt-3 border-t border-slate-100 dark:border-slate-700 pt-3">
               <p className="mb-1 text-xs font-medium uppercase text-slate-400">Resolution note</p>
-              <p className="text-sm text-slate-700">{ticket.resolutionNote}</p>
+              <p className="text-sm text-slate-700 dark:text-slate-300">{ticket.resolutionNote}</p>
             </div>
           )}
         </Card>
       </div>
 
       <Card className="mt-4 p-5">
-        <h2 className="mb-3 text-sm font-semibold text-slate-900">Comments</h2>
+        <h2 className="mb-3 text-sm font-semibold text-primary">Comments</h2>
         <div className="mb-4 space-y-3">
           {ticket.comments?.length ? (
             ticket.comments.map((c) => (
-              <div key={c.id} className="rounded-md border border-slate-100 bg-slate-50 p-3 text-sm">
-                <p className="text-slate-700">{c.body}</p>
+              <div key={c.id} className="rounded-md border border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 p-3 text-sm">
+                <p className="text-slate-700 dark:text-slate-300">{c.body}</p>
                 <p className="mt-1 text-xs text-slate-400">{new Date(c.createdAt).toLocaleString()}{c.isInternal ? " · Internal" : ""}</p>
               </div>
             ))
@@ -139,9 +150,9 @@ export default function TicketDetailPage() {
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex justify-between border-b border-slate-100 pb-2">
+    <div className="flex justify-between border-b border-slate-100 dark:border-slate-700 pb-2">
       <dt className="text-slate-500">{label}</dt>
-      <dd className="font-medium text-slate-900">{value}</dd>
+      <dd className="font-medium text-primary">{value}</dd>
     </div>
   );
 }

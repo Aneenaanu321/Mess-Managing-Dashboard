@@ -134,14 +134,14 @@ export function Sidebar({ open, onClose, onToggle }: SidebarProps) {
 
       <aside
         className={clsx(
-          "fixed inset-y-0 left-0 z-50 flex shrink-0 flex-col border-r border-slate-200/80 bg-white transition-[width,transform] duration-200 ease-out dark:border-slate-700/80 dark:bg-slate-900 lg:static lg:z-auto",
+          "fixed inset-y-0 left-0 z-50 flex h-screen max-h-screen shrink-0 flex-col border-r border-slate-200 dark:border-slate-700/80 bg-surface transition-[width,transform] duration-200 ease-out dark:border-slate-700/80 dark:bg-slate-900 lg:sticky lg:top-0 lg:z-auto",
           open ? "w-[17rem] translate-x-0" : "-translate-x-full w-[17rem] lg:translate-x-0 lg:w-[4.5rem]",
         )}
         aria-hidden={!open && !isDesktop}
       >
         <div
           className={clsx(
-            "flex items-start border-b border-slate-200/80 dark:border-slate-700/80",
+            "flex items-start border-b border-slate-200 dark:border-slate-700/80 dark:border-slate-700/80",
             collapsed ? "h-16 items-center justify-center px-2" : "gap-2 px-4 py-3",
           )}
         >
@@ -161,14 +161,19 @@ export function Sidebar({ open, onClose, onToggle }: SidebarProps) {
           <button
             type="button"
             onClick={onToggle}
-            className="shrink-0 rounded-lg p-2 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+            className="shrink-0 rounded-lg p-2 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-200"
             aria-label={open ? "Collapse menu" : "Expand menu"}
           >
             <Menu size={18} />
           </button>
         </div>
 
-        <nav className={clsx("flex-1 overflow-y-auto", collapsed ? "space-y-2 p-2" : "space-y-5 p-3")}>
+        <nav
+          className={clsx(
+            "sidebar-scroll min-h-0 flex-1 overflow-y-auto overscroll-y-contain",
+            collapsed ? "space-y-2 p-2" : "space-y-5 p-3",
+          )}
+        >
           {NAV.map((group) => (
             <div key={group.section}>
               {!collapsed && (
@@ -195,7 +200,7 @@ export function Sidebar({ open, onClose, onToggle }: SidebarProps) {
                         collapsed ? "justify-center px-0 py-2.5" : "gap-2.5 px-2.5 py-2",
                         active
                           ? "bg-brand-50 text-brand-800 shadow-sm ring-1 ring-brand-100 dark:bg-brand-900/30 dark:text-brand-200 dark:ring-brand-800"
-                          : "text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100",
+                          : "text-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50 hover:text-primary dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100",
                       )}
                     >
                       <Icon

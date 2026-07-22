@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "./api-client";
+import { toast } from "./toast";
 
 export type ActivityType = "CALL" | "EMAIL" | "MEETING" | "NOTE" | "SITE_VISIT" | "DOCUMENT" | "OTHER";
 
@@ -37,7 +38,10 @@ export function useCreateActivity(scope: ActivityScope) {
   return useMutation({
     mutationFn: async (input: { type: ActivityType; subject: string; body?: string }) =>
       (await apiClient.post<Activity>("/activities", { ...input, ...scope })).data,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["activities", scope] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["activities", scope] });
+      toast.success("Saved");
+    },
   });
 }
 

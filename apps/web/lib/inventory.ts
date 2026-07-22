@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "./api-client";
+import { toast } from "./toast";
 
 export type ProductCategory =
   | "RFID_READER"
@@ -84,7 +85,10 @@ export function useCreateProduct() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (input: CreateProductInput) => (await apiClient.post<Product>("/inventory/products", input)).data,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["products"] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+      toast.success("Saved");
+    },
   });
 }
 

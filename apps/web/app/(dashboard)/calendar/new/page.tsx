@@ -31,7 +31,7 @@ export default function NewCalendarEventPage() {
 
   return (
     <div className="mx-auto max-w-lg">
-      <h1 className="mb-6 text-xl font-semibold text-slate-900">New Calendar Event</h1>
+      <h1 className="mb-6 text-xl font-semibold text-primary">New Calendar Event</h1>
       <Card className="p-6">
         <form className="space-y-4" onSubmit={handleSubmit}>
           <div>
@@ -56,7 +56,7 @@ export default function NewCalendarEventPage() {
             <Label htmlFor="endAt">Ends at (optional)</Label>
             <Input id="endAt" type="datetime-local" value={form.endAt} onChange={(e) => setForm({ ...form, endAt: e.target.value })} />
           </div>
-          {error && <p className="text-sm text-red-600">{error}</p>}
+          {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
           <Button type="submit" disabled={createEvent.isPending}>
             {createEvent.isPending ? "Creating…" : "Create Event"}
           </Button>

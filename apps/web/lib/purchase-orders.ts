@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "./api-client";
+import { toast } from "./toast";
 
 export interface CustomerPO {
   id: string;
@@ -55,7 +56,10 @@ export function useCreateCustomerPO() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (input: CreateCustomerPOInput) => (await apiClient.post<CustomerPO>("/purchase-orders", input)).data,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["customer-pos"] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["customer-pos"] });
+      toast.success("Saved");
+    },
   });
 }
 
@@ -74,7 +78,10 @@ export function useRecordAdvancePayment(id: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async () => (await apiClient.post<CustomerPO>(`/purchase-orders/${id}/record-advance`)).data,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["customer-pos"] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["customer-pos"] });
+      toast.success("Saved");
+    },
   });
 }
 

@@ -16,13 +16,13 @@ export default function PortalPurchaseOrderDetailPage() {
       <div className="flex items-start justify-between">
         <div>
           <p className="text-xs font-medium text-slate-400">{po.code}</p>
-          <h1 className="text-xl font-semibold text-slate-900">{po.poNumber}</h1>
+          <h1 className="text-xl font-semibold text-primary">{po.poNumber}</h1>
         </div>
         <Badge tone={PO_STATUS_TONE[po.status] ?? "slate"}>{po.status}</Badge>
       </div>
 
       <Card className="p-5">
-        <h2 className="mb-3 text-sm font-semibold text-slate-900">Details</h2>
+        <h2 className="mb-3 text-sm font-semibold text-primary">Details</h2>
         <dl className="space-y-2 text-sm">
           <Row label="Amount" value={`${Number(po.amount).toLocaleString()} ${po.currency}`} />
           <Row label="Received" value={new Date(po.receivedAt).toLocaleString()} />
@@ -36,9 +36,9 @@ export default function PortalPurchaseOrderDetailPage() {
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex justify-between border-b border-slate-100 pb-2">
+    <div className="flex justify-between border-b border-slate-100 dark:border-slate-700 pb-2">
       <dt className="text-slate-500">{label}</dt>
-      <dd className="font-medium text-slate-900">{value}</dd>
+      <dd className="font-medium text-primary">{value}</dd>
     </div>
   );
 }

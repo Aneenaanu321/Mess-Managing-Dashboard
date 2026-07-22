@@ -10,13 +10,13 @@ export default function WarehousesPage() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-xl font-semibold text-slate-900">Warehouse</h1>
+        <h1 className="text-xl font-semibold text-primary">Warehouse</h1>
         <p className="text-sm text-slate-500">{warehouses?.length ?? 0} warehouse{warehouses?.length === 1 ? "" : "s"}</p>
       </div>
 
       {isLoading && <p className="text-sm text-slate-500">Loading warehouses…</p>}
       {isError && (
-        <p className="text-sm text-red-600">
+        <p className="text-sm text-red-600 dark:text-red-400">
           Couldn&apos;t load warehouses. Is the API running at <code>NEXT_PUBLIC_API_URL</code>?
         </p>
       )}
@@ -33,19 +33,19 @@ export default function WarehousesPage() {
             <Link key={w.id} href={`/warehouse/${w.id}`}>
               <Card className="p-5 transition-shadow hover:shadow-md">
                 <p className="text-xs font-medium text-slate-400">{w.code}</p>
-                <h2 className="mb-3 text-base font-semibold text-slate-900">{w.name}</h2>
+                <h2 className="mb-3 text-base font-semibold text-primary">{w.name}</h2>
                 <dl className="space-y-1.5 text-sm">
                   <div className="flex justify-between">
                     <dt className="text-slate-500">SKUs stocked</dt>
-                    <dd className="font-medium text-slate-900">{w.stockItems.length}</dd>
+                    <dd className="font-medium text-primary">{w.stockItems.length}</dd>
                   </div>
                   <div className="flex justify-between">
                     <dt className="text-slate-500">Total units on hand</dt>
-                    <dd className="font-medium text-slate-900">{totalOnHand.toLocaleString()}</dd>
+                    <dd className="font-medium text-primary">{totalOnHand.toLocaleString()}</dd>
                   </div>
                   <div className="flex justify-between">
                     <dt className="text-slate-500">Low stock items</dt>
-                    <dd className={lowStockCount > 0 ? "font-medium text-red-600" : "font-medium text-slate-900"}>{lowStockCount}</dd>
+                    <dd className={lowStockCount > 0 ? "font-medium text-red-600 dark:text-red-400" : "font-medium text-primary"}>{lowStockCount}</dd>
                   </div>
                 </dl>
               </Card>

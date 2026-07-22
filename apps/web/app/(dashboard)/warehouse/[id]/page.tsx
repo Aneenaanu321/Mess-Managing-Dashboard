@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { useAdjustStock, useStock, useWarehouses } from "@/lib/warehouse";
 import { hasPermission, useCurrentUser } from "@/lib/auth";
 import { Badge, Button, Card, Input, Label, Select } from "@/components/ui";
+import { useConfirm } from "@/components/ConfirmDialog";
 
 export default function WarehouseDetailPage() {
   const params = useParams<{ id: string }>();
@@ -21,9 +22,20 @@ export default function WarehouseDetailPage() {
   const [success, setSuccess] = useState<string | null>(null);
 
   const canAdjust = hasPermission(user, "inventory:adjust");
+  const confirm = useConfirm();
 
   async function handleAdjust(e: React.FormEvent) {
     e.preventDefault();
+    const delta = Number(form.quantityDelta);
+    if (delta < 0) {
+      const ok = await confirm({
+        title: "Remove stock?",
+        message: `This will reduce on-hand quantity by ${Math.abs(delta)} units.`,
+        confirmLabel: "Apply adjustment",
+        variant: "danger",
+      });
+      if (!ok) return;
+    }
     setError(null);
     setSuccess(null);
     try {
@@ -44,7 +56,7 @@ export default function WarehouseDetailPage() {
     <div>
       <div className="mb-6">
         <p className="text-xs font-medium text-slate-400">{warehouse?.code}</p>
-        <h1 className="text-xl font-semibold text-slate-900">{warehouse?.name ?? "Warehouse"}</h1>
+        <h1 className="text-xl font-semibold text-primary">{warehouse?.name ?? "Warehouse"}</h1>
         <p className="text-sm text-slate-500">{warehouse?.address ?? "—"}</p>
       </div>
 
@@ -52,13 +64,13 @@ export default function WarehouseDetailPage() {
         <div className="lg:col-span-2">
           <Card className="overflow-hidden">
             {isLoading && <p className="p-6 text-sm text-slate-500">Loading stock…</p>}
-            {isError && <p className="p-6 text-sm text-red-600">Couldn&apos;t load stock levels.</p>}
+            {isError && <p className="p-6 text-sm text-red-600 dark:text-red-400">Couldn&apos;t load stock levels.</p>}
             {!isLoading && !isError && stockItems.length === 0 && (
               <p className="p-6 text-sm text-slate-500">No stock recorded for this warehouse yet.</p>
             )}
             {stockItems.length > 0 && (
               <table className="w-full text-sm">
-                <thead className="border-b border-slate-200 bg-slate-50 text-left text-xs font-medium uppercase text-slate-500">
+                <thead className="border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-left text-xs font-medium uppercase text-slate-500">
                   <tr>
                     <th className="px-4 py-2.5">SKU</th>
                     <th className="px-4 py-2.5">Product</th>
@@ -67,15 +79,15 @@ export default function WarehouseDetailPage() {
                     <th className="px-4 py-2.5">Reorder Level</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                   {stockItems.map((si) => {
                     const low = Number(si.onHandQty) <= Number(si.product.reorderLevel);
                     return (
-                      <tr key={si.id} className="hover:bg-slate-50">
-                        <td className="px-4 py-3 font-medium text-slate-900">{si.product.sku}</td>
+                      <tr key={si.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50">
+                        <td className="px-4 py-3 font-medium text-primary">{si.product.sku}</td>
                         <td className="px-4 py-3 text-slate-600">{si.product.name}</td>
                         <td className="px-4 py-3">
-                          <span className={low ? "font-semibold text-red-600" : "text-slate-900"}>{Number(si.onHandQty)}</span>
+                          <span className={low ? "font-semibold text-red-600 dark:text-red-400" : "text-primary"}>{Number(si.onHandQty)}</span>
                           {low && <Badge tone="red" className="ml-2">Low</Badge>}
                         </td>
                         <td className="px-4 py-3 text-slate-600">{Number(si.reservedQty)}</td>
@@ -90,7 +102,7 @@ export default function WarehouseDetailPage() {
         </div>
 
         <Card className="p-5">
-          <h2 className="mb-3 text-sm font-semibold text-slate-900">Adjust Stock</h2>
+          <h2 className="mb-3 text-sm font-semibold text-primary">Adjust Stock</h2>
           {canAdjust ? (
             <form onSubmit={handleAdjust} className="space-y-3">
               <div>
@@ -126,7 +138,7 @@ export default function WarehouseDetailPage() {
                   onChange={(e) => setForm({ ...form, reason: e.target.value })}
                 />
               </div>
-              {error && <p className="text-sm text-red-600">{error}</p>}
+              {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
               {success && <p className="text-sm text-emerald-600">{success}</p>}
               <Button type="submit" disabled={adjustStock.isPending} className="w-full">
                 {adjustStock.isPending ? "Adjusting…" : "Apply Adjustment"}

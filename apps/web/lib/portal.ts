@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "./api-client";
+import { toast } from "./toast";
 
 type Tone = "slate" | "green" | "amber" | "red" | "blue";
 
@@ -236,13 +237,19 @@ export function useCreatePortalTicket() {
   return useMutation({
     mutationFn: async (input: { subject: string; description?: string; priority: string }) =>
       (await apiClient.post<PortalTicket>("/portal/support", input)).data,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["portal", "support"] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["portal", "support"] });
+      toast.success("Saved");
+    },
   });
 }
 export function useAddPortalTicketComment(ticketId: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (body: string) => (await apiClient.post(`/portal/support/${ticketId}/comments`, { body })).data,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["portal", "support", ticketId] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["portal", "support", ticketId] });
+      toast.success("Saved");
+    },
   });
 }

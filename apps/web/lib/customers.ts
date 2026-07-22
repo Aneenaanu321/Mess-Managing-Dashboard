@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "./api-client";
+import { toast } from "./toast";
 import { INDUSTRIES } from "./leads";
 
 export interface Contact {
@@ -90,7 +91,10 @@ export function useCreateCustomer() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (input: CreateCustomerInput) => (await apiClient.post<Customer>("/customers", input)).data,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["customers"] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["customers"] });
+      toast.success("Saved");
+    },
   });
 }
 
@@ -111,7 +115,10 @@ export function useMergeCustomers() {
   return useMutation({
     mutationFn: async ({ sourceId, targetId }: { sourceId: string; targetId: string }) =>
       (await apiClient.post<Customer>("/customers/merge", { sourceId, targetId })).data,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["customers"] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["customers"] });
+      toast.success("Saved");
+    },
   });
 }
 

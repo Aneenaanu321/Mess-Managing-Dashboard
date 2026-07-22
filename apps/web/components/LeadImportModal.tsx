@@ -57,7 +57,7 @@ export function LeadImportModal({ onClose }: { onClose: () => void }) {
       <Card className="max-h-[85vh] w-full max-w-lg overflow-y-auto p-6">
         <div className="mb-4 flex items-start justify-between">
           <div>
-            <h2 className="text-lg font-semibold text-slate-900">Bulk Import Leads</h2>
+            <h2 className="text-lg font-semibold text-primary">Bulk Import Leads</h2>
             <p className="mt-1 text-sm text-slate-500">
               CSV with a header row: <code className="text-xs">{EXPECTED_COLUMNS.join(", ")}</code>. Only companyName and
               contactName are required (plus email or phone).
@@ -73,15 +73,15 @@ export function LeadImportModal({ onClose }: { onClose: () => void }) {
             <button
               type="button"
               onClick={() => inputRef.current?.click()}
-              className="flex w-full flex-col items-center gap-2 rounded-xl border-2 border-dashed border-slate-200 p-6 text-center transition-colors hover:border-brand-400 hover:bg-brand-50/40"
+              className="flex w-full flex-col items-center gap-2 rounded-xl border-2 border-dashed border-slate-200 dark:border-slate-700 p-6 text-center transition-colors hover:border-brand-400 hover:bg-brand-50/40"
             >
               <Upload size={20} className="text-slate-400" />
-              <span className="text-sm font-medium text-slate-700">{fileName || "Choose a CSV file"}</span>
+              <span className="text-sm font-medium text-slate-700 dark:text-slate-300 dark:text-slate-300">{fileName || "Choose a CSV file"}</span>
               {rows.length > 0 && <span className="text-xs text-slate-500">{rows.length} row(s) parsed</span>}
             </button>
             <input ref={inputRef} type="file" accept=".csv,text/csv" className="hidden" onChange={handleFile} />
 
-            {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
+            {error && <p className="mt-3 text-sm text-red-600 dark:text-red-400">{error}</p>}
 
             {rows.length > 0 && (
               <Button className="mt-4 w-full" onClick={handleImport} disabled={bulkImport.isPending}>
@@ -97,7 +97,7 @@ export function LeadImportModal({ onClose }: { onClose: () => void }) {
               Created {result.created} of {result.total} leads.
             </div>
             {result.failed.length > 0 && (
-              <div className="rounded-xl bg-red-50 p-4 text-sm text-red-700">
+              <div className="rounded-xl bg-red-50 dark:bg-red-950/40 p-4 text-sm text-red-700 dark:text-red-300">
                 <p className="mb-1 font-medium">{result.failed.length} row(s) failed:</p>
                 <ul className="max-h-40 space-y-1 overflow-y-auto text-xs">
                   {result.failed.map((f) => (

@@ -5,6 +5,7 @@ import { QueryProvider } from "@/lib/QueryProvider";
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
 import { ThemeProvider } from "@/lib/ThemeProvider";
 import { ConfirmProvider } from "@/components/ConfirmDialog";
+import { ToastContainer } from "@/components/Toast";
 
 const sans = DM_Sans({
   subsets: ["latin"],
@@ -39,7 +40,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ServiceWorkerRegister />
         <ThemeProvider>
           <QueryProvider>
-            <ConfirmProvider>{children}</ConfirmProvider>
+            <ConfirmProvider>
+              {children}
+              <ToastContainer />
+            </ConfirmProvider>
           </QueryProvider>
         </ThemeProvider>
       </body>

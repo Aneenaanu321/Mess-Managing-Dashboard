@@ -35,16 +35,16 @@ export default function ApprovalsPage() {
     <div className="space-y-5">
       <div>
         <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-700">Sales</p>
-        <h1 className="font-display mt-1 text-2xl font-semibold tracking-tight text-slate-900">Approvals</h1>
+        <h1 className="font-display mt-1 text-2xl font-semibold tracking-tight text-primary">Approvals</h1>
         <p className="mt-1 text-sm text-slate-500">Quotations awaiting a discount or price-override decision.</p>
       </div>
 
-      {error && <Card className="p-4 text-sm text-red-600">{error}</Card>}
-      {isError && <Card className="p-4 text-sm text-red-600">Couldn&apos;t load approvals.</Card>}
+      {error && <Card className="p-4 text-sm text-red-600 dark:text-red-400">{error}</Card>}
+      {isError && <Card className="p-4 text-sm text-red-600 dark:text-red-400">Couldn&apos;t load approvals.</Card>}
       {isLoading && <Card className="p-8 text-sm text-slate-500">Loading…</Card>}
       {!isLoading && (approvals?.length ?? 0) === 0 && (
         <Card className="px-8 py-14 text-center">
-          <p className="font-medium text-slate-800">Nothing pending</p>
+          <p className="font-medium text-primary">Nothing pending</p>
           <p className="mt-1 text-sm text-slate-500">Quotations that need Sales Manager/Director sign-off will show up here.</p>
         </Card>
       )}
@@ -59,12 +59,12 @@ export default function ApprovalsPage() {
                     {approval.quotation.code}
                   </Link>
                   <p className="text-sm text-slate-600">{approval.quotation.customer.name}</p>
-                  <p className="mt-0.5 text-sm font-medium text-slate-900">
+                  <p className="mt-0.5 text-sm font-medium text-primary">
                     {Number(approval.quotation.grandTotal).toLocaleString()} {approval.quotation.currency}
                   </p>
                 </>
               ) : (
-                <p className="font-medium text-slate-900">
+                <p className="font-medium text-primary">
                   {approval.entityType} #{approval.entityId.slice(-8)}
                 </p>
               )}
@@ -80,7 +80,7 @@ export default function ApprovalsPage() {
                 placeholder="Comment (optional)"
                 value={commentById[approval.id] ?? ""}
                 onChange={(e) => setCommentById((prev) => ({ ...prev, [approval.id]: e.target.value }))}
-                className="w-56 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs text-slate-700 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+                className="w-56 rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-xs text-slate-700 dark:text-slate-300 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
               />
               <div className="flex gap-2">
                 <Button variant="secondary" size="sm" onClick={() => handleDecide(approval, "REJECT")} disabled={decide.isPending}>

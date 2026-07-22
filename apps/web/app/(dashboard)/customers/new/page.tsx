@@ -47,7 +47,7 @@ export default function NewCustomerPage() {
 
   return (
     <div className="mx-auto max-w-2xl">
-      <h1 className="mb-6 text-xl font-semibold text-slate-900">New Customer</h1>
+      <h1 className="mb-6 text-xl font-semibold text-primary">New Customer</h1>
 
       <Card className="p-6">
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -79,8 +79,8 @@ export default function NewCustomerPage() {
             </div>
           </div>
 
-          <div className="border-t border-slate-100 pt-4">
-            <h2 className="mb-3 text-sm font-semibold text-slate-900">Primary contact (optional)</h2>
+          <div className="border-t border-slate-100 dark:border-slate-700 pt-4">
+            <h2 className="mb-3 text-sm font-semibold text-primary">Primary contact (optional)</h2>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="contactFirstName">First name</Label>
@@ -116,7 +116,7 @@ export default function NewCustomerPage() {
             </div>
           </div>
 
-          {error && <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
+          {error && <p className="rounded-md bg-red-50 dark:bg-red-950/40 px-3 py-2 text-sm text-red-700 dark:text-red-300">{error}</p>}
 
           <div className="flex justify-end gap-2">
             <Button type="button" variant="secondary" onClick={() => router.back()}>

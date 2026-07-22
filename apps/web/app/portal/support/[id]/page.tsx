@@ -31,7 +31,7 @@ export default function PortalTicketDetailPage() {
       <div className="flex items-start justify-between">
         <div>
           <p className="text-xs font-medium text-slate-400">{ticket.code}</p>
-          <h1 className="text-xl font-semibold text-slate-900">{ticket.subject}</h1>
+          <h1 className="text-xl font-semibold text-primary">{ticket.subject}</h1>
           <p className="text-sm text-slate-500">Opened {new Date(ticket.createdAt).toLocaleDateString()}</p>
         </div>
         <div className="flex flex-col items-end gap-1.5">
@@ -42,20 +42,20 @@ export default function PortalTicketDetailPage() {
 
       {ticket.description && (
         <Card className="p-5">
-          <h2 className="mb-2 text-sm font-semibold text-slate-900">Description</h2>
-          <p className="whitespace-pre-wrap text-sm text-slate-700">{ticket.description}</p>
+          <h2 className="mb-2 text-sm font-semibold text-primary">Description</h2>
+          <p className="whitespace-pre-wrap text-sm text-slate-700 dark:text-slate-300">{ticket.description}</p>
         </Card>
       )}
 
       <Card className="p-5">
-        <h2 className="mb-3 text-sm font-semibold text-slate-900">Conversation</h2>
+        <h2 className="mb-3 text-sm font-semibold text-primary">Conversation</h2>
         {!ticket.comments || ticket.comments.length === 0 ? (
           <p className="text-sm text-slate-500">No comments yet.</p>
         ) : (
           <ul className="space-y-3">
             {ticket.comments.map((c) => (
-              <li key={c.id} className="rounded-xl bg-slate-50 p-3">
-                <p className="whitespace-pre-wrap text-sm text-slate-800">{c.body}</p>
+              <li key={c.id} className="rounded-xl bg-slate-50 dark:bg-slate-800/50 p-3">
+                <p className="whitespace-pre-wrap text-sm text-primary">{c.body}</p>
                 <p className="mt-1.5 text-xs text-slate-400">{new Date(c.createdAt).toLocaleString()}</p>
               </li>
             ))}
@@ -71,9 +71,9 @@ export default function PortalTicketDetailPage() {
               maxLength={5000}
               required
               placeholder="Add a comment…"
-              className="block w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 shadow-sm placeholder:text-slate-400 transition-colors focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+              className="block w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-surface px-3.5 py-2.5 text-sm text-primary shadow-sm placeholder:text-slate-400 transition-colors focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
             />
-            {error && <div className="rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
+            {error && <div className="rounded-md bg-red-50 dark:bg-red-950/40 px-4 py-3 text-sm text-red-700 dark:text-red-300">{error}</div>}
             <div className="flex justify-end">
               <Button type="submit" size="sm" disabled={addComment.isPending || !body.trim()}>
                 {addComment.isPending ? "Posting…" : "Post Comment"}

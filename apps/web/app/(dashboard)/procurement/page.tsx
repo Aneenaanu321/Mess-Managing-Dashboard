@@ -21,7 +21,7 @@ export default function ProcurementPage() {
     <div>
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-slate-900">Procurement</h1>
+          <h1 className="text-xl font-semibold text-primary">Procurement</h1>
           <p className="text-sm text-slate-500">
             {data?.meta?.total ?? 0} supplier purchase order{data?.meta?.total === 1 ? "" : "s"}
           </p>
@@ -48,7 +48,7 @@ export default function ProcurementPage() {
           <Card className="overflow-hidden">
             {isLoading && <p className="p-6 text-sm text-slate-500">Loading supplier purchase orders…</p>}
             {isError && (
-              <p className="p-6 text-sm text-red-600">
+              <p className="p-6 text-sm text-red-600 dark:text-red-400">
                 Couldn&apos;t load supplier purchase orders. Is the API running at <code>NEXT_PUBLIC_API_URL</code>?
               </p>
             )}
@@ -57,7 +57,7 @@ export default function ProcurementPage() {
             )}
             {supplierPOs.length > 0 && (
               <table className="w-full text-sm">
-                <thead className="border-b border-slate-200 bg-slate-50 text-left text-xs font-medium uppercase text-slate-500">
+                <thead className="border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-left text-xs font-medium uppercase text-slate-500">
                   <tr>
                     <th className="px-4 py-2.5">Code</th>
                     <th className="px-4 py-2.5">Vendor</th>
@@ -66,15 +66,15 @@ export default function ProcurementPage() {
                     <th className="px-4 py-2.5">Status</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                   {supplierPOs.map((po: SupplierPO) => (
-                    <tr key={po.id} className="hover:bg-slate-50">
+                    <tr key={po.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50">
                       <td className="px-4 py-3">
                         <Link href={`/procurement/${po.id}`} className="font-medium text-brand-600 hover:underline">
                           {po.code}
                         </Link>
                       </td>
-                      <td className="px-4 py-3 text-slate-900">{po.vendor?.name}</td>
+                      <td className="px-4 py-3 text-primary">{po.vendor?.name}</td>
                       <td className="px-4 py-3 text-slate-600">
                         {Number(po.totalAmount).toLocaleString()} {po.currency}
                       </td>
@@ -125,7 +125,7 @@ function VendorsPanel({ canManage }: { canManage: boolean }) {
   return (
     <Card className="p-5">
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-slate-900">Vendors</h2>
+        <h2 className="text-sm font-semibold text-primary">Vendors</h2>
         {canManage && (
           <Button size="sm" variant="secondary" onClick={() => setShowForm((s) => !s)}>
             {showForm ? "Cancel" : "+ Add"}
@@ -134,7 +134,7 @@ function VendorsPanel({ canManage }: { canManage: boolean }) {
       </div>
 
       {showForm && (
-        <form onSubmit={handleSubmit} className="mb-4 space-y-2 rounded-md border border-slate-200 p-3">
+        <form onSubmit={handleSubmit} className="mb-4 space-y-2 rounded-md border border-slate-200 dark:border-slate-700 p-3">
           <div>
             <Label htmlFor="vendorName">Name</Label>
             <Input id="vendorName" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
@@ -157,7 +157,7 @@ function VendorsPanel({ canManage }: { canManage: boolean }) {
               onChange={(e) => setForm({ ...form, leadTimeDays: e.target.value })}
             />
           </div>
-          {error && <p className="text-xs text-red-600">{error}</p>}
+          {error && <p className="text-xs text-red-600 dark:text-red-400">{error}</p>}
           <Button type="submit" size="sm" disabled={createVendor.isPending} className="w-full">
             {createVendor.isPending ? "Adding…" : "Add Vendor"}
           </Button>
@@ -168,8 +168,8 @@ function VendorsPanel({ canManage }: { canManage: boolean }) {
       {!isLoading && vendors.length === 0 && <p className="text-sm text-slate-500">No vendors yet.</p>}
       <ul className="space-y-2">
         {vendors.map((v) => (
-          <li key={v.id} className="rounded-md border border-slate-100 p-2.5 text-sm">
-            <p className="font-medium text-slate-900">{v.name}</p>
+          <li key={v.id} className="rounded-md border border-slate-100 dark:border-slate-700 p-2.5 text-sm">
+            <p className="font-medium text-primary">{v.name}</p>
             <p className="text-xs text-slate-500">
               {v.contactName ?? "—"} {v.email ? `· ${v.email}` : ""} · {v.leadTimeDays ?? 14}d lead time
             </p>

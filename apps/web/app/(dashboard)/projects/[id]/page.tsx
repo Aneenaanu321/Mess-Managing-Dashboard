@@ -54,7 +54,7 @@ export default function ProjectDetailPage() {
       <div className="mb-6 flex items-start justify-between">
         <div>
           <p className="text-xs font-medium text-slate-400">{project.code}</p>
-          <h1 className="text-xl font-semibold text-slate-900">{project.name}</h1>
+          <h1 className="text-xl font-semibold text-primary">{project.name}</h1>
           <p className="text-sm text-slate-500">{project.customer?.name}</p>
         </div>
         <div className="flex items-center gap-2">
@@ -72,11 +72,11 @@ export default function ProjectDetailPage() {
         </div>
       </div>
 
-      {error && <p className="mb-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
+      {error && <p className="mb-4 rounded-md bg-red-50 dark:bg-red-950/40 px-3 py-2 text-sm text-red-700 dark:text-red-300">{error}</p>}
 
       <div className="grid grid-cols-2 gap-4">
         <Card className="p-5">
-          <h2 className="mb-3 text-sm font-semibold text-slate-900">Details</h2>
+          <h2 className="mb-3 text-sm font-semibold text-primary">Details</h2>
           <dl className="space-y-2 text-sm">
             <Row label="Customer" value={project.customer?.name ?? "—"} />
             <Row label="Site" value={project.site?.label ?? "—"} />
@@ -89,11 +89,11 @@ export default function ProjectDetailPage() {
         </Card>
 
         <Card className="p-5">
-          <h2 className="mb-3 text-sm font-semibold text-slate-900">Devices</h2>
+          <h2 className="mb-3 text-sm font-semibold text-primary">Devices</h2>
           {project.devices?.length ? (
             <ul className="space-y-1.5 text-sm">
               {project.devices.map((d) => (
-                <li key={d.id} className="flex justify-between border-b border-slate-100 pb-1.5">
+                <li key={d.id} className="flex justify-between border-b border-slate-100 dark:border-slate-700 pb-1.5">
                   <Link href={`/devices/${d.id}`} className="text-brand-600 hover:underline">
                     {d.serialNumber}
                   </Link>
@@ -108,12 +108,12 @@ export default function ProjectDetailPage() {
       </div>
 
       <Card className="mt-4 p-5">
-        <h2 className="mb-3 text-sm font-semibold text-slate-900">Milestones</h2>
-        <div className="divide-y divide-slate-100">
+        <h2 className="mb-3 text-sm font-semibold text-primary">Milestones</h2>
+        <div className="divide-y divide-slate-100 dark:divide-slate-700">
           {project.milestones?.map((m) => (
             <div key={m.id} className="flex items-center justify-between py-3">
               <div>
-                <p className="text-sm font-medium text-slate-900">{MILESTONE_LABELS[m.key]}</p>
+                <p className="text-sm font-medium text-primary">{MILESTONE_LABELS[m.key]}</p>
                 {m.completedAt && <p className="text-xs text-slate-400">Completed {new Date(m.completedAt).toLocaleDateString()}</p>}
               </div>
               {canManage ? (
@@ -138,7 +138,7 @@ export default function ProjectDetailPage() {
 
       <Card className="mt-4 p-5">
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-slate-900">Engineer Tasks</h2>
+          <h2 className="text-sm font-semibold text-primary">Engineer Tasks</h2>
           <Link href={`/tasks/new?projectId=${project.id}`} className="text-sm text-brand-600 hover:underline">
             + Add task
           </Link>
@@ -146,7 +146,7 @@ export default function ProjectDetailPage() {
         {project.tasks?.length ? (
           <ul className="space-y-1.5 text-sm">
             {project.tasks.map((t) => (
-              <li key={t.id} className="flex justify-between border-b border-slate-100 pb-1.5">
+              <li key={t.id} className="flex justify-between border-b border-slate-100 dark:border-slate-700 pb-1.5">
                 <Link href={`/tasks/${t.id}`} className="text-brand-600 hover:underline">
                   {t.title}
                 </Link>
@@ -164,9 +164,9 @@ export default function ProjectDetailPage() {
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex justify-between border-b border-slate-100 pb-2">
+    <div className="flex justify-between border-b border-slate-100 dark:border-slate-700 pb-2">
       <dt className="text-slate-500">{label}</dt>
-      <dd className="font-medium text-slate-900">{value}</dd>
+      <dd className="font-medium text-primary">{value}</dd>
     </div>
   );
 }

@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "./api-client";
+import { toast } from "./toast";
 
 export type CalendarEventType = "FOLLOW_UP" | "MEETING" | "SITE_VISIT" | "DEMO" | "INSTALLATION" | "TRAINING" | "OTHER";
 
@@ -40,7 +41,10 @@ export function useCreateCalendarEvent() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (input: CreateCalendarEventInput) => (await apiClient.post<CalendarEvent>("/calendar", input)).data,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["calendar"] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["calendar"] });
+      toast.success("Saved");
+    },
   });
 }
 
@@ -48,7 +52,10 @@ export function useCompleteCalendarEvent() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => (await apiClient.patch<CalendarEvent>(`/calendar/${id}`, { completed: true })).data,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["calendar"] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["calendar"] });
+      toast.success("Saved");
+    },
   });
 }
 

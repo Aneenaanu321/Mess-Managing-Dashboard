@@ -39,11 +39,11 @@ export default function SettingsPage() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-xl font-semibold text-slate-900">Settings</h1>
+        <h1 className="text-xl font-semibold text-primary">Settings</h1>
         <p className="text-sm text-slate-500">Organization details, roles, and user administration.</p>
       </div>
 
-      <div className="mb-6 flex gap-1 border-b border-slate-200">
+      <div className="mb-6 flex gap-1 border-b border-slate-200 dark:border-slate-700">
         {TABS.map((t) => {
           const Icon = t.icon;
           const active = tab === t.key;
@@ -53,7 +53,7 @@ export default function SettingsPage() {
               onClick={() => setTab(t.key)}
               className={clsx(
                 "flex items-center gap-1.5 border-b-2 px-3 py-2.5 text-sm font-medium",
-                active ? "border-brand-600 text-brand-700" : "border-transparent text-slate-500 hover:text-slate-700",
+                active ? "border-brand-600 text-brand-700" : "border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-300",
               )}
             >
               <Icon size={15} />
@@ -77,43 +77,43 @@ function OrgSection() {
   const { data: org, isLoading, isError } = useOrgSettings();
 
   if (isError) {
-    return <Card className="p-4 text-sm text-red-600">Couldn&apos;t load organization settings.</Card>;
+    return <Card className="p-4 text-sm text-red-600 dark:text-red-400">Couldn&apos;t load organization settings.</Card>;
   }
 
   return (
     <div className="space-y-4">
       <Card className="p-6">
-        <h2 className="mb-4 text-sm font-semibold text-slate-900">Company</h2>
+        <h2 className="mb-4 text-sm font-semibold text-primary">Company</h2>
         {isLoading ? (
           <p className="text-sm text-slate-500">Loading…</p>
         ) : (
           <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <dt className="text-xs uppercase tracking-wide text-slate-400">Name</dt>
-              <dd className="mt-0.5 text-sm text-slate-900">{org?.name}</dd>
+              <dd className="mt-0.5 text-sm text-primary">{org?.name}</dd>
             </div>
             <div>
               <dt className="text-xs uppercase tracking-wide text-slate-400">Legal name</dt>
-              <dd className="mt-0.5 text-sm text-slate-900">{org?.legalName ?? "—"}</dd>
+              <dd className="mt-0.5 text-sm text-primary">{org?.legalName ?? "—"}</dd>
             </div>
             <div>
               <dt className="text-xs uppercase tracking-wide text-slate-400">Tax ID</dt>
-              <dd className="mt-0.5 text-sm text-slate-900">{org?.taxId ?? "—"}</dd>
+              <dd className="mt-0.5 text-sm text-primary">{org?.taxId ?? "—"}</dd>
             </div>
             <div>
               <dt className="text-xs uppercase tracking-wide text-slate-400">Currency</dt>
-              <dd className="mt-0.5 text-sm text-slate-900">{org?.currency}</dd>
+              <dd className="mt-0.5 text-sm text-primary">{org?.currency}</dd>
             </div>
             <div>
               <dt className="text-xs uppercase tracking-wide text-slate-400">Timezone</dt>
-              <dd className="mt-0.5 text-sm text-slate-900">{org?.timezone}</dd>
+              <dd className="mt-0.5 text-sm text-primary">{org?.timezone}</dd>
             </div>
           </dl>
         )}
       </Card>
 
       <Card className="p-6">
-        <h2 className="mb-1 text-sm font-semibold text-slate-900">Lead Intake Webhook</h2>
+        <h2 className="mb-1 text-sm font-semibold text-primary">Lead Intake Webhook</h2>
         <p className="mb-3 text-xs text-slate-500">
           Point your website contact form or marketing tool at this endpoint to auto-create leads. Keep the token private —
           anyone with it can create leads in your account.
@@ -135,13 +135,13 @@ Content-Type: application/json
       </Card>
 
       <Card className="overflow-hidden">
-        <div className="border-b border-slate-200 p-4">
-          <h2 className="text-sm font-semibold text-slate-900">Branches</h2>
+        <div className="border-b border-slate-200 dark:border-slate-700 p-4">
+          <h2 className="text-sm font-semibold text-primary">Branches</h2>
         </div>
         {!isLoading && (org?.branches.length ?? 0) === 0 && <p className="p-6 text-sm text-slate-500">No branches yet.</p>}
         {(org?.branches.length ?? 0) > 0 && (
           <table className="w-full text-sm">
-            <thead className="border-b border-slate-200 bg-slate-50 text-left text-xs font-medium uppercase text-slate-500">
+            <thead className="border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-left text-xs font-medium uppercase text-slate-500">
               <tr>
                 <th className="px-4 py-2.5">Code</th>
                 <th className="px-4 py-2.5">Name</th>
@@ -149,11 +149,11 @@ Content-Type: application/json
                 <th className="px-4 py-2.5">Country</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
               {org?.branches.map((b) => (
                 <tr key={b.id}>
-                  <td className="px-4 py-2.5 font-medium text-slate-900">{b.code}</td>
-                  <td className="px-4 py-2.5 text-slate-700">{b.name}</td>
+                  <td className="px-4 py-2.5 font-medium text-primary">{b.code}</td>
+                  <td className="px-4 py-2.5 text-slate-700 dark:text-slate-300">{b.name}</td>
                   <td className="px-4 py-2.5 text-slate-600">{b.city ?? "—"}</td>
                   <td className="px-4 py-2.5 text-slate-600">{b.country ?? "—"}</td>
                 </tr>
@@ -170,7 +170,7 @@ function RolesSection() {
   const { data: roles, isLoading, isError } = useRoleSettings();
 
   if (isError) {
-    return <Card className="p-4 text-sm text-red-600">Couldn&apos;t load roles.</Card>;
+    return <Card className="p-4 text-sm text-red-600 dark:text-red-400">Couldn&apos;t load roles.</Card>;
   }
 
   return (
@@ -178,7 +178,7 @@ function RolesSection() {
       {isLoading && <p className="p-6 text-sm text-slate-500">Loading roles…</p>}
       {!isLoading && (
         <table className="w-full text-sm">
-          <thead className="border-b border-slate-200 bg-slate-50 text-left text-xs font-medium uppercase text-slate-500">
+          <thead className="border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-left text-xs font-medium uppercase text-slate-500">
             <tr>
               <th className="px-4 py-2.5">Role</th>
               <th className="px-4 py-2.5">Description</th>
@@ -187,10 +187,10 @@ function RolesSection() {
               <th className="px-4 py-2.5">Type</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
             {roles?.map((role) => (
-              <tr key={role.id} className="hover:bg-slate-50">
-                <td className="px-4 py-3 font-medium text-slate-900">{role.name}</td>
+              <tr key={role.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50">
+                <td className="px-4 py-3 font-medium text-primary">{role.name}</td>
                 <td className="px-4 py-3 text-slate-600">{role.description ?? "—"}</td>
                 <td className="px-4 py-3 text-slate-600">{role.permissionCount}</td>
                 <td className="px-4 py-3 text-slate-600">{role.userCount}</td>
@@ -210,7 +210,7 @@ function UsersSection() {
   const { data: users, isLoading, isError } = useUserSettings();
 
   if (isError) {
-    return <Card className="p-4 text-sm text-red-600">Couldn&apos;t load users.</Card>;
+    return <Card className="p-4 text-sm text-red-600 dark:text-red-400">Couldn&apos;t load users.</Card>;
   }
 
   return (
@@ -219,7 +219,7 @@ function UsersSection() {
       {!isLoading && (users?.length ?? 0) === 0 && <p className="p-6 text-sm text-slate-500">No users yet.</p>}
       {!isLoading && (users?.length ?? 0) > 0 && (
         <table className="w-full text-sm">
-          <thead className="border-b border-slate-200 bg-slate-50 text-left text-xs font-medium uppercase text-slate-500">
+          <thead className="border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-left text-xs font-medium uppercase text-slate-500">
             <tr>
               <th className="px-4 py-2.5">Name</th>
               <th className="px-4 py-2.5">Email</th>
@@ -228,10 +228,10 @@ function UsersSection() {
               <th className="px-4 py-2.5">Status</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
             {users?.map((u) => (
-              <tr key={u.id} className="hover:bg-slate-50">
-                <td className="px-4 py-3 font-medium text-slate-900">{u.name}</td>
+              <tr key={u.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50">
+                <td className="px-4 py-3 font-medium text-primary">{u.name}</td>
                 <td className="px-4 py-3 text-slate-600">{u.email}</td>
                 <td className="px-4 py-3 text-slate-600">{u.role}</td>
                 <td className="px-4 py-3 text-slate-600">{u.branch ?? "—"}</td>
@@ -251,13 +251,13 @@ function SequencesSection() {
   const { data: sequences, isLoading, isError } = useSequenceSettings();
 
   if (isError) {
-    return <Card className="p-4 text-sm text-red-600">Couldn&apos;t load number sequences.</Card>;
+    return <Card className="p-4 text-sm text-red-600 dark:text-red-400">Couldn&apos;t load number sequences.</Card>;
   }
 
   return (
     <Card className="overflow-hidden">
-      <div className="border-b border-slate-200 p-4">
-        <h2 className="text-sm font-semibold text-slate-900">Document Numbering</h2>
+      <div className="border-b border-slate-200 dark:border-slate-700 p-4">
+        <h2 className="text-sm font-semibold text-primary">Document Numbering</h2>
         <p className="mt-0.5 text-xs text-slate-500">
           Read-only — these counters drive LEAD/CUST/QT/CPO/SO/PRJ/etc. codes. Editing isn&apos;t exposed here to avoid
           issuing a duplicate or out-of-order document number.
@@ -267,17 +267,17 @@ function SequencesSection() {
       {!isLoading && (sequences?.length ?? 0) === 0 && <p className="p-6 text-sm text-slate-500">No sequences generated yet.</p>}
       {(sequences?.length ?? 0) > 0 && (
         <table className="w-full text-sm">
-          <thead className="border-b border-slate-200 bg-slate-50 text-left text-xs font-medium uppercase text-slate-500">
+          <thead className="border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-left text-xs font-medium uppercase text-slate-500">
             <tr>
               <th className="px-4 py-2.5">Key</th>
               <th className="px-4 py-2.5">Year</th>
               <th className="px-4 py-2.5">Last Issued Value</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
             {sequences?.map((s) => (
-              <tr key={s.id} className="hover:bg-slate-50">
-                <td className="px-4 py-3 font-medium text-slate-900">{s.key}</td>
+              <tr key={s.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50">
+                <td className="px-4 py-3 font-medium text-primary">{s.key}</td>
                 <td className="px-4 py-3 text-slate-600">{s.year}</td>
                 <td className="px-4 py-3 text-slate-600">{s.lastValue}</td>
               </tr>
@@ -303,18 +303,18 @@ function SlaPoliciesSection() {
 
   return (
     <Card className="overflow-hidden">
-      <div className="border-b border-slate-200 p-4">
-        <h2 className="text-sm font-semibold text-slate-900">Support SLA Targets</h2>
+      <div className="border-b border-slate-200 dark:border-slate-700 p-4">
+        <h2 className="text-sm font-semibold text-primary">Support SLA Targets</h2>
         <p className="mt-0.5 text-xs text-slate-500">
           Time-to-first-response and time-to-resolution targets per ticket priority, in minutes. Drives the SLA_RISK/SLA_BREACH
           reminders <code>apps/worker</code> sends.
         </p>
       </div>
-      {isError && <p className="p-6 text-sm text-red-600">Couldn&apos;t load SLA policies.</p>}
+      {isError && <p className="p-6 text-sm text-red-600 dark:text-red-400">Couldn&apos;t load SLA policies.</p>}
       {isLoading && <p className="p-6 text-sm text-slate-500">Loading…</p>}
       {!isLoading && !isError && (
         <table className="w-full text-sm">
-          <thead className="border-b border-slate-200 bg-slate-50 text-left text-xs font-medium uppercase text-slate-500">
+          <thead className="border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-left text-xs font-medium uppercase text-slate-500">
             <tr>
               <th className="px-4 py-2.5">Priority</th>
               <th className="px-4 py-2.5">Response (mins)</th>
@@ -322,7 +322,7 @@ function SlaPoliciesSection() {
               {canManage && <th className="px-4 py-2.5"></th>}
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
             {policies?.map((policy) => (
               <SlaPolicyRow key={policy.priority} policy={policy} canManage={canManage} />
             ))}
@@ -361,7 +361,7 @@ function SlaPolicyRow({
   }
 
   return (
-    <tr className="hover:bg-slate-50">
+    <tr className="hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50">
       <td className="px-4 py-3">
         <Badge tone={PRIORITY_TONE[policy.priority]}>{policy.priority}</Badge>
       </td>
@@ -397,7 +397,7 @@ function SlaPolicyRow({
             <Button size="sm" variant="secondary" onClick={handleSave} disabled={upsert.isPending}>
               {upsert.isPending ? "Saving…" : "Save"}
             </Button>
-            {error && <span className="text-xs text-red-600">{error}</span>}
+            {error && <span className="text-xs text-red-600 dark:text-red-400">{error}</span>}
           </div>
         </td>
       )}
@@ -408,7 +408,17 @@ function SlaPolicyRow({
 function AuditLogSection() {
   const [entityType, setEntityType] = useState("");
   const [action, setAction] = useState("");
-  const { data, isLoading, isError } = useAuditLog({ entityType: entityType || undefined, action: action || undefined });
+  const [actorId, setActorId] = useState("");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const { data: users } = useUserSettings();
+  const { data, isLoading, isError } = useAuditLog({
+    entityType: entityType || undefined,
+    action: action || undefined,
+    actorId: actorId || undefined,
+    dateFrom: dateFrom ? new Date(dateFrom).toISOString() : undefined,
+    dateTo: dateTo ? new Date(`${dateTo}T23:59:59`).toISOString() : undefined,
+  });
   const entries = data?.data ?? [];
 
   return (
@@ -429,15 +439,25 @@ function AuditLogSection() {
           <option value="ASSIGN">ASSIGN</option>
           <option value="CONVERT">CONVERT</option>
         </Select>
+        <Select value={actorId} onChange={(e) => setActorId(e.target.value)} className="w-full sm:w-48">
+          <option value="">All users</option>
+          {users?.map((u) => (
+            <option key={u.id} value={u.id}>
+              {u.name}
+            </option>
+          ))}
+        </Select>
+        <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="w-full sm:w-40" aria-label="From date" />
+        <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="w-full sm:w-40" aria-label="To date" />
       </Card>
 
       <Card className="overflow-hidden">
-        {isError && <p className="p-6 text-sm text-red-600">Couldn&apos;t load the audit log.</p>}
+        {isError && <p className="p-6 text-sm text-red-600 dark:text-red-400">Couldn&apos;t load the audit log.</p>}
         {isLoading && <p className="p-6 text-sm text-slate-500">Loading…</p>}
         {!isLoading && entries.length === 0 && <p className="p-6 text-sm text-slate-500">No matching audit entries.</p>}
         {entries.length > 0 && (
           <table className="w-full text-sm">
-            <thead className="border-b border-slate-200 bg-slate-50 text-left text-xs font-medium uppercase text-slate-500">
+            <thead className="border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-left text-xs font-medium uppercase text-slate-500">
               <tr>
                 <th className="px-4 py-2.5">When</th>
                 <th className="px-4 py-2.5">Actor</th>
@@ -445,11 +465,11 @@ function AuditLogSection() {
                 <th className="px-4 py-2.5">Entity</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
               {entries.map((entry) => (
-                <tr key={entry.id} className="align-top hover:bg-slate-50">
+                <tr key={entry.id} className="align-top hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50">
                   <td className="whitespace-nowrap px-4 py-3 text-slate-600">{new Date(entry.createdAt).toLocaleString()}</td>
-                  <td className="px-4 py-3 text-slate-700">
+                  <td className="px-4 py-3 text-slate-700 dark:text-slate-300">
                     {entry.actor ? `${entry.actor.firstName} ${entry.actor.lastName}` : <span className="text-slate-400">System</span>}
                   </td>
                   <td className="px-4 py-3">

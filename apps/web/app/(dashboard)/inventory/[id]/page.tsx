@@ -57,7 +57,7 @@ export default function ProductDetailPage() {
       <div className="mb-6 flex items-start justify-between">
         <div>
           <p className="text-xs font-medium text-slate-400">{product.sku}</p>
-          <h1 className="text-xl font-semibold text-slate-900">{product.name}</h1>
+          <h1 className="text-xl font-semibold text-primary">{product.name}</h1>
           <p className="text-sm text-slate-500">{product.brand ?? "No brand"}</p>
         </div>
         <Badge tone={product.isActive ? "green" : "slate"}>{product.isActive ? "Active" : "Inactive"}</Badge>
@@ -65,7 +65,7 @@ export default function ProductDetailPage() {
 
       <div className="grid grid-cols-2 gap-4">
         <Card className="p-5">
-          <h2 className="mb-3 text-sm font-semibold text-slate-900">Details</h2>
+          <h2 className="mb-3 text-sm font-semibold text-primary">Details</h2>
           <dl className="space-y-2 text-sm">
             <Row label="Category" value={product.category.replaceAll("_", " ")} />
             <Row label="Unit" value={product.unit} />
@@ -77,7 +77,7 @@ export default function ProductDetailPage() {
         </Card>
 
         <Card className="p-5">
-          <h2 className="mb-3 text-sm font-semibold text-slate-900">Update Product</h2>
+          <h2 className="mb-3 text-sm font-semibold text-primary">Update Product</h2>
           {canEdit ? (
             <form onSubmit={handleSave} className="space-y-3">
               <div>
@@ -118,11 +118,11 @@ export default function ProductDetailPage() {
                   />
                 </div>
               </div>
-              <label className="flex items-center gap-2 text-sm text-slate-700">
+              <label className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
                 <input type="checkbox" checked={form.isActive} onChange={(e) => setForm({ ...form, isActive: e.target.checked })} />
                 Active
               </label>
-              {error && <p className="text-sm text-red-600">{error}</p>}
+              {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
               {saved && <p className="text-sm text-emerald-600">Saved.</p>}
               <Button type="submit" disabled={updateProduct.isPending}>
                 {updateProduct.isPending ? "Saving…" : "Save Changes"}
@@ -139,9 +139,9 @@ export default function ProductDetailPage() {
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex justify-between border-b border-slate-100 pb-2">
+    <div className="flex justify-between border-b border-slate-100 dark:border-slate-700 pb-2">
       <dt className="text-slate-500">{label}</dt>
-      <dd className="font-medium text-slate-900">{value}</dd>
+      <dd className="font-medium text-primary">{value}</dd>
     </div>
   );
 }

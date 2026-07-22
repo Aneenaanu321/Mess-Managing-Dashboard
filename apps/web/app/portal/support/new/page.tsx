@@ -32,7 +32,7 @@ export default function NewPortalTicketPage() {
 
   return (
     <div className="mx-auto max-w-xl">
-      <h1 className="font-display mb-5 text-2xl font-semibold tracking-tight text-slate-900">New Support Ticket</h1>
+      <h1 className="font-display mb-5 text-2xl font-semibold tracking-tight text-primary">New Support Ticket</h1>
 
       <Card className="p-5">
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -48,7 +48,7 @@ export default function NewPortalTicketPage() {
               onChange={(e) => setDescription(e.target.value)}
               rows={5}
               maxLength={5000}
-              className="block w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 shadow-sm placeholder:text-slate-400 transition-colors focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+              className="block w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-surface px-3.5 py-2.5 text-sm text-primary shadow-sm placeholder:text-slate-400 transition-colors focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
               placeholder="Describe the issue you're facing…"
             />
           </div>
@@ -63,7 +63,7 @@ export default function NewPortalTicketPage() {
             </Select>
           </div>
 
-          {error && <div className="rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
+          {error && <div className="rounded-md bg-red-50 dark:bg-red-950/40 px-4 py-3 text-sm text-red-700 dark:text-red-300">{error}</div>}
 
           <div className="flex justify-end gap-2 pt-2">
             <Button type="submit" disabled={createTicket.isPending}>

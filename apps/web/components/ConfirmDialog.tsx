@@ -52,9 +52,9 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
             aria-modal="true"
             aria-labelledby="confirm-dialog-title"
             aria-describedby="confirm-dialog-message"
-            className="relative w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-soft dark:border-slate-700 dark:bg-slate-900"
+            className="relative w-full max-w-md rounded-2xl border border-slate-200 dark:border-slate-700 bg-surface p-6 shadow-soft dark:border-slate-700 dark:bg-slate-900"
           >
-            <h2 id="confirm-dialog-title" className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+            <h2 id="confirm-dialog-title" className="text-lg font-semibold text-primary dark:text-slate-100">
               {dialog.title}
             </h2>
             <p id="confirm-dialog-message" className="mt-2 text-sm text-slate-600 dark:text-slate-300">

@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "./api-client";
+import { toast } from "./toast";
 
 export interface OrgBranch {
   id: string;
@@ -47,6 +48,7 @@ export function useOrgSettings() {
   return useQuery({
     queryKey: ["settings", "org"],
     queryFn: async () => (await apiClient.get<OrgSettings>("/settings/org")).data,
+    staleTime: 5 * 60_000,
   });
 }
 
@@ -89,15 +91,19 @@ export interface AuditLogEntry {
   actor: { id: string; firstName: string; lastName: string; email: string } | null;
 }
 
-export function useAuditLog(params: { entityType?: string; action?: string; page?: number } = {}) {
+export function useAuditLog(params: { entityType?: string; action?: string; actorId?: string; dateFrom?: string; dateTo?: string; page?: number } = {}) {
   const query = new URLSearchParams();
   if (params.entityType) query.set("entityType", params.entityType);
   if (params.action) query.set("action", params.action);
+  if (params.actorId) query.set("actorId", params.actorId);
+  if (params.dateFrom) query.set("dateFrom", params.dateFrom);
+  if (params.dateTo) query.set("dateTo", params.dateTo);
   if (params.page) query.set("page", String(params.page));
 
   return useQuery({
     queryKey: ["settings", "audit-log", params],
     queryFn: async () => apiClient.get<AuditLogEntry[]>(`/settings/audit-log?${query.toString()}`),
+    staleTime: 30_000,
   });
 }
 
@@ -122,6 +128,9 @@ export function useUpsertSlaPolicy() {
   return useMutation({
     mutationFn: async (input: { priority: TicketPriority; responseMins: number; resolutionMins: number }) =>
       (await apiClient.patch<SlaPolicyRow>("/settings/sla-policies", input)).data,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["settings", "sla-policies"] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["settings", "sla-policies"] });
+      toast.success("Saved");
+    },
   });
 }

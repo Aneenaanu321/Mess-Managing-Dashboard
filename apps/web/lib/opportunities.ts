@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "./api-client";
+import { toast } from "./toast";
 
 export const OPPORTUNITY_STAGES = [
   "REQUIREMENT_GATHERING",
@@ -109,7 +110,10 @@ export function useCreateOpportunity() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (input: CreateOpportunityInput) => (await apiClient.post<Opportunity>("/opportunities", input)).data,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["opportunities"] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["opportunities"] });
+      toast.success("Saved");
+    },
   });
 }
 

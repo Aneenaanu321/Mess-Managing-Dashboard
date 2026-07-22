@@ -44,7 +44,7 @@ export default function InvoiceDetailPage() {
       <div className="mb-6 flex items-start justify-between">
         <div>
           <p className="text-xs font-medium text-slate-400">{invoice.customer?.name}</p>
-          <h1 className="text-xl font-semibold text-slate-900">{invoice.code}</h1>
+          <h1 className="text-xl font-semibold text-primary">{invoice.code}</h1>
           {invoice.milestoneLabel && <p className="text-sm text-slate-500">{invoice.milestoneLabel}</p>}
         </div>
         <Badge tone={INVOICE_STATUS_TONE[invoice.status]}>{invoice.status.replaceAll("_", " ")}</Badge>
@@ -53,7 +53,7 @@ export default function InvoiceDetailPage() {
       <div className="grid grid-cols-3 gap-4">
         <Card className="p-4">
           <p className="text-xs font-medium uppercase text-slate-400">Total</p>
-          <p className="text-lg font-semibold text-slate-900">
+          <p className="text-lg font-semibold text-primary">
             {invoice.currency} {Number(invoice.totalAmount).toLocaleString()}
           </p>
         </Card>
@@ -65,16 +65,16 @@ export default function InvoiceDetailPage() {
         </Card>
         <Card className="p-4">
           <p className="text-xs font-medium uppercase text-slate-400">Balance Due</p>
-          <p className="text-lg font-semibold text-slate-900">
+          <p className="text-lg font-semibold text-primary">
             {invoice.currency} {balanceDue.toLocaleString()}
           </p>
         </Card>
       </div>
 
       <Card className="mt-4 p-5">
-        <h2 className="mb-3 text-sm font-semibold text-slate-900">Line Items</h2>
+        <h2 className="mb-3 text-sm font-semibold text-primary">Line Items</h2>
         <table className="w-full text-sm">
-          <thead className="border-b border-slate-200 text-left text-xs font-medium uppercase text-slate-500">
+          <thead className="border-b border-slate-200 dark:border-slate-700 text-left text-xs font-medium uppercase text-slate-500">
             <tr>
               <th className="py-2">Description</th>
               <th className="py-2">Qty</th>
@@ -83,14 +83,14 @@ export default function InvoiceDetailPage() {
               <th className="py-2 text-right">Line Total</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
             {invoice.lineItems?.map((li) => (
               <tr key={li.id}>
-                <td className="py-2 text-slate-900">{li.description}</td>
+                <td className="py-2 text-primary">{li.description}</td>
                 <td className="py-2 text-slate-600">{li.quantity}</td>
                 <td className="py-2 text-slate-600">{li.unitPrice}</td>
                 <td className="py-2 text-slate-600">{li.taxPct}%</td>
-                <td className="py-2 text-right font-medium text-slate-900">{Number(li.lineTotal).toLocaleString()}</td>
+                <td className="py-2 text-right font-medium text-primary">{Number(li.lineTotal).toLocaleString()}</td>
               </tr>
             ))}
           </tbody>
@@ -99,15 +99,15 @@ export default function InvoiceDetailPage() {
 
       <div className="mt-4 grid grid-cols-2 gap-4">
         <Card className="p-5">
-          <h2 className="mb-3 text-sm font-semibold text-slate-900">Payments</h2>
+          <h2 className="mb-3 text-sm font-semibold text-primary">Payments</h2>
           {invoice.payments?.length ? (
             <ul className="space-y-2 text-sm">
               {invoice.payments.map((p) => (
-                <li key={p.id} className="flex justify-between border-b border-slate-100 pb-2">
+                <li key={p.id} className="flex justify-between border-b border-slate-100 dark:border-slate-700 pb-2">
                   <span className="text-slate-600">
                     {p.method.replaceAll("_", " ")} {p.reference ? `· ${p.reference}` : ""}
                   </span>
-                  <span className="font-medium text-slate-900">
+                  <span className="font-medium text-primary">
                     {p.currency} {Number(p.amount).toLocaleString()}
                   </span>
                 </li>
@@ -119,7 +119,7 @@ export default function InvoiceDetailPage() {
         </Card>
 
         <Card className="p-5">
-          <h2 className="mb-3 text-sm font-semibold text-slate-900">Record Payment</h2>
+          <h2 className="mb-3 text-sm font-semibold text-primary">Record Payment</h2>
           {invoice.status === "PAID" ? (
             <p className="text-sm text-slate-500">This invoice is fully paid.</p>
           ) : invoice.status === "CANCELLED" ? (
@@ -144,7 +144,7 @@ export default function InvoiceDetailPage() {
                 <Label htmlFor="reference">Reference (optional)</Label>
                 <Input id="reference" placeholder="Cheque no / transaction ID" value={reference} onChange={(e) => setReference(e.target.value)} />
               </div>
-              {error && <p className="text-sm text-red-600">{error}</p>}
+              {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
               <Button type="submit" disabled={submitting}>
                 {submitting ? "Recording…" : "Record Payment"}
               </Button>

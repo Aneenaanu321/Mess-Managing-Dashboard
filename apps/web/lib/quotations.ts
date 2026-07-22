@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient, getAccessToken } from "./api-client";
+import { toast } from "./toast";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api/v1";
 
@@ -108,7 +109,10 @@ export function useCreateQuotation() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (input: CreateQuotationInput) => (await apiClient.post<Quotation>("/quotations", input)).data,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["quotations"] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["quotations"] });
+      toast.success("Saved");
+    },
   });
 }
 

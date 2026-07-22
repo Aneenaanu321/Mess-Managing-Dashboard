@@ -48,7 +48,7 @@ export default function NewProductPage() {
 
   return (
     <div className="mx-auto max-w-2xl">
-      <h1 className="mb-6 text-xl font-semibold text-slate-900">New Product</h1>
+      <h1 className="mb-6 text-xl font-semibold text-primary">New Product</h1>
 
       <Card className="p-6">
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -128,7 +128,7 @@ export default function NewProductPage() {
           </div>
 
           <div className="flex items-center gap-6">
-            <label className="flex items-center gap-2 text-sm text-slate-700">
+            <label className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
               <input
                 type="checkbox"
                 checked={form.isSerialized}
@@ -136,13 +136,13 @@ export default function NewProductPage() {
               />
               Serialized (tracked by serial number)
             </label>
-            <label className="flex items-center gap-2 text-sm text-slate-700">
+            <label className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
               <input type="checkbox" checked={form.isActive} onChange={(e) => setForm({ ...form, isActive: e.target.checked })} />
               Active
             </label>
           </div>
 
-          {error && <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
+          {error && <p className="rounded-md bg-red-50 dark:bg-red-950/40 px-3 py-2 text-sm text-red-700 dark:text-red-300">{error}</p>}
 
           <div className="flex justify-end gap-2">
             <Button type="button" variant="secondary" onClick={() => router.back()}>

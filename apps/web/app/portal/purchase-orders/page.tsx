@@ -10,22 +10,22 @@ export default function PortalPurchaseOrdersPage() {
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="font-display text-2xl font-semibold tracking-tight text-slate-900">Purchase Orders</h1>
+        <h1 className="font-display text-2xl font-semibold tracking-tight text-primary">Purchase Orders</h1>
         <p className="mt-1 text-sm text-slate-500">POs you&apos;ve issued to us.</p>
       </div>
 
       <Card className="overflow-hidden">
         {isLoading && <p className="p-8 text-sm text-slate-500">Loading purchase orders…</p>}
-        {isError && <p className="p-8 text-sm text-red-600">Couldn&apos;t load purchase orders.</p>}
+        {isError && <p className="p-8 text-sm text-red-600 dark:text-red-400">Couldn&apos;t load purchase orders.</p>}
         {!isLoading && !isError && (pos?.length ?? 0) === 0 && (
           <div className="px-8 py-14 text-center">
-            <p className="font-medium text-slate-800">No purchase orders yet</p>
+            <p className="font-medium text-primary">No purchase orders yet</p>
           </div>
         )}
         {(pos?.length ?? 0) > 0 && (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[640px] text-sm">
-              <thead className="border-b border-slate-200 bg-slate-50/80 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">
+              <thead className="border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50/80 dark:bg-slate-800/50 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">
                 <tr>
                   <th className="px-4 py-3">Code</th>
                   <th className="px-4 py-3">PO Number</th>
@@ -34,7 +34,7 @@ export default function PortalPurchaseOrdersPage() {
                   <th className="px-4 py-3">Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                 {pos!.map((po) => (
                   <tr key={po.id} className="transition-colors hover:bg-brand-50/40">
                     <td className="px-4 py-3.5">
@@ -43,7 +43,7 @@ export default function PortalPurchaseOrdersPage() {
                       </Link>
                     </td>
                     <td className="px-4 py-3.5 text-slate-600">{po.poNumber}</td>
-                    <td className="px-4 py-3.5 font-medium text-slate-900">
+                    <td className="px-4 py-3.5 font-medium text-primary">
                       {Number(po.amount).toLocaleString()} {po.currency}
                     </td>
                     <td className="px-4 py-3.5 text-slate-600">{new Date(po.receivedAt).toLocaleDateString()}</td>

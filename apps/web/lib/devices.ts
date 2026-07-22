@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "./api-client";
+import { toast } from "./toast";
 
 export type DeviceType = "READER" | "ANTENNA" | "GATE" | "HANDHELD" | "PRINTER" | "TAG" | "LABEL_APPLICATOR" | "EAS_SYSTEM" | "OTHER";
 export type DeviceStatus = "IN_STOCK" | "ALLOCATED" | "INSTALLED" | "FAULTY" | "RETIRED" | "RMA";
@@ -69,7 +70,10 @@ export function useCreateDevice() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (input: CreateDeviceInput) => (await apiClient.post<Device>("/devices", input)).data,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["devices"] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["devices"] });
+      toast.success("Saved");
+    },
   });
 }
 

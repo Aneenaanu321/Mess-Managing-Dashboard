@@ -18,14 +18,14 @@ export default function CustomerDetailPage() {
       <div className="mb-6 flex items-start justify-between">
         <div>
           <p className="text-xs font-medium text-slate-400">{customer.code}</p>
-          <h1 className="text-xl font-semibold text-slate-900">{customer.name}</h1>
+          <h1 className="text-xl font-semibold text-primary">{customer.name}</h1>
           <p className="text-sm text-slate-500">{customer.industry}</p>
         </div>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <Card className="p-5">
-          <h2 className="mb-3 text-sm font-semibold text-slate-900">Details</h2>
+          <h2 className="mb-3 text-sm font-semibold text-primary">Details</h2>
           <dl className="space-y-2 text-sm">
             <Row label="Website" value={customer.website ?? "—"} />
             <Row label="Tax ID" value={customer.taxId ?? "—"} />
@@ -34,13 +34,13 @@ export default function CustomerDetailPage() {
         </Card>
 
         <Card className="p-5">
-          <h2 className="mb-3 text-sm font-semibold text-slate-900">Opportunities</h2>
+          <h2 className="mb-3 text-sm font-semibold text-primary">Opportunities</h2>
           {!customer.opportunities || customer.opportunities.length === 0 ? (
             <p className="text-sm text-slate-500">No opportunities yet.</p>
           ) : (
             <ul className="space-y-2 text-sm">
               {customer.opportunities.map((opp) => (
-                <li key={opp.id} className="flex items-center justify-between border-b border-slate-100 pb-2 last:border-0 last:pb-0">
+                <li key={opp.id} className="flex items-center justify-between border-b border-slate-100 dark:border-slate-700 pb-2 last:border-0 last:pb-0">
                   <Link href={`/opportunities/${opp.id}`} className="font-medium text-brand-600 hover:underline">
                     {opp.code}
                   </Link>
@@ -52,15 +52,15 @@ export default function CustomerDetailPage() {
         </Card>
 
         <Card className="p-5">
-          <h2 className="mb-3 text-sm font-semibold text-slate-900">Contacts</h2>
+          <h2 className="mb-3 text-sm font-semibold text-primary">Contacts</h2>
           {!customer.contacts || customer.contacts.length === 0 ? (
             <p className="text-sm text-slate-500">No contacts yet.</p>
           ) : (
             <ul className="space-y-3 text-sm">
               {customer.contacts.map((contact) => (
-                <li key={contact.id} className="border-b border-slate-100 pb-2 last:border-0 last:pb-0">
+                <li key={contact.id} className="border-b border-slate-100 dark:border-slate-700 pb-2 last:border-0 last:pb-0">
                   <div className="flex items-center gap-2">
-                    <span className="font-medium text-slate-900">
+                    <span className="font-medium text-primary">
                       {contact.firstName} {contact.lastName}
                     </span>
                     {contact.isPrimary && <Badge tone="blue">Primary</Badge>}
@@ -73,14 +73,14 @@ export default function CustomerDetailPage() {
         </Card>
 
         <Card className="p-5">
-          <h2 className="mb-3 text-sm font-semibold text-slate-900">Sites</h2>
+          <h2 className="mb-3 text-sm font-semibold text-primary">Sites</h2>
           {!customer.sites || customer.sites.length === 0 ? (
             <p className="text-sm text-slate-500">No sites yet.</p>
           ) : (
             <ul className="space-y-3 text-sm">
               {customer.sites.map((site) => (
-                <li key={site.id} className="border-b border-slate-100 pb-2 last:border-0 last:pb-0">
-                  <p className="font-medium text-slate-900">{site.label}</p>
+                <li key={site.id} className="border-b border-slate-100 dark:border-slate-700 pb-2 last:border-0 last:pb-0">
+                  <p className="font-medium text-primary">{site.label}</p>
                   <p className="text-slate-500">
                     {[site.addressLine, site.city, site.country].filter(Boolean).join(", ") || "—"}
                   </p>
@@ -100,9 +100,9 @@ export default function CustomerDetailPage() {
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex justify-between border-b border-slate-100 pb-2">
+    <div className="flex justify-between border-b border-slate-100 dark:border-slate-700 pb-2">
       <dt className="text-slate-500">{label}</dt>
-      <dd className="font-medium text-slate-900">{value}</dd>
+      <dd className="font-medium text-primary">{value}</dd>
     </div>
   );
 }

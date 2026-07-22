@@ -41,7 +41,7 @@ export default function SalesOrderDetailPage() {
       <div className="mb-2 flex items-start justify-between">
         <div>
           <p className="text-xs font-medium text-slate-400">{so.code}</p>
-          <h1 className="text-xl font-semibold text-slate-900">{so.customer?.name}</h1>
+          <h1 className="text-xl font-semibold text-primary">{so.customer?.name}</h1>
           <p className="text-sm text-slate-500">
             From PO{" "}
             <Link href={`/purchase-orders/${so.customerPO?.id}`} className="text-brand-700 hover:underline">
@@ -53,10 +53,10 @@ export default function SalesOrderDetailPage() {
       </div>
 
       <Card className="p-5">
-        <h2 className="mb-3 text-sm font-semibold text-slate-900">Line Items</h2>
+        <h2 className="mb-3 text-sm font-semibold text-primary">Line Items</h2>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[560px] text-sm">
-            <thead className="border-b border-slate-200 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">
+            <thead className="border-b border-slate-200 dark:border-slate-700 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">
               <tr>
                 <th className="py-2">Product</th>
                 <th className="py-2">Qty</th>
@@ -65,7 +65,7 @@ export default function SalesOrderDetailPage() {
                 <th className="py-2">Line Total</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
               {so.lineItems.map((line) => {
                 const allocated = line.allocations
                   .filter((a) => a.status === "RESERVED")
@@ -73,7 +73,7 @@ export default function SalesOrderDetailPage() {
                 return (
                   <tr key={line.id}>
                     <td className="py-2.5">
-                      <p className="font-medium text-slate-900">{line.product.name}</p>
+                      <p className="font-medium text-primary">{line.product.name}</p>
                       <p className="text-xs text-slate-500">{line.product.sku}</p>
                     </td>
                     <td className="py-2.5 text-slate-600">
@@ -83,7 +83,7 @@ export default function SalesOrderDetailPage() {
                       {allocated} / {line.quantity}
                     </td>
                     <td className="py-2.5 text-slate-600">{Number(line.unitPrice).toLocaleString()}</td>
-                    <td className="py-2.5 font-medium text-slate-900">
+                    <td className="py-2.5 font-medium text-primary">
                       {Number(line.lineTotal).toLocaleString()} {so.currency}
                     </td>
                   </tr>
@@ -92,14 +92,14 @@ export default function SalesOrderDetailPage() {
             </tbody>
           </table>
         </div>
-        <p className="mt-3 text-right text-sm font-semibold text-slate-900">
+        <p className="mt-3 text-right text-sm font-semibold text-primary">
           Total: {Number(so.totalAmount).toLocaleString()} {so.currency}
         </p>
       </Card>
 
       {so.project && (
         <Card className="p-5">
-          <h2 className="mb-2 text-sm font-semibold text-slate-900">Project</h2>
+          <h2 className="mb-2 text-sm font-semibold text-primary">Project</h2>
           <Link href={`/projects/${so.project.id}`} className="text-sm text-brand-700 hover:underline">
             {so.project.code} — {so.project.status.replaceAll("_", " ")}
           </Link>
@@ -108,7 +108,7 @@ export default function SalesOrderDetailPage() {
 
       {canManage && !isTerminal && (
         <Card className="p-5">
-          <h2 className="mb-3 text-sm font-semibold text-slate-900">Allocate Inventory</h2>
+          <h2 className="mb-3 text-sm font-semibold text-primary">Allocate Inventory</h2>
           <div className="flex flex-wrap items-end gap-3">
             <div className="min-w-[220px]">
               <Select value={warehouseId} onChange={(e) => setWarehouseId(e.target.value)}>
@@ -124,7 +124,7 @@ export default function SalesOrderDetailPage() {
               {allocate.isPending ? "Allocating…" : "Allocate Available Stock"}
             </Button>
           </div>
-          {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
+          {error && <p className="mt-2 text-sm text-red-600 dark:text-red-400">{error}</p>}
           <p className="mt-2 text-xs text-slate-500">
             Reserves as much of each line as is currently in stock at the chosen warehouse. Re-run after restocking to cover the rest.
           </p>

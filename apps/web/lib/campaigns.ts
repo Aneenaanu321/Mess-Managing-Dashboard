@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "./api-client";
+import { toast } from "./toast";
 
 export interface Campaign {
   id: string;
@@ -45,6 +46,9 @@ export function useCreateCampaign() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (input: CreateCampaignInput) => (await apiClient.post<Campaign>("/campaigns", input)).data,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["campaigns"] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["campaigns"] });
+      toast.success("Saved");
+    },
   });
 }

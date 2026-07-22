@@ -19,7 +19,7 @@ export default function VendorsPage() {
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-700">Fulfillment</p>
-          <h1 className="font-display mt-1 text-2xl font-semibold tracking-tight text-slate-900">Vendors</h1>
+          <h1 className="font-display mt-1 text-2xl font-semibold tracking-tight text-primary">Vendors</h1>
           <p className="mt-1 text-sm text-slate-500">
             {data?.meta?.total ?? 0} vendor{data?.meta?.total === 1 ? "" : "s"} supplying your Procurement orders.
           </p>
@@ -43,16 +43,16 @@ export default function VendorsPage() {
 
       <Card className="overflow-hidden">
         {isLoading && <p className="p-8 text-sm text-slate-500">Loading vendors…</p>}
-        {isError && <p className="p-8 text-sm text-red-600">Couldn&apos;t load vendors.</p>}
+        {isError && <p className="p-8 text-sm text-red-600 dark:text-red-400">Couldn&apos;t load vendors.</p>}
         {!isLoading && !isError && vendors.length === 0 && (
           <div className="px-8 py-14 text-center">
-            <p className="font-medium text-slate-800">No vendors yet</p>
+            <p className="font-medium text-primary">No vendors yet</p>
             <p className="mt-1 text-sm text-slate-500">Add one to start raising Procurement orders against it.</p>
           </div>
         )}
         {vendors.length > 0 && (
           <table className="w-full text-sm">
-            <thead className="border-b border-slate-200 bg-slate-50/80 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">
+            <thead className="border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50/80 dark:bg-slate-800/50 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">
               <tr>
                 <th className="px-4 py-3">Name</th>
                 <th className="px-4 py-3">Contact</th>
@@ -61,10 +61,10 @@ export default function VendorsPage() {
                 <th className="px-4 py-3">Lead Time</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
               {vendors.map((v: Vendor) => (
-                <tr key={v.id} className="hover:bg-slate-50">
-                  <td className="px-4 py-3.5 font-medium text-slate-900">{v.name}</td>
+                <tr key={v.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50">
+                  <td className="px-4 py-3.5 font-medium text-primary">{v.name}</td>
                   <td className="px-4 py-3.5 text-slate-600">{v.contactName ?? "—"}</td>
                   <td className="px-4 py-3.5 text-slate-600">{v.email ?? "—"}</td>
                   <td className="px-4 py-3.5 text-slate-600">{v.phone ?? "—"}</td>
@@ -131,7 +131,7 @@ function NewVendorForm({ onDone }: { onDone: () => void }) {
           />
         </div>
         <div className="flex items-end gap-2 sm:col-span-2 lg:col-span-3">
-          {error && <p className="text-sm text-red-600">{error}</p>}
+          {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
         </div>
         <div className="sm:col-span-2 lg:col-span-3">
           <Button type="submit" disabled={createVendor.isPending}>

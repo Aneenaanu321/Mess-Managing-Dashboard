@@ -29,7 +29,7 @@ export function ActivityTimeline({ scope }: { scope: ActivityScope }) {
 
   return (
     <Card className="p-5">
-      <h2 className="mb-3 text-sm font-semibold text-slate-900">Activity Timeline</h2>
+      <h2 className="mb-3 text-sm font-semibold text-primary">Activity Timeline</h2>
 
       {hasPermission(user, "activity:create") && (
         <div className="mb-4 flex flex-wrap items-center gap-2">
@@ -45,27 +45,27 @@ export function ActivityTimeline({ scope }: { scope: ActivityScope }) {
             value={subject}
             onChange={(e) => setSubject(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleLog()}
-            className="min-w-[160px] flex-1 rounded-lg border border-slate-200 px-2.5 py-1.5 text-sm text-slate-700 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+            className="min-w-[160px] flex-1 rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-sm text-slate-700 dark:text-slate-300 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
           />
           <Button size="sm" onClick={handleLog} disabled={createActivity.isPending || !subject.trim()}>
             Log
           </Button>
         </div>
       )}
-      {error && <p className="mb-3 text-xs text-red-600">{error}</p>}
+      {error && <p className="mb-3 text-xs text-red-600 dark:text-red-400">{error}</p>}
 
       {isLoading && <p className="text-sm text-slate-500">Loading…</p>}
       {!isLoading && (activities?.length ?? 0) === 0 && <p className="text-sm text-slate-400">No activity logged yet.</p>}
 
       <ul className="space-y-3">
         {activities?.map((activity) => (
-          <li key={activity.id} className="flex gap-3 border-l-2 border-slate-100 pl-3">
+          <li key={activity.id} className="flex gap-3 border-l-2 border-slate-100 dark:border-slate-700 pl-3">
             <div className="flex-1">
               <div className="flex items-center gap-2">
                 <Badge tone="slate">{ACTIVITY_TYPE_LABELS[activity.type]}</Badge>
                 <p className="text-xs text-slate-400">{new Date(activity.occurredAt).toLocaleString()}</p>
               </div>
-              <p className="mt-1 text-sm text-slate-800">{activity.subject}</p>
+              <p className="mt-1 text-sm text-primary">{activity.subject}</p>
               {activity.actor && (
                 <p className="mt-0.5 text-xs text-slate-400">
                   {activity.actor.firstName} {activity.actor.lastName}

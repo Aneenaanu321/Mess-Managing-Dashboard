@@ -18,7 +18,7 @@ export default function TasksPage() {
     <div>
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-slate-900">Engineer Tasks</h1>
+          <h1 className="text-xl font-semibold text-primary">Engineer Tasks</h1>
           <p className="text-sm text-slate-500">
             {data?.meta?.total ?? 0} task{data?.meta?.total === 1 ? "" : "s"}
           </p>
@@ -44,11 +44,11 @@ export default function TasksPage() {
 
       <Card className="overflow-hidden">
         {isLoading && <p className="p-6 text-sm text-slate-500">Loading tasks…</p>}
-        {isError && <p className="p-6 text-sm text-red-600">Couldn&apos;t load tasks.</p>}
+        {isError && <p className="p-6 text-sm text-red-600 dark:text-red-400">Couldn&apos;t load tasks.</p>}
         {!isLoading && !isError && tasks.length === 0 && <p className="p-6 text-sm text-slate-500">No tasks match these filters yet.</p>}
         {tasks.length > 0 && (
           <table className="w-full text-sm">
-            <thead className="border-b border-slate-200 bg-slate-50 text-left text-xs font-medium uppercase text-slate-500">
+            <thead className="border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-left text-xs font-medium uppercase text-slate-500">
               <tr>
                 <th className="px-4 py-2.5">Title</th>
                 <th className="px-4 py-2.5">Project</th>
@@ -57,9 +57,9 @@ export default function TasksPage() {
                 <th className="px-4 py-2.5">Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
               {tasks.map((t: EngineerTask) => (
-                <tr key={t.id} className="hover:bg-slate-50">
+                <tr key={t.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50">
                   <td className="px-4 py-3">
                     <Link href={`/tasks/${t.id}`} className="font-medium text-brand-600 hover:underline">
                       {t.title}

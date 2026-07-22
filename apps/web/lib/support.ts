@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "./api-client";
+import { toast } from "./toast";
 
 export type TicketPriority = "CRITICAL" | "HIGH" | "MEDIUM" | "LOW";
 export type TicketStatus = "NEW" | "ASSIGNED" | "IN_PROGRESS" | "RESOLVED" | "CLOSED" | "REOPENED" | "ESCALATED";
@@ -88,7 +89,10 @@ export function useCreateTicket() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (input: CreateTicketInput) => (await apiClient.post<Ticket>("/support", input)).data,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["tickets"] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tickets"] });
+      toast.success("Saved");
+    },
   });
 }
 

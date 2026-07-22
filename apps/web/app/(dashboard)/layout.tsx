@@ -3,8 +3,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCurrentUser } from "@/lib/auth";
+import { useKeyboardShortcuts } from "@/lib/keyboard-shortcuts";
 import { Sidebar } from "@/components/Sidebar";
 import { Topbar } from "@/components/Topbar";
+import { OnboardingTour } from "@/components/OnboardingTour";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { data: user, isLoading, isError } = useCurrentUser();
@@ -13,6 +15,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const closeSidebar = useCallback(() => setSidebarOpen(false), []);
   const toggleSidebar = useCallback(() => setSidebarOpen((open) => !open), []);
+  useKeyboardShortcuts();
 
   useEffect(() => {
     if (isLoading) return;
@@ -54,11 +57,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   if (!user || user.portalCustomer) return null;
 
   return (
-    <div className="flex min-h-screen bg-[var(--background)]">
+    <div className="flex h-screen overflow-hidden bg-[var(--background)]">
       <Sidebar open={sidebarOpen} onClose={closeSidebar} onToggle={toggleSidebar} />
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         <Topbar sidebarOpen={sidebarOpen} onMenuClick={toggleSidebar} />
-        <main className="flex-1 overflow-y-auto px-4 py-6 sm:px-6 lg:px-8">{children}</main>
+        <main className="flex-1 overflow-y-auto px-4 py-6 sm:px-6 lg:px-8">
+          {children}
+          <OnboardingTour />
+        </main>
       </div>
     </div>
   );

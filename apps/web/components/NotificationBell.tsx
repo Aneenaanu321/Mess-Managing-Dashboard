@@ -51,7 +51,7 @@ export function NotificationBell() {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="relative rounded-xl p-2.5 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800"
+        className="relative rounded-xl p-2.5 text-slate-500 transition-colors hover:bg-slate-100 hover:text-primary"
         aria-label="Notifications"
         aria-expanded={open}
         aria-haspopup="menu"
@@ -67,10 +67,10 @@ export function NotificationBell() {
       {open && (
         <div
           role="menu"
-          className="absolute right-0 z-50 mt-2 w-80 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-soft"
+          className="absolute right-0 z-50 mt-2 w-80 overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-700 bg-surface shadow-soft"
         >
-          <div className="flex items-center justify-between border-b border-slate-100 px-3.5 py-3">
-            <p className="text-sm font-semibold text-slate-900">Notifications</p>
+          <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-700 px-3.5 py-3">
+            <p className="text-sm font-semibold text-primary">Notifications</p>
             {unreadCount > 0 && (
               <button
                 type="button"
@@ -94,13 +94,13 @@ export function NotificationBell() {
                 type="button"
                 role="menuitem"
                 onClick={() => handleClick(n)}
-                className="flex w-full items-start gap-2.5 border-b border-slate-50 px-3.5 py-3 text-left transition-colors last:border-0 hover:bg-slate-50"
+                className="flex w-full items-start gap-2.5 border-b border-slate-50 px-3.5 py-3 text-left transition-colors last:border-0 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50"
               >
                 <span
                   className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${n.readAt ? "bg-transparent" : "bg-brand-500"}`}
                 />
                 <div className="min-w-0 flex-1">
-                  <p className={`text-sm ${n.readAt ? "text-slate-600" : "font-medium text-slate-900"}`}>{n.title}</p>
+                  <p className={`text-sm ${n.readAt ? "text-slate-600" : "font-medium text-primary"}`}>{n.title}</p>
                   <p className="mt-0.5 truncate text-xs text-slate-500">{n.body}</p>
                   <p className="mt-0.5 text-[11px] text-slate-400">{timeAgo(n.createdAt)}</p>
                 </div>

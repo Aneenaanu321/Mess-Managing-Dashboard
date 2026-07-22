@@ -28,14 +28,14 @@ export default function CalendarPage() {
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-700">Sales</p>
-          <h1 className="font-display mt-1 text-2xl font-semibold tracking-tight text-slate-900">Calendar &amp; Follow-ups</h1>
+          <h1 className="font-display mt-1 text-2xl font-semibold tracking-tight text-primary">Calendar &amp; Follow-ups</h1>
           <p className="mt-1 text-sm text-slate-500">Your upcoming meetings, site visits, and follow-up reminders.</p>
         </div>
         <div className="flex items-center gap-3">
           <button
             type="button"
             onClick={() => setIncludeCompleted((v) => !v)}
-            className="text-xs font-medium text-slate-500 hover:text-slate-700"
+            className="text-xs font-medium text-slate-500 hover:text-slate-700 dark:text-slate-300"
           >
             {includeCompleted ? "Hide completed" : "Show completed"}
           </button>
@@ -48,28 +48,28 @@ export default function CalendarPage() {
         </div>
       </div>
 
-      {isError && <Card className="p-4 text-sm text-red-600">Couldn&apos;t load your calendar.</Card>}
+      {isError && <Card className="p-4 text-sm text-red-600 dark:text-red-400">Couldn&apos;t load your calendar.</Card>}
       {isLoading && <Card className="p-8 text-sm text-slate-500">Loading…</Card>}
 
       {!isLoading && grouped.length === 0 && (
         <Card className="px-8 py-14 text-center">
-          <p className="font-medium text-slate-800">Nothing scheduled</p>
+          <p className="font-medium text-primary">Nothing scheduled</p>
           <p className="mt-1 text-sm text-slate-500">Create a follow-up or meeting to see it here.</p>
         </Card>
       )}
 
       {grouped.map(([day, dayEvents]) => (
         <Card key={day} className="overflow-hidden">
-          <div className="border-b border-slate-200 bg-slate-50/80 px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-slate-500">
+          <div className="border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50/80 dark:bg-slate-800/50 px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-slate-500">
             {day}
           </div>
-          <div className="divide-y divide-slate-100">
+          <div className="divide-y divide-slate-100 dark:divide-slate-700">
             {dayEvents.map((event) => (
               <div key={event.id} className="flex items-center justify-between gap-4 px-4 py-3">
                 <div className="flex items-center gap-3">
                   <Badge tone={event.completedAt ? "green" : "blue"}>{CALENDAR_EVENT_TYPE_LABELS[event.type]}</Badge>
                   <div>
-                    <p className={`text-sm font-medium ${event.completedAt ? "text-slate-400 line-through" : "text-slate-900"}`}>{event.title}</p>
+                    <p className={`text-sm font-medium ${event.completedAt ? "text-slate-400 line-through" : "text-primary"}`}>{event.title}</p>
                     <p className="text-xs text-slate-500">
                       {new Date(event.startAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                       {event.opportunity ? ` · ${event.opportunity.code}` : ""}

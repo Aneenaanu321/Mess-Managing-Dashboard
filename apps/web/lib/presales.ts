@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "./api-client";
+import { toast } from "./toast";
 
 export interface SiteSurvey {
   id: string;
@@ -40,7 +41,10 @@ function useCreate<TInput extends object>(kind: string, opportunityId: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (input: TInput) => (await apiClient.post(`/presales/${kind}`, { ...input, opportunityId })).data,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["presales", kind, opportunityId] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["presales", kind, opportunityId] });
+      toast.success("Saved");
+    },
   });
 }
 

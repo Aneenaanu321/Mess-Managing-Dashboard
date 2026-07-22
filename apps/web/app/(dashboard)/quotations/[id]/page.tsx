@@ -7,6 +7,7 @@ import { Download } from "lucide-react";
 import { useQuotation, useSendQuotation, useApproveQuotation, openQuotationPdf, STATUS_TONE } from "@/lib/quotations";
 import { hasPermission, useCurrentUser } from "@/lib/auth";
 import { Badge, Button, Card } from "@/components/ui";
+import { useConfirm } from "@/components/ConfirmDialog";
 
 export default function QuotationDetailPage() {
   const params = useParams<{ id: string }>();
@@ -14,6 +15,7 @@ export default function QuotationDetailPage() {
   const { data: user } = useCurrentUser();
   const sendQuotation = useSendQuotation();
   const approveQuotation = useApproveQuotation();
+  const confirm = useConfirm();
   const [error, setError] = useState<string | null>(null);
   const [downloading, setDownloading] = useState(false);
 
@@ -37,6 +39,13 @@ export default function QuotationDetailPage() {
   const canApprove = hasPermission(user, "quotation:approve") && (quotation.status === "DRAFT" || quotation.status === "PENDING_APPROVAL");
 
   async function handleSend() {
+    const ok = await confirm({
+      title: "Send quotation?",
+      message: "This will email the quotation to the customer and mark it as sent.",
+      confirmLabel: "Send",
+      variant: "primary",
+    });
+    if (!ok) return;
     setError(null);
     try {
       await sendQuotation.mutateAsync(quotation!.id);
@@ -59,7 +68,7 @@ export default function QuotationDetailPage() {
       <div className="mb-6 flex items-start justify-between">
         <div>
           <p className="text-xs font-medium text-slate-400">{quotation.code}</p>
-          <h1 className="text-xl font-semibold text-slate-900">
+          <h1 className="text-xl font-semibold text-primary">
             {quotation.customer?.name ?? "—"} <span className="text-slate-400">v{quotation.version}</span>
           </h1>
           <p className="text-sm text-slate-500">
@@ -77,7 +86,7 @@ export default function QuotationDetailPage() {
 
       <div className="grid grid-cols-2 gap-4">
         <Card className="p-5">
-          <h2 className="mb-3 text-sm font-semibold text-slate-900">Details</h2>
+          <h2 className="mb-3 text-sm font-semibold text-primary">Details</h2>
           <dl className="space-y-2 text-sm">
             <Row label="Payment terms" value={quotation.paymentTerms ?? "—"} />
             <Row label="Valid until" value={quotation.validUntil ? new Date(quotation.validUntil).toLocaleDateString() : "—"} />
@@ -86,8 +95,8 @@ export default function QuotationDetailPage() {
         </Card>
 
         <Card className="p-5">
-          <h2 className="mb-3 text-sm font-semibold text-slate-900">Actions</h2>
-          {error && <p className="mb-2 text-sm text-red-600">{error}</p>}
+          <h2 className="mb-3 text-sm font-semibold text-primary">Actions</h2>
+          {error && <p className="mb-2 text-sm text-red-600 dark:text-red-400">{error}</p>}
           <div className="flex flex-wrap gap-2">
             {canApprove && (
               <Button onClick={handleApprove} disabled={approveQuotation.isPending}>
@@ -107,9 +116,9 @@ export default function QuotationDetailPage() {
         </Card>
 
         <Card className="col-span-2 overflow-hidden p-0">
-          <h2 className="p-5 pb-3 text-sm font-semibold text-slate-900">Line Items</h2>
+          <h2 className="p-5 pb-3 text-sm font-semibold text-primary">Line Items</h2>
           <table className="w-full text-sm">
-            <thead className="border-y border-slate-200 bg-slate-50 text-left text-xs font-medium uppercase text-slate-500">
+            <thead className="border-y border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-left text-xs font-medium uppercase text-slate-500">
               <tr>
                 <th className="px-4 py-2.5">Description</th>
                 <th className="px-4 py-2.5">Qty</th>
@@ -119,15 +128,15 @@ export default function QuotationDetailPage() {
                 <th className="px-4 py-2.5">Line total</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
               {quotation.lineItems?.map((line) => (
                 <tr key={line.id}>
-                  <td className="px-4 py-3 text-slate-900">{line.description}</td>
+                  <td className="px-4 py-3 text-primary">{line.description}</td>
                   <td className="px-4 py-3 text-slate-600">{line.quantity}</td>
                   <td className="px-4 py-3 text-slate-600">{Number(line.unitPrice).toLocaleString()}</td>
                   <td className="px-4 py-3 text-slate-600">{line.discountPct}%</td>
                   <td className="px-4 py-3 text-slate-600">{line.taxPct}%</td>
-                  <td className="px-4 py-3 font-medium text-slate-900">{Number(line.lineTotal).toLocaleString()}</td>
+                  <td className="px-4 py-3 font-medium text-primary">{Number(line.lineTotal).toLocaleString()}</td>
                 </tr>
               ))}
             </tbody>
@@ -145,7 +154,7 @@ export default function QuotationDetailPage() {
               <span>Tax</span>
               <span>{quotation.currency} {Number(quotation.taxTotal).toLocaleString()}</span>
             </div>
-            <div className="flex justify-between border-t border-slate-200 pt-1 font-semibold text-slate-900">
+            <div className="flex justify-between border-t border-slate-200 dark:border-slate-700 pt-1 font-semibold text-primary">
               <span>Grand total</span>
               <span>{quotation.currency} {Number(quotation.grandTotal).toLocaleString()}</span>
             </div>
@@ -158,9 +167,9 @@ export default function QuotationDetailPage() {
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex justify-between border-b border-slate-100 pb-2">
+    <div className="flex justify-between border-b border-slate-100 dark:border-slate-700 pb-2">
       <dt className="text-slate-500">{label}</dt>
-      <dd className="font-medium text-slate-900">{value}</dd>
+      <dd className="font-medium text-primary">{value}</dd>
     </div>
   );
 }

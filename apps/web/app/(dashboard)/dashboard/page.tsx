@@ -25,6 +25,7 @@ import { useDashboardSpotlight, useExecutiveSummary } from "@/lib/dashboard";
 import { useReportsSummary } from "@/lib/reports";
 import { Badge, Card } from "@/components/ui";
 import { BranchFilter } from "@/components/BranchFilter";
+import { formatChartLabel } from "@/lib/chart-labels";
 
 const DashboardCharts = dynamic(() => import("@/components/dashboard/DashboardCharts").then((m) => m.DashboardCharts), {
   ssr: false,
@@ -40,7 +41,7 @@ const DashboardCharts = dynamic(() => import("@/components/dashboard/DashboardCh
 });
 
 function label(value: string) {
-  return value.replaceAll("_", " ");
+  return formatChartLabel(value);
 }
 
 function formatCurrency(amount: number, currency: string) {
@@ -74,7 +75,7 @@ const TONES = {
   emerald: { bg: "bg-emerald-50", text: "text-emerald-600" },
   amber: { bg: "bg-amber-50", text: "text-amber-600" },
   violet: { bg: "bg-violet-50", text: "text-violet-600" },
-  red: { bg: "bg-red-50", text: "text-red-600" },
+  red: { bg: "bg-red-50 dark:bg-red-950/40", text: "text-red-600 dark:text-red-400" },
   slate: { bg: "bg-slate-100", text: "text-slate-600" },
   cyan: { bg: "bg-cyan-50", text: "text-cyan-600" },
 } as const;
@@ -90,7 +91,11 @@ export default function ExecutiveDashboardPage() {
   const pipelineByStage = (reports?.opportunityByStage ?? [])
     .filter((row) => row.stage !== "WON" && row.stage !== "LOST")
     .map((row) => ({ ...row, name: label(row.stage) }));
-  const leadFunnel = (reports?.leadFunnel ?? []).map((row) => ({ ...row, name: label(row.status) }));
+  const leadFunnel = (reports?.leadFunnel ?? []).map((row) => ({
+    ...row,
+    status: row.status,
+    name: formatChartLabel(row.status),
+  }));
   const collectionsByMonth = reports?.collections.byMonth ?? [];
 
   const cards: {
@@ -250,7 +255,7 @@ export default function ExecutiveDashboardPage() {
     <div>
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-xl font-semibold text-slate-900">Executive Dashboard</h1>
+          <h1 className="text-xl font-semibold text-primary">Executive Dashboard</h1>
           <p className="text-sm text-slate-500">
             Real-time snapshot across sales, delivery, finance, and support
             {user?.company ? ` for ${user.company.name}` : ""}.
@@ -260,7 +265,7 @@ export default function ExecutiveDashboardPage() {
       </div>
 
       {isError && (
-        <Card className="mb-6 p-4 text-sm text-red-600">
+        <Card className="mb-6 p-4 text-sm text-red-600 dark:text-red-400">
           Couldn&apos;t load the dashboard summary. Is the API running at <code>NEXT_PUBLIC_API_URL</code>?
         </Card>
       )}
@@ -269,16 +274,16 @@ export default function ExecutiveDashboardPage() {
         <Card className="mb-6 border-amber-200 bg-amber-50/60 p-5">
           <div className="mb-3 flex items-center gap-2">
             <AlertTriangle size={16} className="text-amber-600" />
-            <h2 className="text-sm font-semibold text-slate-900">Needs attention</h2>
+            <h2 className="text-sm font-semibold text-primary">Needs attention</h2>
           </div>
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
             {attention.map((item) => (
               <Link
                 key={item.href + item.title}
                 href={item.href}
-                className="rounded-md border border-amber-100 bg-white px-4 py-3 transition-shadow hover:shadow-sm"
+                className="rounded-md border border-amber-100 bg-surface px-4 py-3 transition-shadow hover:shadow-sm"
               >
-                <p className="text-sm font-medium text-slate-900">{item.title}</p>
+                <p className="text-sm font-medium text-primary">{item.title}</p>
                 <p className="mt-0.5 text-xs text-slate-500">{item.body}</p>
               </Link>
             ))}
@@ -289,19 +294,19 @@ export default function ExecutiveDashboardPage() {
       <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
         <Card className="p-5">
           <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Paid invoices</p>
-          <p className="mt-2 text-2xl font-semibold text-slate-900">
+          <p className="mt-2 text-2xl font-semibold text-primary">
             {reportsLoading ? "…" : formatCurrency(reports?.revenue.paidInvoices ?? 0, currency)}
           </p>
         </Card>
         <Card className="p-5">
           <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Won opportunity value</p>
-          <p className="mt-2 text-2xl font-semibold text-slate-900">
+          <p className="mt-2 text-2xl font-semibold text-primary">
             {reportsLoading ? "…" : formatCurrency(reports?.revenue.wonOpportunities ?? 0, currency)}
           </p>
         </Card>
         <Card className="p-5">
           <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Total collections</p>
-          <p className="mt-2 text-2xl font-semibold text-slate-900">
+          <p className="mt-2 text-2xl font-semibold text-primary">
             {reportsLoading ? "…" : formatCurrency(reports?.collections.total ?? 0, currency)}
           </p>
         </Card>
@@ -321,7 +326,7 @@ export default function ExecutiveDashboardPage() {
                   <ArrowRight size={16} className="mt-1 text-slate-300 transition-colors group-hover:text-slate-500" />
                 </div>
                 <div className="mt-3">
-                  <p className="text-xl font-semibold text-slate-900">{isLoading ? "…" : card.value}</p>
+                  <p className="text-xl font-semibold text-primary">{isLoading ? "…" : card.value}</p>
                   <p className="mt-1 text-sm font-medium text-slate-600">{card.label}</p>
                   <p className="mt-0.5 text-xs text-slate-400">{card.hint}</p>
                 </div>
@@ -343,7 +348,7 @@ export default function ExecutiveDashboardPage() {
       <div className="mt-6">
         <Card className="p-5">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Quick actions</h2>
+            <h2 className="text-sm font-semibold text-primary dark:text-slate-100">Quick actions</h2>
             <Sparkles size={14} className="text-brand-600" />
           </div>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
@@ -351,7 +356,7 @@ export default function ExecutiveDashboardPage() {
               <Link
                 key={link.href}
                 href={link.href}
-                className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:border-brand-200 hover:bg-brand-50 hover:text-brand-800 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-brand-700 dark:hover:bg-brand-900/30 dark:hover:text-brand-300"
+                className="rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 px-3 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-300 dark:text-slate-300 transition-colors hover:border-brand-200 hover:bg-brand-50 hover:text-brand-800 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-brand-700 dark:hover:bg-brand-900/30 dark:hover:text-brand-300"
               >
                 {link.label}
               </Link>
@@ -362,8 +367,8 @@ export default function ExecutiveDashboardPage() {
 
       <div className="mt-6 grid grid-cols-1 gap-4 xl:grid-cols-2">
         <Card className="overflow-hidden">
-          <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
-            <h2 className="text-sm font-semibold text-slate-900">Recent leads</h2>
+          <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-700 px-5 py-4">
+            <h2 className="text-sm font-semibold text-primary">Recent leads</h2>
             <Link href="/leads" className="text-xs font-medium text-brand-700 hover:underline">
               View all
             </Link>
@@ -373,12 +378,12 @@ export default function ExecutiveDashboardPage() {
             <p className="p-5 text-sm text-slate-400">No leads yet.</p>
           )}
           {(spotlight?.recentLeads.length ?? 0) > 0 && (
-            <ul className="divide-y divide-slate-100">
+            <ul className="divide-y divide-slate-100 dark:divide-slate-700">
               {spotlight!.recentLeads.map((lead) => (
                 <li key={lead.id}>
-                  <Link href={`/leads/${lead.id}`} className="flex items-center justify-between gap-3 px-5 py-3 hover:bg-slate-50">
+                  <Link href={`/leads/${lead.id}`} className="flex items-center justify-between gap-3 px-5 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50">
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-slate-900">
+                      <p className="truncate text-sm font-medium text-primary">
                         {lead.companyName}{" "}
                         <span className="font-normal text-slate-400">{lead.code}</span>
                       </p>
@@ -395,8 +400,8 @@ export default function ExecutiveDashboardPage() {
         </Card>
 
         <Card className="overflow-hidden">
-          <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
-            <h2 className="text-sm font-semibold text-slate-900">Top open opportunities</h2>
+          <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-700 px-5 py-4">
+            <h2 className="text-sm font-semibold text-primary">Top open opportunities</h2>
             <Link href="/opportunities" className="text-xs font-medium text-brand-700 hover:underline">
               View all
             </Link>
@@ -406,12 +411,12 @@ export default function ExecutiveDashboardPage() {
             <p className="p-5 text-sm text-slate-400">No open opportunities yet.</p>
           )}
           {(spotlight?.topOpportunities.length ?? 0) > 0 && (
-            <ul className="divide-y divide-slate-100">
+            <ul className="divide-y divide-slate-100 dark:divide-slate-700">
               {spotlight!.topOpportunities.map((opp) => (
                 <li key={opp.id}>
-                  <Link href={`/opportunities/${opp.id}`} className="flex items-center justify-between gap-3 px-5 py-3 hover:bg-slate-50">
+                  <Link href={`/opportunities/${opp.id}`} className="flex items-center justify-between gap-3 px-5 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50">
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-slate-900">
+                      <p className="truncate text-sm font-medium text-primary">
                         {opp.title}{" "}
                         <span className="font-normal text-slate-400">{opp.code}</span>
                       </p>
@@ -419,7 +424,7 @@ export default function ExecutiveDashboardPage() {
                         {opp.customerName ?? "—"} · {label(opp.stage)}
                       </p>
                     </div>
-                    <p className="shrink-0 text-sm font-semibold text-slate-900">
+                    <p className="shrink-0 text-sm font-semibold text-primary">
                       {formatCurrency(opp.estimatedValue, opp.currency)}
                     </p>
                   </Link>
@@ -430,8 +435,8 @@ export default function ExecutiveDashboardPage() {
         </Card>
 
         <Card className="overflow-hidden">
-          <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
-            <h2 className="text-sm font-semibold text-slate-900">Upcoming follow-ups</h2>
+          <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-700 px-5 py-4">
+            <h2 className="text-sm font-semibold text-primary">Upcoming follow-ups</h2>
             <Link href="/calendar" className="text-xs font-medium text-brand-700 hover:underline">
               Calendar
             </Link>
@@ -441,11 +446,11 @@ export default function ExecutiveDashboardPage() {
             <p className="p-5 text-sm text-slate-400">No upcoming events in the next 14 days.</p>
           )}
           {(spotlight?.upcomingEvents.length ?? 0) > 0 && (
-            <ul className="divide-y divide-slate-100">
+            <ul className="divide-y divide-slate-100 dark:divide-slate-700">
               {spotlight!.upcomingEvents.map((event) => (
                 <li key={event.id} className="flex items-center justify-between gap-3 px-5 py-3">
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-medium text-slate-900">{event.title}</p>
+                    <p className="truncate text-sm font-medium text-primary">{event.title}</p>
                     <p className="truncate text-xs text-slate-500">
                       {label(event.type)}
                       {event.opportunityCode ? ` · ${event.opportunityCode}` : ""}
@@ -459,8 +464,8 @@ export default function ExecutiveDashboardPage() {
         </Card>
 
         <Card className="overflow-hidden">
-          <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
-            <h2 className="text-sm font-semibold text-slate-900">Pending approvals</h2>
+          <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-700 px-5 py-4">
+            <h2 className="text-sm font-semibold text-primary">Pending approvals</h2>
             <Link href="/approvals" className="text-xs font-medium text-brand-700 hover:underline">
               Inbox
             </Link>
@@ -470,19 +475,19 @@ export default function ExecutiveDashboardPage() {
             <p className="p-5 text-sm text-slate-400">No pending approvals.</p>
           )}
           {(spotlight?.pendingApprovals.length ?? 0) > 0 && (
-            <ul className="divide-y divide-slate-100">
+            <ul className="divide-y divide-slate-100 dark:divide-slate-700">
               {spotlight!.pendingApprovals.map((approval) => (
                 <li key={approval.id}>
-                  <Link href="/approvals" className="flex items-center justify-between gap-3 px-5 py-3 hover:bg-slate-50">
+                  <Link href="/approvals" className="flex items-center justify-between gap-3 px-5 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50">
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-slate-900">
+                      <p className="truncate text-sm font-medium text-primary">
                         {approval.quotationCode ?? "Quotation"}{" "}
                         <span className="font-normal text-slate-400">{approval.customerName ?? ""}</span>
                       </p>
                       <p className="truncate text-xs text-slate-500">{approval.reason ?? "Approval required"}</p>
                     </div>
                     {approval.grandTotal != null && approval.currency && (
-                      <p className="shrink-0 text-sm font-semibold text-slate-900">
+                      <p className="shrink-0 text-sm font-semibold text-primary">
                         {formatCurrency(approval.grandTotal, approval.currency)}
                       </p>
                     )}
@@ -496,9 +501,9 @@ export default function ExecutiveDashboardPage() {
 
       {(spotlight?.expiringAmcs.length ?? 0) > 0 && (
         <Card className="mt-6 overflow-hidden">
-          <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+          <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-700 px-5 py-4">
             <div>
-              <h2 className="text-sm font-semibold text-slate-900">AMC renewals due</h2>
+              <h2 className="text-sm font-semibold text-primary">AMC renewals due</h2>
               <p className="text-xs text-slate-500">Contracts ending within 90 days</p>
             </div>
             <Link href="/amc" className="text-xs font-medium text-brand-700 hover:underline">
@@ -506,7 +511,7 @@ export default function ExecutiveDashboardPage() {
             </Link>
           </div>
           <table className="w-full text-sm">
-            <thead className="bg-slate-50 text-left text-xs font-medium uppercase text-slate-500">
+            <thead className="bg-slate-50 dark:bg-slate-800/50 text-left text-xs font-medium uppercase text-slate-500">
               <tr>
                 <th className="px-5 py-2.5">Contract</th>
                 <th className="px-5 py-2.5">Customer</th>
@@ -514,9 +519,9 @@ export default function ExecutiveDashboardPage() {
                 <th className="px-5 py-2.5 text-right">Value</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
               {spotlight!.expiringAmcs.map((contract) => (
-                <tr key={contract.id} className="hover:bg-slate-50">
+                <tr key={contract.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50">
                   <td className="px-5 py-3">
                     <Link href={`/amc/${contract.id}`} className="font-medium text-brand-600 hover:underline">
                       {contract.code}
@@ -527,7 +532,7 @@ export default function ExecutiveDashboardPage() {
                     {new Date(contract.endDate).toLocaleDateString()}
                     <span className="ml-2 text-xs font-medium text-amber-700">({contract.daysToExpiry}d)</span>
                   </td>
-                  <td className="px-5 py-3 text-right font-medium text-slate-900">
+                  <td className="px-5 py-3 text-right font-medium text-primary">
                     {formatCurrency(contract.contractValue, contract.currency)}
                   </td>
                 </tr>

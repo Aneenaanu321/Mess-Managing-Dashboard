@@ -33,7 +33,7 @@ export default function DeviceDetailPage() {
       <div className="mb-6 flex items-start justify-between">
         <div>
           <p className="text-xs font-medium text-slate-400">{device.type.replaceAll("_", " ")}</p>
-          <h1 className="text-xl font-semibold text-slate-900">{device.serialNumber}</h1>
+          <h1 className="text-xl font-semibold text-primary">{device.serialNumber}</h1>
           <p className="text-sm text-slate-500">{device.product?.name}</p>
         </div>
         {canManage ? (
@@ -49,11 +49,11 @@ export default function DeviceDetailPage() {
         )}
       </div>
 
-      {error && <p className="mb-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
+      {error && <p className="mb-4 rounded-md bg-red-50 dark:bg-red-950/40 px-3 py-2 text-sm text-red-700 dark:text-red-300">{error}</p>}
 
       <div className="grid grid-cols-2 gap-4">
         <Card className="p-5">
-          <h2 className="mb-3 text-sm font-semibold text-slate-900">Details</h2>
+          <h2 className="mb-3 text-sm font-semibold text-primary">Details</h2>
           <dl className="space-y-2 text-sm">
             <Row label="Product" value={device.product?.name ?? "—"} />
             <Row label="SKU" value={device.product?.sku ?? "—"} />
@@ -69,11 +69,11 @@ export default function DeviceDetailPage() {
         </Card>
 
         <Card className="p-5">
-          <h2 className="mb-3 text-sm font-semibold text-slate-900">Support Tickets</h2>
+          <h2 className="mb-3 text-sm font-semibold text-primary">Support Tickets</h2>
           {device.tickets?.length ? (
             <ul className="space-y-1.5 text-sm">
               {device.tickets.map((t) => (
-                <li key={t.id} className="flex justify-between border-b border-slate-100 pb-1.5">
+                <li key={t.id} className="flex justify-between border-b border-slate-100 dark:border-slate-700 pb-1.5">
                   <Link href={`/support/${t.id}`} className="text-brand-600 hover:underline">
                     {t.code}
                   </Link>
@@ -92,9 +92,9 @@ export default function DeviceDetailPage() {
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex justify-between border-b border-slate-100 pb-2">
+    <div className="flex justify-between border-b border-slate-100 dark:border-slate-700 pb-2">
       <dt className="text-slate-500">{label}</dt>
-      <dd className="font-medium text-slate-900">{value}</dd>
+      <dd className="font-medium text-primary">{value}</dd>
     </div>
   );
 }

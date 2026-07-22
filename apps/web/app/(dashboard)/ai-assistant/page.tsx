@@ -66,7 +66,7 @@ export default function AiAssistantPage() {
           <Sparkles size={18} />
         </div>
         <div>
-          <h1 className="text-xl font-semibold text-slate-900">AI Assistant</h1>
+          <h1 className="text-xl font-semibold text-primary">AI Assistant</h1>
           <p className="text-sm text-slate-500">Advisory only — reads live data, never changes it.</p>
         </div>
       </div>
@@ -77,7 +77,7 @@ export default function AiAssistantPage() {
             <div key={msg.id} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
               <div
                 className={`max-w-[80%] whitespace-pre-line rounded-lg px-3 py-2 text-sm ${
-                  msg.role === "user" ? "bg-brand-600 text-white" : "bg-slate-100 text-slate-800"
+                  msg.role === "user" ? "bg-brand-600 text-white" : "bg-slate-100 text-primary"
                 }`}
               >
                 {msg.content}
@@ -92,12 +92,12 @@ export default function AiAssistantPage() {
         </div>
 
         {messages.length <= 1 && (
-          <div className="flex flex-wrap gap-2 border-t border-slate-100 px-4 py-3">
+          <div className="flex flex-wrap gap-2 border-t border-slate-100 dark:border-slate-700 px-4 py-3">
             {SUGGESTIONS.map((s) => (
               <button
                 key={s}
                 onClick={() => send(s)}
-                className="rounded-full border border-slate-200 px-3 py-1 text-xs text-slate-600 hover:border-brand-300 hover:text-brand-700"
+                className="rounded-full border border-slate-200 dark:border-slate-700 px-3 py-1 text-xs text-slate-600 hover:border-brand-300 hover:text-brand-700"
               >
                 {s}
               </button>
@@ -106,7 +106,7 @@ export default function AiAssistantPage() {
         )}
 
         <form
-          className="flex items-center gap-2 border-t border-slate-200 p-3"
+          className="flex items-center gap-2 border-t border-slate-200 dark:border-slate-700 p-3"
           onSubmit={(e) => {
             e.preventDefault();
             send(input);

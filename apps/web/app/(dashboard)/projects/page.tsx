@@ -18,7 +18,7 @@ export default function ProjectsPage() {
     <div>
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-slate-900">Projects</h1>
+          <h1 className="text-xl font-semibold text-primary">Projects</h1>
           <p className="text-sm text-slate-500">
             {data?.meta?.total ?? 0} total project{data?.meta?.total === 1 ? "" : "s"}
           </p>
@@ -44,13 +44,13 @@ export default function ProjectsPage() {
 
       <Card className="overflow-hidden">
         {isLoading && <p className="p-6 text-sm text-slate-500">Loading projects…</p>}
-        {isError && <p className="p-6 text-sm text-red-600">Couldn&apos;t load projects.</p>}
+        {isError && <p className="p-6 text-sm text-red-600 dark:text-red-400">Couldn&apos;t load projects.</p>}
         {!isLoading && !isError && projects.length === 0 && (
           <p className="p-6 text-sm text-slate-500">No projects match these filters yet.</p>
         )}
         {projects.length > 0 && (
           <table className="w-full text-sm">
-            <thead className="border-b border-slate-200 bg-slate-50 text-left text-xs font-medium uppercase text-slate-500">
+            <thead className="border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-left text-xs font-medium uppercase text-slate-500">
               <tr>
                 <th className="px-4 py-2.5">Code</th>
                 <th className="px-4 py-2.5">Name</th>
@@ -60,15 +60,15 @@ export default function ProjectsPage() {
                 <th className="px-4 py-2.5">Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
               {projects.map((p: Project) => (
-                <tr key={p.id} className="hover:bg-slate-50">
+                <tr key={p.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50">
                   <td className="px-4 py-3">
                     <Link href={`/projects/${p.id}`} className="font-medium text-brand-600 hover:underline">
                       {p.code}
                     </Link>
                   </td>
-                  <td className="px-4 py-3 text-slate-900">{p.name}</td>
+                  <td className="px-4 py-3 text-primary">{p.name}</td>
                   <td className="px-4 py-3 text-slate-600">{p.customer?.name ?? "—"}</td>
                   <td className="px-4 py-3 text-slate-600">
                     {p.manager ? `${p.manager.firstName} ${p.manager.lastName}` : <span className="text-slate-400">Unassigned</span>}

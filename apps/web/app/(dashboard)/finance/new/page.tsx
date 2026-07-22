@@ -6,6 +6,7 @@ import { useCreateInvoice, CreateInvoiceLineItemInput } from "@/lib/finance";
 import { useCustomers } from "@/lib/customers";
 import { useProjects } from "@/lib/projects";
 import { Button, Input, Label, Select, Card } from "@/components/ui";
+import { useConfirm } from "@/components/ConfirmDialog";
 
 const emptyLine: CreateInvoiceLineItemInput = { description: "", quantity: 1, unitPrice: 0, taxPct: 0 };
 
@@ -23,6 +24,7 @@ export default function NewInvoicePage() {
   const [dueDate, setDueDate] = useState("");
   const [lineItems, setLineItems] = useState<CreateInvoiceLineItemInput[]>([{ ...emptyLine }]);
   const [error, setError] = useState<string | null>(null);
+  const confirm = useConfirm();
 
   const subtotal = lineItems.reduce((sum, li) => sum + li.quantity * li.unitPrice, 0);
   const taxTotal = lineItems.reduce((sum, li) => sum + li.quantity * li.unitPrice * ((li.taxPct ?? 0) / 100), 0);
@@ -50,7 +52,7 @@ export default function NewInvoicePage() {
 
   return (
     <div className="mx-auto max-w-3xl">
-      <h1 className="mb-6 text-xl font-semibold text-slate-900">New Invoice</h1>
+      <h1 className="mb-6 text-xl font-semibold text-primary">New Invoice</h1>
 
       <Card className="p-6">
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -141,7 +143,17 @@ export default function NewInvoicePage() {
                     size="sm"
                     className="col-span-1"
                     disabled={lineItems.length === 1}
-                    onClick={() => setLineItems((prev) => prev.filter((_, idx) => idx !== i))}
+                    onClick={async () => {
+                      if (lineItems.length <= 1) return;
+                      const ok = await confirm({
+                        title: "Remove line item?",
+                        message: "This line will be removed from the invoice.",
+                        confirmLabel: "Remove",
+                        variant: "danger",
+                      });
+                      if (!ok) return;
+                      setLineItems((prev) => prev.filter((_, idx) => idx !== i));
+                    }}
                   >
                     ✕
                   </Button>
@@ -150,19 +162,19 @@ export default function NewInvoicePage() {
             </div>
           </div>
 
-          <div className="flex justify-end gap-6 border-t border-slate-100 pt-4 text-sm">
+          <div className="flex justify-end gap-6 border-t border-slate-100 dark:border-slate-700 pt-4 text-sm">
             <span className="text-slate-500">
-              Subtotal: <span className="font-medium text-slate-900">{subtotal.toFixed(2)}</span>
+              Subtotal: <span className="font-medium text-primary">{subtotal.toFixed(2)}</span>
             </span>
             <span className="text-slate-500">
-              Tax: <span className="font-medium text-slate-900">{taxTotal.toFixed(2)}</span>
+              Tax: <span className="font-medium text-primary">{taxTotal.toFixed(2)}</span>
             </span>
             <span className="text-slate-500">
-              Total: <span className="font-semibold text-slate-900">{(subtotal + taxTotal).toFixed(2)}</span>
+              Total: <span className="font-semibold text-primary">{(subtotal + taxTotal).toFixed(2)}</span>
             </span>
           </div>
 
-          {error && <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
+          {error && <p className="rounded-md bg-red-50 dark:bg-red-950/40 px-3 py-2 text-sm text-red-700 dark:text-red-300">{error}</p>}
 
           <div className="flex justify-end gap-2">
             <Button type="button" variant="secondary" onClick={() => router.back()}>

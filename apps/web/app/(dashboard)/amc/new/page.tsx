@@ -42,7 +42,7 @@ export default function NewAmcContractPage() {
 
   return (
     <div className="mx-auto max-w-2xl">
-      <h1 className="mb-6 text-xl font-semibold text-slate-900">New AMC Contract</h1>
+      <h1 className="mb-6 text-xl font-semibold text-primary">New AMC Contract</h1>
 
       <Card className="p-6">
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -84,10 +84,10 @@ export default function NewAmcContractPage() {
 
           <div>
             <Label>Covered devices (optional)</Label>
-            <div className="max-h-40 space-y-1.5 overflow-y-auto rounded-md border border-slate-200 p-3">
+            <div className="max-h-40 space-y-1.5 overflow-y-auto rounded-md border border-slate-200 dark:border-slate-700 p-3">
               {devices.length === 0 && <p className="text-sm text-slate-400">No devices available.</p>}
               {devices.map((d) => (
-                <label key={d.id} className="flex items-center gap-2 text-sm text-slate-700">
+                <label key={d.id} className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
                   <input type="checkbox" checked={deviceIds.includes(d.id)} onChange={() => toggleDevice(d.id)} />
                   {d.serialNumber} — {d.type.replaceAll("_", " ")}
                 </label>
@@ -95,7 +95,7 @@ export default function NewAmcContractPage() {
             </div>
           </div>
 
-          {error && <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
+          {error && <p className="rounded-md bg-red-50 dark:bg-red-950/40 px-3 py-2 text-sm text-red-700 dark:text-red-300">{error}</p>}
 
           <div className="flex justify-end gap-2">
             <Button type="button" variant="secondary" onClick={() => router.back()}>

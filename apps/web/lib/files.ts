@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "./api-client";
+import { toast } from "./toast";
 import { getAccessToken } from "./api-client";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api/v1";
@@ -43,7 +44,10 @@ export function useUploadFile(entityType: string, entityId: string) {
       if (!res.ok || body.success === false) throw new Error(body.error?.message ?? "Upload failed");
       return body.data as FileAsset;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["files", entityType, entityId] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["files", entityType, entityId] });
+      toast.success("Saved");
+    },
   });
 }
 

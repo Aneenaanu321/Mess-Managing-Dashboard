@@ -45,7 +45,7 @@ export default function CustomersPage() {
     <div>
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-slate-900">Customers</h1>
+          <h1 className="text-xl font-semibold text-primary">Customers</h1>
           <p className="text-sm text-slate-500">
             {data?.meta?.total ?? 0} total customer{data?.meta?.total === 1 ? "" : "s"}
           </p>
@@ -92,7 +92,7 @@ export default function CustomersPage() {
       <Card className="overflow-hidden">
         {isLoading && <p className="p-6 text-sm text-slate-500">Loading customers…</p>}
         {isError && (
-          <p className="p-6 text-sm text-red-600">
+          <p className="p-6 text-sm text-red-600 dark:text-red-400">
             Couldn&apos;t load customers. Is the API running at <code>NEXT_PUBLIC_API_URL</code>?
           </p>
         )}
@@ -101,7 +101,7 @@ export default function CustomersPage() {
         )}
         {customers.length > 0 && (
           <table className="w-full text-sm">
-            <thead className="border-b border-slate-200 bg-slate-50 text-left text-xs font-medium uppercase text-slate-500">
+            <thead className="border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-left text-xs font-medium uppercase text-slate-500">
               <tr>
                 <th className="px-4 py-2.5">Code</th>
                 <th className="px-4 py-2.5">Name</th>
@@ -112,15 +112,15 @@ export default function CustomersPage() {
                 <th className="px-4 py-2.5">Sites</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
               {customers.map((customer: Customer & { _count?: { contacts: number; sites: number; opportunities: number } }) => (
-                <tr key={customer.id} className="hover:bg-slate-50">
+                <tr key={customer.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50">
                   <td className="px-4 py-3">
                     <Link href={`/customers/${customer.id}`} className="font-medium text-brand-600 hover:underline">
                       {customer.code}
                     </Link>
                   </td>
-                  <td className="px-4 py-3 text-slate-900">{customer.name}</td>
+                  <td className="px-4 py-3 text-primary">{customer.name}</td>
                   <td className="px-4 py-3 text-slate-600">{customer.industry}</td>
                   <td className="px-4 py-3 text-slate-600">{customer.website || <span className="text-slate-400">—</span>}</td>
                   <td className="px-4 py-3 text-slate-600">
@@ -205,7 +205,7 @@ function MergePanel({ customers, onDone }: { customers: Customer[]; onDone: () =
           {mergeCustomers.isPending ? "Merging…" : "Merge"}
         </Button>
       </div>
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
     </Card>
   );
 }

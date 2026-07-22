@@ -35,7 +35,7 @@ export function FileAttachments({ entityType, entityId }: { entityType: string; 
   return (
     <Card className="p-5">
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-slate-900">Attachments</h2>
+        <h2 className="text-sm font-semibold text-primary">Attachments</h2>
         <Button size="sm" variant="secondary" onClick={() => inputRef.current?.click()} disabled={upload.isPending}>
           <Upload size={14} />
           {upload.isPending ? "Uploading…" : "Upload"}
@@ -43,7 +43,7 @@ export function FileAttachments({ entityType, entityId }: { entityType: string; 
         <input ref={inputRef} type="file" className="hidden" onChange={handleFileChange} />
       </div>
 
-      {error && <p className="mb-2 text-xs text-red-600">{error}</p>}
+      {error && <p className="mb-2 text-xs text-red-600 dark:text-red-400">{error}</p>}
       {isLoading && <p className="text-sm text-slate-500">Loading…</p>}
       {!isLoading && (files?.length ?? 0) === 0 && <p className="text-sm text-slate-400">No files attached yet.</p>}
 
@@ -53,7 +53,7 @@ export function FileAttachments({ entityType, entityId }: { entityType: string; 
             <button
               type="button"
               onClick={() => openFile(file.id)}
-              className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-sm text-slate-700 hover:bg-slate-50"
+              className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50"
             >
               <Paperclip size={14} className="shrink-0 text-slate-400" />
               <span className="flex-1 truncate">{file.fileName}</span>

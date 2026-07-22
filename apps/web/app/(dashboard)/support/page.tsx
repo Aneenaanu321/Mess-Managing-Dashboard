@@ -19,7 +19,7 @@ export default function SupportPage() {
     <div>
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-slate-900">Support Tickets</h1>
+          <h1 className="text-xl font-semibold text-primary">Support Tickets</h1>
           <p className="text-sm text-slate-500">
             {data?.meta?.total ?? 0} ticket{data?.meta?.total === 1 ? "" : "s"}
           </p>
@@ -53,11 +53,11 @@ export default function SupportPage() {
 
       <Card className="overflow-hidden">
         {isLoading && <p className="p-6 text-sm text-slate-500">Loading tickets…</p>}
-        {isError && <p className="p-6 text-sm text-red-600">Couldn&apos;t load tickets.</p>}
+        {isError && <p className="p-6 text-sm text-red-600 dark:text-red-400">Couldn&apos;t load tickets.</p>}
         {!isLoading && !isError && tickets.length === 0 && <p className="p-6 text-sm text-slate-500">No tickets match these filters yet.</p>}
         {tickets.length > 0 && (
           <table className="w-full text-sm">
-            <thead className="border-b border-slate-200 bg-slate-50 text-left text-xs font-medium uppercase text-slate-500">
+            <thead className="border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-left text-xs font-medium uppercase text-slate-500">
               <tr>
                 <th className="px-4 py-2.5">Code</th>
                 <th className="px-4 py-2.5">Subject</th>
@@ -67,15 +67,15 @@ export default function SupportPage() {
                 <th className="px-4 py-2.5">Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
               {tickets.map((t: Ticket) => (
-                <tr key={t.id} className="hover:bg-slate-50">
+                <tr key={t.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50">
                   <td className="px-4 py-3">
                     <Link href={`/support/${t.id}`} className="font-medium text-brand-600 hover:underline">
                       {t.code}
                     </Link>
                   </td>
-                  <td className="px-4 py-3 text-slate-900">{t.subject}</td>
+                  <td className="px-4 py-3 text-primary">{t.subject}</td>
                   <td className="px-4 py-3 text-slate-600">{t.customer?.name ?? "—"}</td>
                   <td className="px-4 py-3">
                     <Badge tone={TICKET_PRIORITY_TONE[t.priority]}>{t.priority}</Badge>

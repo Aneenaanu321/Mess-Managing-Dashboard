@@ -3,6 +3,9 @@ import { z } from "zod";
 export const listAuditLogQuerySchema = z.object({
   entityType: z.string().optional(),
   action: z.string().optional(),
+  actorId: z.string().optional(),
+  dateFrom: z.string().datetime().optional(),
+  dateTo: z.string().datetime().optional(),
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(50),
 });

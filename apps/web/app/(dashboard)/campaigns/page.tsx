@@ -18,7 +18,7 @@ export default function CampaignsPage() {
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-700">Marketing</p>
-          <h1 className="font-display mt-1 text-2xl font-semibold tracking-tight text-slate-900">Campaigns</h1>
+          <h1 className="font-display mt-1 text-2xl font-semibold tracking-tight text-primary">Campaigns</h1>
           <p className="mt-1 text-sm text-slate-500">Track lead attribution back to the campaign that generated it.</p>
         </div>
         {hasPermission(user, "campaign:manage") && (
@@ -40,16 +40,16 @@ export default function CampaignsPage() {
 
       <Card className="overflow-hidden">
         {isLoading && <p className="p-8 text-sm text-slate-500">Loading campaigns…</p>}
-        {isError && <p className="p-8 text-sm text-red-600">Couldn&apos;t load campaigns.</p>}
+        {isError && <p className="p-8 text-sm text-red-600 dark:text-red-400">Couldn&apos;t load campaigns.</p>}
         {!isLoading && !isError && campaigns.length === 0 && (
           <div className="px-8 py-14 text-center">
-            <p className="font-medium text-slate-800">No campaigns yet</p>
+            <p className="font-medium text-primary">No campaigns yet</p>
             <p className="mt-1 text-sm text-slate-500">Create one to start attributing leads to it.</p>
           </div>
         )}
         {campaigns.length > 0 && (
           <table className="w-full text-sm">
-            <thead className="border-b border-slate-200 bg-slate-50/80 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">
+            <thead className="border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50/80 dark:bg-slate-800/50 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">
               <tr>
                 <th className="px-4 py-3">Name</th>
                 <th className="px-4 py-3">Channel</th>
@@ -58,7 +58,7 @@ export default function CampaignsPage() {
                 <th className="px-4 py-3">Leads</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
               {campaigns.map((c: Campaign) => (
                 <tr key={c.id} className="transition-colors hover:bg-brand-50/40">
                   <td className="px-4 py-3.5">

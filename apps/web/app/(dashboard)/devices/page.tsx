@@ -19,7 +19,7 @@ export default function DevicesPage() {
     <div>
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-slate-900">Devices</h1>
+          <h1 className="text-xl font-semibold text-primary">Devices</h1>
           <p className="text-sm text-slate-500">
             {data?.meta?.total ?? 0} device{data?.meta?.total === 1 ? "" : "s"} tracked
           </p>
@@ -53,13 +53,13 @@ export default function DevicesPage() {
 
       <Card className="overflow-hidden">
         {isLoading && <p className="p-6 text-sm text-slate-500">Loading devices…</p>}
-        {isError && <p className="p-6 text-sm text-red-600">Couldn&apos;t load devices.</p>}
+        {isError && <p className="p-6 text-sm text-red-600 dark:text-red-400">Couldn&apos;t load devices.</p>}
         {!isLoading && !isError && devices.length === 0 && (
           <p className="p-6 text-sm text-slate-500">No devices match these filters yet.</p>
         )}
         {devices.length > 0 && (
           <table className="w-full text-sm">
-            <thead className="border-b border-slate-200 bg-slate-50 text-left text-xs font-medium uppercase text-slate-500">
+            <thead className="border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-left text-xs font-medium uppercase text-slate-500">
               <tr>
                 <th className="px-4 py-2.5">Serial Number</th>
                 <th className="px-4 py-2.5">Type</th>
@@ -69,9 +69,9 @@ export default function DevicesPage() {
                 <th className="px-4 py-2.5">Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
               {devices.map((d: Device) => (
-                <tr key={d.id} className="hover:bg-slate-50">
+                <tr key={d.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50">
                   <td className="px-4 py-3">
                     <Link href={`/devices/${d.id}`} className="font-medium text-brand-600 hover:underline">
                       {d.serialNumber}

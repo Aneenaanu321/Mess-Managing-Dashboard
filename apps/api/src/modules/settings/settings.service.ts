@@ -66,12 +66,21 @@ export const settingsService = {
   },
 
   async getAuditLog(ctx: Ctx, query: ListAuditLogQuery) {
-    const { entityType, action, page, pageSize } = query;
+    const { entityType, action, actorId, dateFrom, dateTo, page, pageSize } = query;
 
     const where = {
       companyId: ctx.companyId,
       ...(entityType ? { entityType } : {}),
       ...(action ? { action } : {}),
+      ...(actorId ? { actorId } : {}),
+      ...(dateFrom || dateTo
+        ? {
+            createdAt: {
+              ...(dateFrom ? { gte: new Date(dateFrom) } : {}),
+              ...(dateTo ? { lte: new Date(dateTo) } : {}),
+            },
+          }
+        : {}),
     };
 
     const [items, total] = await Promise.all([

@@ -4,17 +4,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api/v1
 const ACCESS_TOKEN_COOKIE = "rfidcore_access";
 const REMEMBER_FLAG_KEY = "rfidcore_remember_flag";
 
-/**
- * v1 token storage note: the access token is kept in a short-lived
- * (15 min), non-httpOnly cookie so client components can read it and attach
- * it as a Bearer header. This is deliberately readable by JS (unlike the
- * refresh token, which the API sets as httpOnly) — the access token's short
- * TTL and the fact that it can't be used to mint new tokens without the
- * httpOnly refresh cookie bounds the XSS blast radius. A stricter setup
- * (in-memory-only access token + silent refresh on load) is a reasonable
- * hardening step for a later pass; documented here rather than silently
- * assumed.
- */
+// Access token: short-lived JS-readable cookie for Bearer headers; refresh token stays httpOnly.
 export function getAccessToken(): string | undefined {
   return Cookies.get(ACCESS_TOKEN_COOKIE);
 }

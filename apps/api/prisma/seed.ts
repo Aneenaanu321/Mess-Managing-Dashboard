@@ -236,6 +236,7 @@ async function main() {
 
   for (const [i, lead] of demoLeads.entries()) {
     const code = `LEAD-2026-${String(i + 1).padStart(4, "0")}`;
+    const leadStatuses = ["NEW", "CONTACTED", "QUALIFIED", "QUALIFIED", "CONVERTED"] as const;
     await prisma.lead.upsert({
       where: { companyId_code: { companyId: company.id, code } },
       create: {
@@ -250,9 +251,10 @@ async function main() {
         source: lead.source as never,
         industry: lead.industry as never,
         score: lead.score,
+        status: leadStatuses[i] ?? "NEW",
         ownerId: userIds.get("SALES_EXECUTIVE"),
       },
-      update: {},
+      update: { status: leadStatuses[i] ?? "NEW" },
     });
   }
 
@@ -260,6 +262,19 @@ async function main() {
   const raviId = userIds.get("SALES_EXECUTIVE");
   const pmId = userIds.get("PROJECT_MANAGER");
   const engineerId = userIds.get("IMPLEMENTATION_ENGINEER");
+  const financeId = userIds.get("FINANCE");
+
+  function monthsAgo(months: number, day = 15): Date {
+    const d = new Date();
+    d.setHours(12, 0, 0, 0);
+    d.setDate(day);
+    d.setMonth(d.getMonth() - months);
+    return d;
+  }
+
+  function daysFromNow(days: number): Date {
+    return new Date(Date.now() + days * 86400000);
+  }
 
   const customerSpecs = [
     { code: "CUST-2026-0001", name: "Al Noor Retail Group", industry: "RETAIL", contact: { firstName: "Yasmin", lastName: "Ali", email: "yasmin@alnoorretail.demo", phone: "+971501234567" }, site: { label: "Dubai Mall Flagship", city: "Dubai", country: "UAE" } },
@@ -326,6 +341,12 @@ async function main() {
     opportunities.push({ id: opp.id, customerId: cust.id });
   }
 
+  // One closed-won deal for revenue KPIs
+  await prisma.opportunity.update({
+    where: { companyId_code: { companyId: company.id, code: "OPP-2026-0001" } },
+    data: { stage: "WON", probability: 100 },
+  });
+
   const reader = allProducts.find((p) => p.sku === "RFID-RDR-100");
   const antenna = allProducts.find((p) => p.sku === "RFID-ANT-200");
   const gate = allProducts.find((p) => p.sku === "RFID-GATE-300");
@@ -388,6 +409,267 @@ async function main() {
         },
       });
     }
+
+    // Pending approvals for discount-triggered quotations
+    const pendingQuotations = await prisma.quotation.findMany({
+      where: { companyId: company.id, status: "PENDING_APPROVAL" },
+      select: { id: true, code: true },
+    });
+    for (const qt of pendingQuotations) {
+      const existing = await prisma.approval.findFirst({
+        where: { companyId: company.id, quotationId: qt.id, status: "PENDING" },
+      });
+      if (existing) continue;
+      await prisma.approval.create({
+        data: {
+          companyId: company.id,
+          entityType: "Quotation",
+          entityId: qt.id,
+          quotationId: qt.id,
+          requestedById: raviId!,
+          status: "PENDING",
+          reason: `Discount on ${qt.code} exceeds approval threshold`,
+        },
+      });
+    }
+  }
+
+  console.log("Seeding: invoices + payments (collections trend)...");
+  const invoiceSpecs = [
+    {
+      code: "INV-2026-0001",
+      customerIdx: 0,
+      status: "PAID" as const,
+      subtotal: 80952.38,
+      taxTotal: 4047.62,
+      total: 85000,
+      amountPaid: 85000,
+      dueDate: monthsAgo(2),
+      issuedAt: monthsAgo(3),
+      milestone: "Advance",
+      payments: [
+        { monthsAgo: 3, amount: 34000, method: "BANK_TRANSFER" as const, ref: "TXN-ADV-001" },
+        { monthsAgo: 2, amount: 51000, method: "BANK_TRANSFER" as const, ref: "TXN-ADV-002" },
+      ],
+    },
+    {
+      code: "INV-2026-0002",
+      customerIdx: 1,
+      status: "PAID" as const,
+      subtotal: 57142.86,
+      taxTotal: 2857.14,
+      total: 60000,
+      amountPaid: 60000,
+      dueDate: monthsAgo(1),
+      issuedAt: monthsAgo(2),
+      milestone: "Delivery",
+      payments: [{ monthsAgo: 2, amount: 60000, method: "CHEQUE" as const, ref: "CHQ-88421" }],
+    },
+    {
+      code: "INV-2026-0003",
+      customerIdx: 2,
+      status: "PAID" as const,
+      subtotal: 42857.14,
+      taxTotal: 2142.86,
+      total: 45000,
+      amountPaid: 45000,
+      dueDate: monthsAgo(1),
+      issuedAt: monthsAgo(1),
+      milestone: "Go-Live",
+      payments: [{ monthsAgo: 1, amount: 45000, method: "ONLINE" as const, ref: "PG-77219" }],
+    },
+    {
+      code: "INV-2026-0004",
+      customerIdx: 3,
+      status: "PAID" as const,
+      subtotal: 66666.67,
+      taxTotal: 3333.33,
+      total: 70000,
+      amountPaid: 70000,
+      dueDate: daysFromNow(-7),
+      issuedAt: monthsAgo(0),
+      milestone: "Advance",
+      payments: [{ monthsAgo: 0, amount: 70000, method: "BANK_TRANSFER" as const, ref: "TXN-JUL-004" }],
+    },
+    {
+      code: "INV-2026-0005",
+      customerIdx: 4,
+      status: "PARTIALLY_PAID" as const,
+      subtotal: 95238.1,
+      taxTotal: 4761.9,
+      total: 100000,
+      amountPaid: 40000,
+      dueDate: daysFromNow(14),
+      issuedAt: monthsAgo(0),
+      milestone: "Delivery",
+      payments: [{ monthsAgo: 0, amount: 40000, method: "BANK_TRANSFER" as const, ref: "TXN-PART-005" }],
+    },
+    {
+      code: "INV-2026-0006",
+      customerIdx: 0,
+      status: "OVERDUE" as const,
+      subtotal: 28571.43,
+      taxTotal: 1428.57,
+      total: 30000,
+      amountPaid: 0,
+      dueDate: daysFromNow(-45),
+      issuedAt: monthsAgo(2),
+      milestone: "Support retainer",
+      payments: [] as Array<{ monthsAgo: number; amount: number; method: "BANK_TRANSFER"; ref: string }>,
+    },
+    {
+      code: "INV-2026-0007",
+      customerIdx: 1,
+      status: "SENT" as const,
+      subtotal: 38095.24,
+      taxTotal: 1904.76,
+      total: 40000,
+      amountPaid: 0,
+      dueDate: daysFromNow(30),
+      issuedAt: monthsAgo(0),
+      milestone: "Training",
+      payments: [] as Array<{ monthsAgo: number; amount: number; method: "BANK_TRANSFER"; ref: string }>,
+    },
+  ] as const;
+
+  for (const spec of invoiceSpecs) {
+    const customer = customers[spec.customerIdx];
+    if (!customer) continue;
+
+    const invoice = await prisma.invoice.upsert({
+      where: { companyId_code: { companyId: company.id, code: spec.code } },
+      create: {
+        companyId: company.id,
+        branchId: branch.id,
+        code: spec.code,
+        customerId: customer.id,
+        milestoneLabel: spec.milestone,
+        status: spec.status,
+        currency: "AED",
+        subtotal: spec.subtotal,
+        taxTotal: spec.taxTotal,
+        totalAmount: spec.total,
+        amountPaid: spec.amountPaid,
+        dueDate: spec.dueDate,
+        issuedAt: spec.issuedAt,
+        lineItems: {
+          create: [
+            {
+              description: `${spec.milestone} — RFID hardware & services`,
+              quantity: 1,
+              unitPrice: spec.subtotal,
+              taxPct: 5,
+              lineTotal: spec.total,
+            },
+          ],
+        },
+      },
+      update: {
+        status: spec.status,
+        amountPaid: spec.amountPaid,
+        dueDate: spec.dueDate,
+        issuedAt: spec.issuedAt,
+      },
+    });
+
+    const existingPayments = await prisma.payment.count({ where: { invoiceId: invoice.id } });
+    if (existingPayments === 0) {
+      for (const payment of spec.payments) {
+        await prisma.payment.create({
+          data: {
+            companyId: company.id,
+            invoiceId: invoice.id,
+            amount: payment.amount,
+            currency: "AED",
+            method: payment.method,
+            reference: payment.ref,
+            receivedAt: monthsAgo(payment.monthsAgo),
+            recordedById: financeId,
+          },
+        });
+      }
+    }
+  }
+
+  // Extra historical payments so the collections chart spans several months
+  const extraPayments = [
+    { monthsAgo: 5, amount: 32000, customerIdx: 2 },
+    { monthsAgo: 4, amount: 48000, customerIdx: 3 },
+  ] as const;
+  for (const [i, extra] of extraPayments.entries()) {
+    const customer = customers[extra.customerIdx];
+    if (!customer) continue;
+    const code = `INV-2026-HIST-${String(i + 1).padStart(2, "0")}`;
+    const total = extra.amount;
+    const subtotal = total / 1.05;
+    const taxTotal = total - subtotal;
+
+    const invoice = await prisma.invoice.upsert({
+      where: { companyId_code: { companyId: company.id, code } },
+      create: {
+        companyId: company.id,
+        branchId: branch.id,
+        code,
+        customerId: customer.id,
+        status: "PAID",
+        currency: "AED",
+        subtotal,
+        taxTotal,
+        totalAmount: total,
+        amountPaid: total,
+        dueDate: monthsAgo(extra.monthsAgo - 1),
+        issuedAt: monthsAgo(extra.monthsAgo),
+        lineItems: {
+          create: [{ description: "Historical demo invoice", quantity: 1, unitPrice: subtotal, taxPct: 5, lineTotal: total }],
+        },
+      },
+      update: { status: "PAID", amountPaid: total },
+    });
+
+    const hasPayment = await prisma.payment.count({ where: { invoiceId: invoice.id } });
+    if (hasPayment === 0) {
+      await prisma.payment.create({
+        data: {
+          companyId: company.id,
+          invoiceId: invoice.id,
+          amount: total,
+          currency: "AED",
+          method: "BANK_TRANSFER",
+          reference: `HIST-${code}`,
+          receivedAt: monthsAgo(extra.monthsAgo),
+          recordedById: financeId,
+        },
+      });
+    }
+  }
+
+  console.log("Seeding: calendar follow-ups...");
+  const calendarSpecs = [
+    { title: "Follow up — Al Noor quotation review", type: "FOLLOW_UP" as const, daysAhead: 2, oppIdx: 0 },
+    { title: "Site visit — MedLife warehouse survey", type: "SITE_VISIT" as const, daysAhead: 5, oppIdx: 1 },
+    { title: "Demo — Silk Road dock RFID solution", type: "DEMO" as const, daysAhead: 8, oppIdx: 2 },
+    { title: "Negotiation call — Desert Crown pricing", type: "MEETING" as const, daysAhead: 3, oppIdx: 3 },
+    { title: "Training session — Vertex plant go-live", type: "TRAINING" as const, daysAhead: 12, oppIdx: 4 },
+  ] as const;
+
+  for (const [i, event] of calendarSpecs.entries()) {
+    const startAt = daysFromNow(event.daysAhead);
+    startAt.setHours(10 + i, 0, 0, 0);
+    const existing = await prisma.calendarEvent.findFirst({
+      where: { companyId: company.id, title: event.title },
+    });
+    if (existing) continue;
+    await prisma.calendarEvent.create({
+      data: {
+        companyId: company.id,
+        ownerId: raviId!,
+        type: event.type,
+        title: event.title,
+        startAt,
+        endAt: new Date(startAt.getTime() + 60 * 60 * 1000),
+        opportunityId: opportunities[event.oppIdx]?.id,
+      },
+    });
   }
 
   console.log("Seeding: vendors + support tickets + AMC...");
@@ -479,9 +761,11 @@ async function main() {
   void engineerId;
 
   console.log("\nSeed complete.");
-  console.log("ibTech super admin: aneena.antony@ibtechintl.com / AneenaAntony@123");
-  console.log(`Demo login (any role): <email> / ${DEMO_PASSWORD}`);
-  console.log("e.g. admin@falconrfid.demo, ravi@falconrfid.demo, pm@falconrfid.demo ...");
+  if (process.env.NODE_ENV !== "production") {
+    console.log("ibTech super admin: aneena.antony@ibtechintl.com / AneenaAntony@123");
+    console.log(`Demo login (any role): <email> / ${DEMO_PASSWORD}`);
+    console.log("e.g. admin@falconrfid.demo, ravi@falconrfid.demo, pm@falconrfid.demo ...");
+  }
 }
 
 main()

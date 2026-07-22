@@ -6,6 +6,7 @@ import { useCreateQuotation, QuotationLineItemInput } from "@/lib/quotations";
 import { useOpportunities } from "@/lib/opportunities";
 import { useCurrentUser } from "@/lib/auth";
 import { Button, Input, Label, Select, Card } from "@/components/ui";
+import { useConfirm } from "@/components/ConfirmDialog";
 
 const EMPTY_LINE: QuotationLineItemInput = { description: "", quantity: 1, unitPrice: 0, discountPct: 0, taxPct: 0 };
 
@@ -21,6 +22,7 @@ export default function NewQuotationPage() {
   const [paymentTerms, setPaymentTerms] = useState("");
   const [lineItems, setLineItems] = useState<QuotationLineItemInput[]>([{ ...EMPTY_LINE }]);
   const [error, setError] = useState<string | null>(null);
+  const confirm = useConfirm();
 
   const selectedOpportunity = opportunities.find((o) => o.id === opportunityId);
 
@@ -48,8 +50,16 @@ export default function NewQuotationPage() {
     setLineItems((prev) => [...prev, { ...EMPTY_LINE }]);
   }
 
-  function removeLine(index: number) {
-    setLineItems((prev) => (prev.length > 1 ? prev.filter((_, i) => i !== index) : prev));
+  async function removeLine(index: number) {
+    if (lineItems.length <= 1) return;
+    const ok = await confirm({
+      title: "Remove line item?",
+      message: "This line will be removed from the quotation.",
+      confirmLabel: "Remove",
+      variant: "danger",
+    });
+    if (!ok) return;
+    setLineItems((prev) => prev.filter((_, i) => i !== index));
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -85,7 +95,7 @@ export default function NewQuotationPage() {
 
   return (
     <div className="mx-auto max-w-4xl">
-      <h1 className="mb-6 text-xl font-semibold text-slate-900">New Quotation</h1>
+      <h1 className="mb-6 text-xl font-semibold text-primary">New Quotation</h1>
 
       <Card className="p-6">
         <form onSubmit={handleSubmit} className="space-y-5">
@@ -128,9 +138,9 @@ export default function NewQuotationPage() {
               </Button>
             </div>
 
-            <div className="overflow-x-auto rounded-md border border-slate-200">
+            <div className="overflow-x-auto rounded-md border border-slate-200 dark:border-slate-700">
               <table className="w-full text-sm">
-                <thead className="bg-slate-50 text-left text-xs font-medium uppercase text-slate-500">
+                <thead className="bg-slate-50 dark:bg-slate-800/50 text-left text-xs font-medium uppercase text-slate-500">
                   <tr>
                     <th className="px-3 py-2">Description</th>
                     <th className="px-3 py-2">Qty</th>
@@ -140,7 +150,7 @@ export default function NewQuotationPage() {
                     <th className="px-3 py-2"></th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                   {lineItems.map((line, index) => (
                     <tr key={index}>
                       <td className="px-3 py-2">
@@ -213,13 +223,13 @@ export default function NewQuotationPage() {
               <span>Tax</span>
               <span>{currency} {totals.taxTotal.toFixed(2)}</span>
             </div>
-            <div className="flex justify-between border-t border-slate-200 pt-1 font-semibold text-slate-900">
+            <div className="flex justify-between border-t border-slate-200 dark:border-slate-700 pt-1 font-semibold text-primary">
               <span>Grand total</span>
               <span>{currency} {totals.grandTotal.toFixed(2)}</span>
             </div>
           </div>
 
-          {error && <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
+          {error && <p className="rounded-md bg-red-50 dark:bg-red-950/40 px-3 py-2 text-sm text-red-700 dark:text-red-300">{error}</p>}
 
           <div className="flex justify-end gap-2">
             <Button type="button" variant="secondary" onClick={() => router.back()}>

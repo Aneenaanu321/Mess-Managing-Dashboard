@@ -20,7 +20,7 @@ export default function PurchaseOrdersPage() {
     <div>
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-slate-900">Purchase Orders</h1>
+          <h1 className="text-xl font-semibold text-primary">Purchase Orders</h1>
           <p className="text-sm text-slate-500">
             {data?.meta?.total ?? 0} total purchase order{data?.meta?.total === 1 ? "" : "s"}
           </p>
@@ -51,7 +51,7 @@ export default function PurchaseOrdersPage() {
       <Card className="overflow-hidden">
         {isLoading && <p className="p-6 text-sm text-slate-500">Loading purchase orders…</p>}
         {isError && (
-          <p className="p-6 text-sm text-red-600">
+          <p className="p-6 text-sm text-red-600 dark:text-red-400">
             Couldn&apos;t load purchase orders. Is the API running at <code>NEXT_PUBLIC_API_URL</code>?
           </p>
         )}
@@ -60,7 +60,7 @@ export default function PurchaseOrdersPage() {
         )}
         {pos.length > 0 && (
           <table className="w-full text-sm">
-            <thead className="border-b border-slate-200 bg-slate-50 text-left text-xs font-medium uppercase text-slate-500">
+            <thead className="border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-left text-xs font-medium uppercase text-slate-500">
               <tr>
                 <th className="px-4 py-2.5">Code</th>
                 <th className="px-4 py-2.5">PO Number</th>
@@ -70,20 +70,20 @@ export default function PurchaseOrdersPage() {
                 <th className="px-4 py-2.5">Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
               {pos.map((po: CustomerPO) => (
-                <tr key={po.id} className="hover:bg-slate-50">
+                <tr key={po.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50">
                   <td className="px-4 py-3">
                     <Link href={`/purchase-orders/${po.id}`} className="font-medium text-brand-600 hover:underline">
                       {po.code}
                     </Link>
                   </td>
                   <td className="px-4 py-3 text-slate-600">{po.poNumber}</td>
-                  <td className="px-4 py-3 text-slate-900">{po.customer?.name ?? "—"}</td>
+                  <td className="px-4 py-3 text-primary">{po.customer?.name ?? "—"}</td>
                   <td className="px-4 py-3 text-slate-600">{po.quotation?.code ?? "—"}</td>
                   <td className="px-4 py-3 text-slate-600">
                     {Number(po.amount).toLocaleString()} {po.currency}
-                    {po.amountMismatch && <span className="ml-2 text-xs font-medium text-red-600">mismatch</span>}
+                    {po.amountMismatch && <span className="ml-2 text-xs font-medium text-red-600 dark:text-red-400">mismatch</span>}
                   </td>
                   <td className="px-4 py-3">
                     <Badge tone={CUSTOMER_PO_STATUS_TONE[po.status]}>{po.status}</Badge>

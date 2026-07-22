@@ -18,7 +18,7 @@ export default function FinancePage() {
     <div>
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-slate-900">Finance — Invoices</h1>
+          <h1 className="text-xl font-semibold text-primary">Finance — Invoices</h1>
           <p className="text-sm text-slate-500">
             {data?.meta?.total ?? 0} invoice{data?.meta?.total === 1 ? "" : "s"}
           </p>
@@ -44,11 +44,11 @@ export default function FinancePage() {
 
       <Card className="overflow-hidden">
         {isLoading && <p className="p-6 text-sm text-slate-500">Loading invoices…</p>}
-        {isError && <p className="p-6 text-sm text-red-600">Couldn&apos;t load invoices.</p>}
+        {isError && <p className="p-6 text-sm text-red-600 dark:text-red-400">Couldn&apos;t load invoices.</p>}
         {!isLoading && !isError && invoices.length === 0 && <p className="p-6 text-sm text-slate-500">No invoices match these filters yet.</p>}
         {invoices.length > 0 && (
           <table className="w-full text-sm">
-            <thead className="border-b border-slate-200 bg-slate-50 text-left text-xs font-medium uppercase text-slate-500">
+            <thead className="border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-left text-xs font-medium uppercase text-slate-500">
               <tr>
                 <th className="px-4 py-2.5">Code</th>
                 <th className="px-4 py-2.5">Customer</th>
@@ -58,16 +58,16 @@ export default function FinancePage() {
                 <th className="px-4 py-2.5">Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
               {invoices.map((inv: Invoice) => (
-                <tr key={inv.id} className="hover:bg-slate-50">
+                <tr key={inv.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50">
                   <td className="px-4 py-3">
                     <Link href={`/finance/${inv.id}`} className="font-medium text-brand-600 hover:underline">
                       {inv.code}
                     </Link>
                   </td>
                   <td className="px-4 py-3 text-slate-600">{inv.customer?.name ?? "—"}</td>
-                  <td className="px-4 py-3 text-slate-900">
+                  <td className="px-4 py-3 text-primary">
                     {inv.currency} {Number(inv.totalAmount).toLocaleString()}
                   </td>
                   <td className="px-4 py-3 text-slate-600">

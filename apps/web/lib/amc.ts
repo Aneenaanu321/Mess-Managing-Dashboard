@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "./api-client";
+import { toast } from "./toast";
 
 export type AmcStatus = "ACTIVE" | "EXPIRING_SOON" | "LAPSED" | "RENEWED" | "CANCELLED";
 
@@ -69,7 +70,10 @@ export function useCreateAmcContract() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (input: CreateAmcContractInput) => (await apiClient.post<AmcContract>("/amc", input)).data,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["amc"] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["amc"] });
+      toast.success("Saved");
+    },
   });
 }
 

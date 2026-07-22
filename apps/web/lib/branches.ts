@@ -12,5 +12,6 @@ export function useBranches() {
   return useQuery({
     queryKey: ["dashboard", "branches"],
     queryFn: async () => (await apiClient.get<BranchOption[]>("/dashboard/branches")).data,
+    staleTime: 5 * 60_000,
   });
 }

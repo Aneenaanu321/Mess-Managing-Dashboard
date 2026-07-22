@@ -43,8 +43,8 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="sticky top-0 z-30 border-b border-slate-200 bg-white">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-800/50">
+      <header className="sticky top-0 z-30 border-b border-slate-200 dark:border-slate-700 bg-surface">
         <div className="mx-auto flex h-16 max-w-5xl items-center gap-4 px-4 sm:px-6">
           <Link href="/portal/quotations" className="flex items-center">
             <Image src="/ibtech-logo.png" alt="ibTech" width={120} height={42} className="h-7 w-auto" priority />
@@ -52,13 +52,13 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
           <span className="hidden text-sm text-slate-400 sm:block">Customer Portal</span>
           <div className="ml-auto flex items-center gap-3">
             <div className="hidden text-right sm:block">
-              <p className="text-sm font-medium text-slate-900">{user.portalCustomer.name}</p>
+              <p className="text-sm font-medium text-primary">{user.portalCustomer.name}</p>
               <p className="text-xs text-slate-500">{user.email}</p>
             </div>
             <button
               type="button"
               onClick={handleLogout}
-              className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-medium text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800"
+              className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-medium text-slate-500 transition-colors hover:bg-slate-100 hover:text-primary"
             >
               <LogOut size={15} />
               <span className="hidden sm:inline">Sign out</span>
@@ -75,7 +75,7 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
                 href={item.href}
                 className={clsx(
                   "flex shrink-0 items-center gap-1.5 border-b-2 px-3 py-2.5 text-sm font-medium transition-colors",
-                  active ? "border-brand-600 text-brand-700" : "border-transparent text-slate-500 hover:text-slate-800",
+                  active ? "border-brand-600 text-brand-700" : "border-transparent text-slate-500 hover:text-primary",
                 )}
               >
                 <Icon size={15} />
