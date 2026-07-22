@@ -51,8 +51,8 @@ Repo: https://github.com/Aneenaanu321/P11_Sales-Operations-Managing-Dashboard
 6. In Render → API service → **Shell** (or one-off job), run migrations + seed:
 
 ```bash
-npx prisma migrate deploy -w apps/api
-npx prisma db seed -w apps/api
+npm run prisma:deploy -w apps/api
+npm run prisma:seed -w apps/api
 ```
 
 Demo login after seed: `admin@falconrfid.demo` / `Password123!`  
