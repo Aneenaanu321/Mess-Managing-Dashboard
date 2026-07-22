@@ -53,10 +53,17 @@ export function createApp() {
     }),
   );
   // CORS_ORIGIN may be a comma-separated list (e.g. local + Vercel preview + prod).
-  const corsOrigins = env.CORS_ORIGIN.split(",").map((o) => o.trim()).filter(Boolean);
+  // Strip trailing slashes — browsers send Origin without a trailing slash.
+  const corsOrigins = env.CORS_ORIGIN.split(",")
+    .map((o) => o.trim().replace(/\/+$/, ""))
+    .filter(Boolean);
   app.use(
     cors({
-      origin: corsOrigins.length === 1 ? corsOrigins[0] : corsOrigins,
+      origin: (origin, callback) => {
+        if (!origin) return callback(null, true); // same-origin / curl / server-to-server
+        if (corsOrigins.includes(origin)) return callback(null, true);
+        return callback(new Error(`CORS blocked for origin: ${origin}`));
+      },
       credentials: true,
     }),
   );
