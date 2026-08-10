@@ -28,6 +28,8 @@ const envSchema = z.object({
   SMTP_USER: z.string().optional(),
   SMTP_PASS: z.string().optional(),
   SMTP_FROM: z.string().default("ibTech <notifications@ibtechintl.com>"),
+  /** Always BCC/copy job lifecycle emails here (ops oversight). */
+  JOB_NOTIFY_CC: z.string().email().optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);

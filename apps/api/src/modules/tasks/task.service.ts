@@ -96,7 +96,6 @@ async function notifyJobParty(params: {
   actorName?: string;
 }) {
   const { userId, exceptUserId, event, jobId, jobTitle, detail, actorName } = params;
-  if (!userId || userId === exceptUserId) return;
 
   const who = actorName?.trim() || "Someone";
   const link = `/team-tasks/${jobId}`;
@@ -153,9 +152,24 @@ async function notifyJobParty(params: {
   };
 
   const message = copy[event];
-  await notificationService.notify({
-    userId,
-    type: message.type,
+  const shouldNotifyParty = Boolean(userId && userId !== exceptUserId);
+
+  if (shouldNotifyParty && userId) {
+    await notificationService.notify({
+      userId,
+      type: message.type,
+      title: message.title,
+      body: message.body,
+      link,
+      emailSubject: message.emailSubject,
+      linkLabel: "Open job",
+      copyToWatchers: true,
+    });
+    return;
+  }
+
+  // Still email ops even when the primary party is the actor / missing
+  await notificationService.copyWatchers({
     title: message.title,
     body: message.body,
     link,
@@ -529,6 +543,15 @@ export const taskService = {
           link: `/team-tasks/${id}`,
           emailSubject: `Urgent stock used: ${existing.title}`,
           linkLabel: "Open job",
+          copyToWatchers: true,
+        });
+      } else {
+        await notificationService.copyWatchers({
+          title: "Urgent: checklist stock used",
+          body: `"${existing.title}" — warehouse flagged checklist items used for urgent needs.`,
+          link: `/team-tasks/${id}`,
+          emailSubject: `Urgent stock used: ${existing.title}`,
+          linkLabel: "Open job",
         });
       }
     }
@@ -780,6 +803,7 @@ export const taskService = {
         link: `/invoices-payments/${paymentResult.invoice.id}`,
         emailSubject: `Payment recorded: ${existing.title}`,
         linkLabel: "Open invoice",
+        copyToWatchers: true,
       });
     }
 

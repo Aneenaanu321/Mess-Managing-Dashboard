@@ -13,6 +13,46 @@ interface NotifyParams {
   emailSubject?: string;
   /** Optional CTA label in the HTML email. */
   linkLabel?: string;
+  /**
+   * Also email JOB_NOTIFY_CC (and any extras) with the same content.
+   * Used for job lifecycle updates so ops always gets a copy.
+   */
+  copyToWatchers?: boolean;
+}
+
+async function sendWatcherCopies(params: {
+  subject: string;
+  body: string;
+  link?: string;
+  linkLabel?: string;
+  skipEmails?: Array<string | null | undefined>;
+}) {
+  const watchers = [env.JOB_NOTIFY_CC].filter((email): email is string => Boolean(email));
+  if (watchers.length === 0) return;
+
+  const skip = new Set(
+    (params.skipEmails ?? []).filter(Boolean).map((e) => e!.trim().toLowerCase()),
+  );
+  const linkUrl = params.link ? `${env.CORS_ORIGIN}${params.link}` : undefined;
+  const { text, html } = buildNotificationEmail({
+    title: params.subject,
+    body: params.body,
+    linkUrl,
+    linkLabel: params.linkLabel,
+  });
+
+  await Promise.all(
+    watchers
+      .filter((email) => !skip.has(email.toLowerCase()))
+      .map((email) =>
+        sendEmail({
+          to: email,
+          subject: params.subject,
+          text,
+          html,
+        }),
+      ),
+  );
 }
 
 /**
@@ -41,23 +81,51 @@ export const notificationService = {
       }),
     ]);
 
+    const subject = params.emailSubject ?? params.title;
+    const linkUrl = params.link ? `${env.CORS_ORIGIN}${params.link}` : undefined;
+    const { text, html } = buildNotificationEmail({
+      title: subject,
+      body: params.body,
+      linkUrl,
+      linkLabel: params.linkLabel,
+    });
+
     if (user?.emailNotifications && user.email) {
-      const linkUrl = params.link ? `${env.CORS_ORIGIN}${params.link}` : undefined;
-      const { text, html } = buildNotificationEmail({
-        title: params.emailSubject ?? params.title,
-        body: params.body,
-        linkUrl,
-        linkLabel: params.linkLabel,
-      });
       await sendEmail({
         to: user.email,
-        subject: params.emailSubject ?? params.title,
+        subject,
         text,
         html,
       });
     }
 
+    if (params.copyToWatchers) {
+      await sendWatcherCopies({
+        subject,
+        body: params.body,
+        link: params.link,
+        linkLabel: params.linkLabel,
+        skipEmails: [user?.email],
+      });
+    }
+
     return notification;
+  },
+
+  /** Email-only copy to JOB_NOTIFY_CC (no in-app row) — for job events with no primary user. */
+  async copyWatchers(params: {
+    title: string;
+    body: string;
+    link?: string;
+    emailSubject?: string;
+    linkLabel?: string;
+  }) {
+    await sendWatcherCopies({
+      subject: params.emailSubject ?? params.title,
+      body: params.body,
+      link: params.link,
+      linkLabel: params.linkLabel,
+    });
   },
 
   list(userId: string, unreadOnly = false) {
