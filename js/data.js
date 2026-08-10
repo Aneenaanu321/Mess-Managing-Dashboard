@@ -307,10 +307,12 @@ const Store = (() => {
     return readyPromise;
   }
 
+  function bootLocal() {
+    if (!loadLocal()) state = buildDemoData();
+    saveLocalOnly();
+  }
+
   async function initCloud() {
-    if (typeof firebase === "undefined" || typeof isFirebaseConfigured !== "function" || !isFirebaseConfigured()) {
-      return false;
-    }
     try {
       if (!firebase.apps.length) {
         firebase.initializeApp(FirebaseConfig);
@@ -326,42 +328,32 @@ const Store = (() => {
     }
   }
 
-  async function boot() {
-    loadSettingsLocal();
+  function finishReady() {
+    if (!state) bootLocal();
+    readyResolve();
+  }
 
-    const ok = await initCloud();
-    if (!ok) {
-      if (!loadLocal()) state = buildDemoData();
-      saveLocalOnly();
-      readyResolve();
-      return;
+  async function bootCloud() {
+    const snap = await Promise.race([
+      db.ref(CLOUD_STATE_PATH).once("value"),
+      new Promise((_, reject) => setTimeout(() => reject(new Error("Cloud timeout")), 4000)),
+    ]);
+    const remote = snap.val();
+    if (remote) {
+      state = normalizeState(remote);
+    } else if (loadLocal()) {
+      await db.ref(CLOUD_STATE_PATH).set(state);
+    } else {
+      state = emptyData();
+      await db.ref(CLOUD_STATE_PATH).set(state);
     }
-
-    // First cloud snapshot
-    try {
-      const snap = await db.ref(CLOUD_STATE_PATH).once("value");
-      const remote = snap.val();
-      if (remote) {
-        state = normalizeState(remote);
-      } else if (loadLocal()) {
-        // Migrate existing browser data up to the cloud once
-        await db.ref(CLOUD_STATE_PATH).set(state);
-      } else {
-        state = emptyData();
-        await db.ref(CLOUD_STATE_PATH).set(state);
-      }
-      cacheLocal();
-    } catch (e) {
-      console.error("Cloud load failed, using local data", e);
-      cloudEnabled = false;
-      if (!loadLocal()) state = buildDemoData();
-      saveLocalOnly();
-      readyResolve();
-      return;
-    }
+    cacheLocal();
 
     try {
-      const settingsSnap = await db.ref(CLOUD_SETTINGS_PATH).once("value");
+      const settingsSnap = await Promise.race([
+        db.ref(CLOUD_SETTINGS_PATH).once("value"),
+        new Promise((_, reject) => setTimeout(() => reject(new Error("Settings timeout")), 4000)),
+      ]);
       const remoteSettings = settingsSnap.val();
       if (remoteSettings && typeof remoteSettings === "object") {
         settings = remoteSettings;
@@ -372,15 +364,14 @@ const Store = (() => {
         await db.ref(CLOUD_SETTINGS_PATH).set(settings);
       }
     } catch (e) {
-      console.error("Cloud settings load failed", e);
+      console.warn("Cloud settings load skipped", e);
     }
 
-    // Live sync across devices/browsers
     db.ref(CLOUD_STATE_PATH).on("value", (snap) => {
-      const remote = snap.val();
-      if (!remote) return;
+      const remoteVal = snap.val();
+      if (!remoteVal) return;
       applyingRemote = true;
-      state = normalizeState(remote);
+      state = normalizeState(remoteVal);
       cacheLocal();
       notify();
       applyingRemote = false;
@@ -394,11 +385,41 @@ const Store = (() => {
         localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
       } catch (_) {}
     });
-
-    readyResolve();
   }
 
-  boot();
+  // Local path is sync so the UI never waits on Firebase placeholders
+  loadSettingsLocal();
+  if (typeof firebase === "undefined" || typeof isFirebaseConfigured !== "function" || !isFirebaseConfigured()) {
+    bootLocal();
+    finishReady();
+  } else {
+    initCloud().then(async (ok) => {
+      if (!ok) {
+        bootLocal();
+        finishReady();
+        return;
+      }
+      try {
+        await bootCloud();
+      } catch (e) {
+        console.error("Cloud load failed, using local data", e);
+        cloudEnabled = false;
+        bootLocal();
+      } finally {
+        finishReady();
+      }
+    }).catch((e) => {
+      console.error("Store boot failed", e);
+      cloudEnabled = false;
+      bootLocal();
+      finishReady();
+    });
+
+    setTimeout(() => {
+      if (!state) bootLocal();
+      readyResolve();
+    }, 5000);
+  }
 
   return {
     getAll, getById, add, update, remove, subscribe, logActivity, resetDemoData, clearAllData,

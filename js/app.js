@@ -20,10 +20,6 @@ const App = (() => {
   const STORAGE_KEY = "mm-nav-open";
   const MOBILE_MQ = "(max-width: 900px)";
 
-  function buildIcon(inner) {
-    return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${inner}</svg>`;
-  }
-
   function isMobile() {
     return window.matchMedia(MOBILE_MQ).matches;
   }
@@ -84,7 +80,6 @@ const App = (() => {
       lastSection = r.section;
       return `${sectionHtml}
       <div class="nav-item ${r.key === activeKey ? "active" : ""}" data-route="${r.key}" role="link" tabindex="0" title="${r.label}">
-        ${buildIcon(r.icon)}
         <span>${r.label}</span>
       </div>`;
     }).join("");
@@ -178,7 +173,27 @@ const App = (() => {
   return { init, navigate, openNav, closeNav, toggleNav, ROUTES };
 })();
 
-document.addEventListener("DOMContentLoaded", async () => {
+document.addEventListener("DOMContentLoaded", () => {
+  const start = () => {
+    try {
+      App.init();
+    } catch (err) {
+      console.error("Failed to start app:", err);
+      const content = document.getElementById("mainContent");
+      if (content) {
+        content.innerHTML = `<div class="panel" style="padding:24px;">
+          <div class="section-title">Could not start dashboard</div>
+          <p class="form-hint">${String(err && err.message ? err.message : err)}</p>
+        </div>`;
+      }
+    }
+  };
+
+  if (typeof Store === "undefined" || !Store.ready) {
+    start();
+    return;
+  }
+
   const content = document.getElementById("mainContent");
   if (content) {
     content.innerHTML = `<div class="panel" style="text-align:center;padding:48px 24px;">
@@ -186,7 +201,10 @@ document.addEventListener("DOMContentLoaded", async () => {
       <p class="form-hint">Connecting to data store</p>
     </div>`;
   }
-  await Store.ready();
-  App.init();
+
+  Promise.race([
+    Store.ready(),
+    new Promise((resolve) => setTimeout(resolve, 2500)),
+  ]).then(start);
 });
 
