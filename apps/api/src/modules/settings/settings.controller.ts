@@ -14,8 +14,8 @@ export const settingsController = {
     res.json({ success: true, data });
   },
 
-  async roles(_req: Request, res: Response) {
-    const data = await settingsService.getRoles();
+  async roles(req: Request, res: Response) {
+    const data = await settingsService.getRoles(ctxFrom(req));
     res.json({ success: true, data });
   },
 
@@ -47,6 +47,19 @@ export const settingsController = {
   async upsertSlaPolicy(req: Request, res: Response) {
     const input = upsertSlaPolicySchema.parse(req.body);
     const data = await settingsService.upsertSlaPolicy(ctxFrom(req), input);
+    res.json({ success: true, data });
+  },
+
+  async exportWorkbook(req: Request, res: Response) {
+    const buffer = await settingsService.exportWorkbook(ctxFrom(req));
+    const stamp = new Date().toISOString().slice(0, 10);
+    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    res.setHeader("Content-Disposition", `attachment; filename="sales-ops-data-${stamp}.xlsx"`);
+    res.send(buffer);
+  },
+
+  async resetToDemo(req: Request, res: Response) {
+    const data = await settingsService.resetToDemoData(ctxFrom(req));
     res.json({ success: true, data });
   },
 };

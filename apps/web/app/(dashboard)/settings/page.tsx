@@ -2,7 +2,17 @@
 
 import { useState, useEffect } from "react";
 import clsx from "clsx";
-import { Building2, ClipboardList, Hash, Languages, ScrollText, ShieldCheck, Timer, Users as UsersIcon } from "lucide-react";
+import {
+  Building2,
+  ClipboardList,
+  Database,
+  Hash,
+  Languages,
+  ScrollText,
+  ShieldCheck,
+  Timer,
+  Users as UsersIcon,
+} from "lucide-react";
 import {
   useOrgSettings,
   useRoleSettings,
@@ -11,6 +21,8 @@ import {
   useAuditLog,
   useSlaPolicies,
   useUpsertSlaPolicy,
+  downloadCompanyDataExport,
+  useResetDemoData,
   TicketPriority,
 } from "@/lib/settings";
 import { useLeadOpsSettings, useUpdateLeadOpsSettings } from "@/lib/sales-ops";
@@ -18,8 +30,10 @@ import { hasPermission, useCurrentUser } from "@/lib/auth";
 import { Badge, Button, Card, Input, Select } from "@/components/ui";
 import { getPageLabel } from "@/lib/nav-labels";
 import { useLocale, Locale } from "@/lib/i18n";
+import { useConfirm } from "@/components/ConfirmDialog";
+import { toast } from "@/lib/toast";
 
-type Tab = "org" | "lead-ops" | "roles" | "users" | "sequences" | "sla" | "audit-log" | "language";
+type Tab = "org" | "lead-ops" | "roles" | "users" | "sequences" | "sla" | "audit-log" | "language" | "data";
 
 const TABS: { key: Tab; label: string; icon: typeof Building2 }[] = [
   { key: "org", label: "Organization", icon: Building2 },
@@ -27,6 +41,7 @@ const TABS: { key: Tab; label: string; icon: typeof Building2 }[] = [
   { key: "language", label: "Language", icon: Languages },
   { key: "roles", label: "Roles", icon: ShieldCheck },
   { key: "users", label: "Users", icon: UsersIcon },
+  { key: "data", label: "Data", icon: Database },
   { key: "sequences", label: "Number Sequences", icon: Hash },
   { key: "sla", label: "SLA Policies", icon: Timer },
   { key: "audit-log", label: "Audit Log", icon: ScrollText },
@@ -73,10 +88,71 @@ export default function SettingsPage() {
       {tab === "language" && <LanguageSection />}
       {tab === "roles" && <RolesSection />}
       {tab === "users" && <UsersSection />}
+      {tab === "data" && <DataManagementSection />}
       {tab === "sequences" && <SequencesSection />}
       {tab === "sla" && <SlaPoliciesSection />}
       {tab === "audit-log" && <AuditLogSection />}
     </div>
+  );
+}
+
+function DataManagementSection() {
+  const { data: user } = useCurrentUser();
+  const confirm = useConfirm();
+  const resetDemo = useResetDemoData();
+  const [exporting, setExporting] = useState(false);
+  const canManage = hasPermission(user, "settings:manage_org");
+
+  async function handleExport() {
+    setExporting(true);
+    try {
+      await downloadCompanyDataExport();
+      toast.success("Excel workbook downloaded");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Export failed");
+    } finally {
+      setExporting(false);
+    }
+  }
+
+  async function handleReset() {
+    const ok = await confirm({
+      title: "Reset to demo data?",
+      message:
+        "This restores sample demo records (dev/staging only). Production live client data cannot be reset from here.",
+      confirmLabel: "Reset to demo",
+      variant: "danger",
+    });
+    if (!ok) return;
+    try {
+      await resetDemo.mutateAsync();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Reset failed");
+    }
+  }
+
+  return (
+    <Card className="max-w-lg space-y-3 p-5">
+      <div>
+        <h2 className="text-sm font-semibold text-primary">Data Management</h2>
+        <p className="mt-1 text-xs text-slate-500">
+          Export everything to a single Excel workbook for the client / offline processing. For production, migrate
+          without seed and create real users — do not load demo data on the live database.
+        </p>
+      </div>
+      {canManage ? (
+        <div className="flex flex-col gap-2">
+          <Button variant="secondary" onClick={handleExport} disabled={exporting}>
+            {exporting ? "Exporting…" : "Export All Data to Excel"}
+          </Button>
+          <Button variant="danger" onClick={handleReset} disabled={resetDemo.isPending}>
+            {resetDemo.isPending ? "Resetting…" : "Reset to Demo Data"}
+          </Button>
+        </div>
+      ) : (
+        <p className="text-xs text-slate-500">You need organization settings permission to export or reset data.</p>
+      )}
+    </Card>
   );
 }
 
@@ -261,35 +337,41 @@ function RolesSection() {
   }
 
   return (
-    <Card className="overflow-hidden">
-      {isLoading && <p className="p-6 text-sm text-slate-500">Loading roles…</p>}
-      {!isLoading && (
-        <table className="w-full text-sm">
-          <thead className="border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-left text-xs font-medium uppercase text-slate-500">
-            <tr>
-              <th className="px-4 py-2.5">Role</th>
-              <th className="px-4 py-2.5">Description</th>
-              <th className="px-4 py-2.5">Permissions</th>
-              <th className="px-4 py-2.5">Users</th>
-              <th className="px-4 py-2.5">Type</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-            {roles?.map((role) => (
-              <tr key={role.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50">
-                <td className="px-4 py-3 font-medium text-primary">{role.name}</td>
-                <td className="px-4 py-3 text-slate-600">{role.description ?? "—"}</td>
-                <td className="px-4 py-3 text-slate-600">{role.permissionCount}</td>
-                <td className="px-4 py-3 text-slate-600">{role.userCount}</td>
-                <td className="px-4 py-3">
-                  <Badge tone={role.isSystem ? "blue" : "slate"}>{role.isSystem ? "System" : "Custom"}</Badge>
-                </td>
+    <div className="space-y-3">
+      <p className="text-xs text-slate-500">
+        Active users only. Working team roles: Super Admin (Admin, Aneena), Sales Coordinator (Susan), Sales Manager
+        (Jeremy), Delivery Person (Rakesh).
+      </p>
+      <Card className="overflow-hidden">
+        {isLoading && <p className="p-6 text-sm text-slate-500">Loading roles…</p>}
+        {!isLoading && (
+          <table className="w-full text-sm">
+            <thead className="border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-left text-xs font-medium uppercase text-slate-500">
+              <tr>
+                <th className="px-4 py-2.5">Role</th>
+                <th className="px-4 py-2.5">Description</th>
+                <th className="px-4 py-2.5">Permissions</th>
+                <th className="px-4 py-2.5">Users</th>
+                <th className="px-4 py-2.5">Type</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-    </Card>
+            </thead>
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
+              {roles?.map((role) => (
+                <tr key={role.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50">
+                  <td className="px-4 py-3 font-medium text-primary">{role.name}</td>
+                  <td className="px-4 py-3 text-slate-600">{role.description ?? "—"}</td>
+                  <td className="px-4 py-3 text-slate-600">{role.permissionCount}</td>
+                  <td className="px-4 py-3 text-slate-600">{role.userCount}</td>
+                  <td className="px-4 py-3">
+                    <Badge tone={role.isSystem ? "blue" : "slate"}>{role.isSystem ? "System" : "Custom"}</Badge>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </Card>
+    </div>
   );
 }
 
@@ -301,36 +383,41 @@ function UsersSection() {
   }
 
   return (
-    <Card className="overflow-hidden">
-      {isLoading && <p className="p-6 text-sm text-slate-500">Loading users…</p>}
-      {!isLoading && (users?.length ?? 0) === 0 && <p className="p-6 text-sm text-slate-500">No users yet.</p>}
-      {!isLoading && (users?.length ?? 0) > 0 && (
-        <table className="w-full text-sm">
-          <thead className="border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-left text-xs font-medium uppercase text-slate-500">
-            <tr>
-              <th className="px-4 py-2.5">Name</th>
-              <th className="px-4 py-2.5">Email</th>
-              <th className="px-4 py-2.5">Role</th>
-              <th className="px-4 py-2.5">Branch</th>
-              <th className="px-4 py-2.5">Status</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-            {users?.map((u) => (
-              <tr key={u.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50">
-                <td className="px-4 py-3 font-medium text-primary">{u.name}</td>
-                <td className="px-4 py-3 text-slate-600">{u.email}</td>
-                <td className="px-4 py-3 text-slate-600">{u.role}</td>
-                <td className="px-4 py-3 text-slate-600">{u.branch ?? "—"}</td>
-                <td className="px-4 py-3">
-                  <Badge tone={STATUS_TONE[u.status] ?? "slate"}>{u.status}</Badge>
-                </td>
+    <div className="space-y-3">
+      <p className="text-xs text-slate-500">
+        Active working team only: Admin, Aneena, Susan, Jeremy, and Rakesh.
+      </p>
+      <Card className="overflow-hidden">
+        {isLoading && <p className="p-6 text-sm text-slate-500">Loading users…</p>}
+        {!isLoading && (users?.length ?? 0) === 0 && <p className="p-6 text-sm text-slate-500">No active users yet.</p>}
+        {!isLoading && (users?.length ?? 0) > 0 && (
+          <table className="w-full text-sm">
+            <thead className="border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-left text-xs font-medium uppercase text-slate-500">
+              <tr>
+                <th className="px-4 py-2.5">Name</th>
+                <th className="px-4 py-2.5">Email</th>
+                <th className="px-4 py-2.5">Role</th>
+                <th className="px-4 py-2.5">Branch</th>
+                <th className="px-4 py-2.5">Status</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-    </Card>
+            </thead>
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
+              {users?.map((u) => (
+                <tr key={u.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 dark:bg-slate-800/50">
+                  <td className="px-4 py-3 font-medium text-primary">{u.name}</td>
+                  <td className="px-4 py-3 text-slate-600">{u.email}</td>
+                  <td className="px-4 py-3 text-slate-600">{u.role}</td>
+                  <td className="px-4 py-3 text-slate-600">{u.branch ?? "—"}</td>
+                  <td className="px-4 py-3">
+                    <Badge tone={STATUS_TONE[u.status] ?? "slate"}>{u.status}</Badge>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </Card>
+    </div>
   );
 }
 

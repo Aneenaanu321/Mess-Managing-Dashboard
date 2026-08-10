@@ -1,8 +1,37 @@
 import { prisma } from "../../config/prisma";
 import { ListAuditLogQuery, UpsertSlaPolicyInput } from "./settings.validation";
 import { writeAuditLog } from "../../utils/audit";
+import { RoleKey } from "@prisma/client";
+import { buildCompanyDataWorkbook } from "./data-export";
+import { env } from "../../config/env";
+import { ApiError } from "../../utils/ApiError";
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
+import path from "node:path";
+
+const execFileAsync = promisify(execFile);
 
 const PRIORITY_ORDER = ["CRITICAL", "HIGH", "MEDIUM", "LOW"];
+
+const ROLE_DESCRIPTION_FALLBACK: Partial<Record<RoleKey, string>> = {
+  SUPER_ADMIN: "Full system access — org settings, roles, and all modules",
+  MANAGING_DIRECTOR: "Executive oversight across sales and operations",
+  SALES_DIRECTOR: "Owns sales strategy, pipeline, and approvals",
+  SALES_MANAGER: "Manages sales team, leads, and field job oversight",
+  SALES_EXECUTIVE: "Day-to-day lead and opportunity ownership",
+  SALES_COORDINATOR: "Coordinates field jobs, docs, and delivery follow-up",
+  PRE_SALES_ENGINEER: "Solution design and technical pre-sales support",
+  TECHNICAL_CONSULTANT: "Technical consulting on opportunities and projects",
+  PROJECT_MANAGER: "Customer project delivery and milestones",
+  IMPLEMENTATION_ENGINEER: "On-site implementation and commissioning",
+  DELIVERY_PERSON: "Field deliveries, collections, and Field Ops SOP",
+  SUPPORT_ENGINEER: "After-sales support tickets and SLA work",
+  FINANCE: "Invoices, payments, and collections finance",
+  ACCOUNTS: "Accounts receivable / payable support",
+  WAREHOUSE: "Stock, packing, and warehouse operations",
+  PROCUREMENT: "Supplier POs and purchasing",
+  CUSTOMER_PORTAL_USER: "Customer self-service portal access",
+};
 
 interface Ctx {
   companyId: string;
@@ -20,29 +49,38 @@ export const settingsService = {
     });
   },
 
-  async getRoles() {
+  async getRoles(ctx: Ctx) {
     // Roles are a global catalog (not company-scoped) — every tenant shares the same
-    // 15-role RBAC matrix defined in config/permissions.ts and seeded into the DB.
+    // RBAC matrix. User counts are company-scoped and ACTIVE-only so deactivated
+    // demo accounts don’t inflate Settings → Roles.
     const roles = await prisma.role.findMany({
       orderBy: { name: "asc" },
-      include: { _count: { select: { permissions: true, users: true } } },
+      include: {
+        _count: { select: { permissions: true } },
+        users: {
+          where: { companyId: ctx.companyId, status: "ACTIVE" },
+          select: { id: true },
+        },
+      },
     });
 
-    return roles.map((role) => ({
-      id: role.id,
-      key: role.key,
-      name: role.name,
-      description: role.description,
-      isSystem: role.isSystem,
-      permissionCount: role._count.permissions,
-      userCount: role._count.users,
-    }));
+    return roles
+      .map((role) => ({
+        id: role.id,
+        key: role.key,
+        name: role.name,
+        description: role.description ?? ROLE_DESCRIPTION_FALLBACK[role.key] ?? null,
+        isSystem: role.isSystem,
+        permissionCount: role._count.permissions,
+        userCount: role.users.length,
+      }))
+      .sort((a, b) => b.userCount - a.userCount || a.name.localeCompare(b.name));
   },
 
   async getUsers(ctx: Ctx) {
     const users = await prisma.user.findMany({
-      where: { companyId: ctx.companyId },
-      orderBy: { createdAt: "desc" },
+      where: { companyId: ctx.companyId, status: "ACTIVE" },
+      orderBy: [{ firstName: "asc" }, { lastName: "asc" }],
       include: { role: { select: { key: true, name: true } }, branch: { select: { name: true } } },
     });
 
@@ -126,5 +164,39 @@ export const settingsService = {
     });
 
     return policy;
+  },
+
+  async exportWorkbook(ctx: Ctx) {
+    const buffer = await buildCompanyDataWorkbook(ctx.companyId);
+    return Buffer.from(buffer);
+  },
+
+  /**
+   * Dev/staging only — re-runs prisma seed so the working team + sample
+   * records come back. Blocked in production so client live data cannot
+   * be wiped from the UI.
+   */
+  async resetToDemoData(ctx: WriteCtx) {
+    if (env.NODE_ENV === "production") {
+      throw ApiError.forbidden("Reset to demo data is disabled in production. Export a backup, then re-seed from a secure shell if you truly need sample data.");
+    }
+
+    const apiRoot = path.resolve(__dirname, "../../..");
+    await execFileAsync("npx", ["tsx", "prisma/seed.ts"], {
+      cwd: apiRoot,
+      env: process.env,
+      timeout: 120_000,
+    });
+
+    await writeAuditLog({
+      companyId: ctx.companyId,
+      actorId: ctx.userId,
+      entityType: "Company",
+      entityId: ctx.companyId,
+      action: "UPDATE",
+      after: { resetToDemoData: true, at: new Date().toISOString() },
+    });
+
+    return { ok: true, message: "Demo data restored. Refresh the app and sign in again if your session was cleared." };
   },
 };

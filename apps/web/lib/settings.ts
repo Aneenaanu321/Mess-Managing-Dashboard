@@ -134,3 +134,36 @@ export function useUpsertSlaPolicy() {
     },
   });
 }
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api/v1";
+
+/** Download full company workbook for client / offline processing. */
+export async function downloadCompanyDataExport() {
+  const { getAccessToken } = await import("./api-client");
+  const res = await fetch(`${API_URL}/settings/export.xlsx`, {
+    headers: { Authorization: `Bearer ${getAccessToken() ?? ""}` },
+    credentials: "include",
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body?.error?.message ?? "Failed to export data");
+  }
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `sales-ops-data-${new Date().toISOString().slice(0, 10)}.xlsx`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+export function useResetDemoData() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async () => (await apiClient.post<{ ok: boolean; message: string }>("/settings/reset-demo")).data,
+    onSuccess: (data) => {
+      queryClient.invalidateQueries();
+      toast.success(data.message || "Demo data restored");
+    },
+  });
+}

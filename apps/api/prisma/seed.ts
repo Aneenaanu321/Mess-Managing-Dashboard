@@ -27,6 +27,26 @@ const ROLE_LABELS = {
   CUSTOMER_PORTAL_USER: "Customer Portal User",
 } as Record<RoleKey, string>;
 
+const ROLE_DESCRIPTIONS: Record<RoleKey, string> = {
+  SUPER_ADMIN: "Full system access — org settings, roles, and all modules",
+  MANAGING_DIRECTOR: "Executive oversight across sales and operations",
+  SALES_DIRECTOR: "Owns sales strategy, pipeline, and approvals",
+  SALES_MANAGER: "Manages sales team, leads, and field job oversight",
+  SALES_EXECUTIVE: "Day-to-day lead and opportunity ownership",
+  SALES_COORDINATOR: "Coordinates field jobs, docs, and delivery follow-up",
+  PRE_SALES_ENGINEER: "Solution design and technical pre-sales support",
+  TECHNICAL_CONSULTANT: "Technical consulting on opportunities and projects",
+  PROJECT_MANAGER: "Customer project delivery and milestones",
+  IMPLEMENTATION_ENGINEER: "On-site implementation and commissioning",
+  DELIVERY_PERSON: "Field deliveries, collections, and Field Ops SOP",
+  SUPPORT_ENGINEER: "After-sales support tickets and SLA work",
+  FINANCE: "Invoices, payments, and collections finance",
+  ACCOUNTS: "Accounts receivable / payable support",
+  WAREHOUSE: "Stock, packing, and warehouse operations",
+  PROCUREMENT: "Supplier POs and purchasing",
+  CUSTOMER_PORTAL_USER: "Customer self-service portal access",
+};
+
 const DEMO_PASSWORD = "Password123!";
 
 type DemoUser = { role: RoleKey; first: string; last: string; email: string };
@@ -52,8 +72,15 @@ async function main() {
   for (const roleKey of Object.values(RoleKey)) {
     const role = await prisma.role.upsert({
       where: { key: roleKey },
-      create: { key: roleKey, name: ROLE_LABELS[roleKey] },
-      update: { name: ROLE_LABELS[roleKey] },
+      create: {
+        key: roleKey,
+        name: ROLE_LABELS[roleKey],
+        description: ROLE_DESCRIPTIONS[roleKey],
+      },
+      update: {
+        name: ROLE_LABELS[roleKey],
+        description: ROLE_DESCRIPTIONS[roleKey],
+      },
     });
     roleRecords.set(roleKey, role);
 

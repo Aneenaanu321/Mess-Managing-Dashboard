@@ -22,5 +22,7 @@ router.get("/sla-policies", asyncHandler(settingsController.slaPolicies));
 // Editing SLA targets is an org-level configuration change, gated tighter
 // than the router-level read check above.
 router.patch("/sla-policies", authorize(PERMISSIONS.SETTINGS_MANAGE_ORG), asyncHandler(settingsController.upsertSlaPolicy));
+router.get("/export.xlsx", authorize(PERMISSIONS.SETTINGS_MANAGE_ORG), asyncHandler(settingsController.exportWorkbook));
+router.post("/reset-demo", authorize(PERMISSIONS.SETTINGS_MANAGE_ORG), asyncHandler(settingsController.resetToDemo));
 
 export default router;
