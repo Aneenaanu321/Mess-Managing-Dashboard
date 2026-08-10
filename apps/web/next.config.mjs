@@ -26,11 +26,6 @@ const nextConfig = {
       { source: "/ai-assistant/:path*", destination: "/sales-assistant/:path*", permanent: true },
       { source: "/support/:path*", destination: "/customer-support/:path*", permanent: true },
       { source: "/amc/:path*", destination: "/service-contracts/:path*", permanent: true },
-      {
-        source: "/purchase-orders/:path*",
-        destination: "/customer-orders/:path*",
-        permanent: true,
-      },
     ];
   },
 };

@@ -76,12 +76,12 @@ async function issueSession(user: UserWithRole, ip?: string) {
 
 export const authService = {
   async login(email: string, password: string, ip?: string) {
-    const user = await authRepository.findUserByEmail(email.toLowerCase());
+    const user = await authRepository.findUserByEmail(email.trim().toLowerCase());
     if (!user || user.status !== "ACTIVE") {
       throw ApiError.unauthorized("Invalid email or password");
     }
 
-    const valid = await verifyPassword(password, user.passwordHash);
+    const valid = await verifyPassword(password.trim(), user.passwordHash);
     if (!valid) {
       throw ApiError.unauthorized("Invalid email or password");
     }

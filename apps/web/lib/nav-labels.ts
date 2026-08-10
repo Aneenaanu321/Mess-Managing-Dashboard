@@ -49,7 +49,6 @@ export const NAV_GROUPS = [
       { href: ROUTES.quotations, label: "Orders" },
       { href: ROUTES.approvals, label: "Pending Approvals" },
       { href: ROUTES.handoffs, label: "Handoffs" },
-      { href: ROUTES.hygiene, label: "Data Hygiene" },
       { href: ROUTES.calendar, label: "Calendar" },
     ],
   },
@@ -92,6 +91,7 @@ export const NAV_GROUPS = [
 ] as const;
 
 const HIDDEN_PAGE_LABELS: Record<string, string> = {
+  [ROUTES.hygiene]: "Data Hygiene",
   [ROUTES.support]: "Customer Support",
   [ROUTES.amc]: "Service Contracts",
   [ROUTES.campaigns]: "Campaigns",

@@ -27,7 +27,11 @@ export default function LoginPage() {
     e.preventDefault();
     setError(null);
     try {
-      const result = await login.mutateAsync({ email, password, rememberMe });
+      const result = await login.mutateAsync({
+        email: email.trim(),
+        password: password.trim(),
+        rememberMe,
+      });
       router.push(result.user.portalCustomer ? "/portal" : "/new-inquiries");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login failed");

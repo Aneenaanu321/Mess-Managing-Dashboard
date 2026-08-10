@@ -5,7 +5,9 @@ import { assertDefined } from "../src/utils/assert";
 
 const prisma = new PrismaClient();
 
-const ROLE_LABELS: Record<RoleKey, string> = {
+// Use string keys (not RoleKey.X) so this file typechecks even if the IDE's
+// Prisma client cache is briefly stale after adding a new role.
+const ROLE_LABELS = {
   SUPER_ADMIN: "Super Admin",
   MANAGING_DIRECTOR: "Managing Director",
   SALES_DIRECTOR: "Sales Director",
@@ -23,9 +25,15 @@ const ROLE_LABELS: Record<RoleKey, string> = {
   WAREHOUSE: "Warehouse",
   PROCUREMENT: "Procurement",
   CUSTOMER_PORTAL_USER: "Customer Portal User",
-};
+} as Record<RoleKey, string>;
 
 const DEMO_PASSWORD = "Password123!";
+
+type DemoUser = { role: RoleKey; first: string; last: string; email: string };
+
+function demoRole(role: string): RoleKey {
+  return role as RoleKey;
+}
 
 async function main() {
   console.log("Seeding: permissions...");
@@ -127,24 +135,24 @@ async function main() {
     `UPDATE users SET email = REPLACE(email, '@falconrfid.com', '@ibtechintl.com') WHERE email LIKE '%@falconrfid.com'`,
   );
 
-  const demoUsers: Array<{ role: RoleKey; first: string; last: string; email: string }> = [
-    { role: "SUPER_ADMIN", first: "Admin", last: "User", email: "admin@ibtechintl.com" },
-    { role: "MANAGING_DIRECTOR", first: "Anil", last: "Kapoor", email: "md@ibtechintl.com" },
-    { role: "SALES_DIRECTOR", first: "Sara", last: "Al Farsi", email: "sales.director@ibtechintl.com" },
-    { role: "SALES_MANAGER", first: "Omar", last: "Hassan", email: "sales.manager@ibtechintl.com" },
-    { role: "SALES_EXECUTIVE", first: "Ravi", last: "Menon", email: "ravi@ibtechintl.com" },
-    { role: "SALES_COORDINATOR", first: "Maya", last: "Joseph", email: "coordinator@ibtechintl.com" },
-    { role: "PRE_SALES_ENGINEER", first: "Lina", last: "Choudhury", email: "presales@ibtechintl.com" },
-    { role: "TECHNICAL_CONSULTANT", first: "Karim", last: "Idris", email: "techconsultant@ibtechintl.com" },
-    { role: "PROJECT_MANAGER", first: "Fatima", last: "Zahra", email: "pm@ibtechintl.com" },
-    { role: "IMPLEMENTATION_ENGINEER", first: "John", last: "Dsouza", email: "engineer@ibtechintl.com" },
-    { role: "DELIVERY_PERSON", first: "Samir", last: "Khan", email: "driver@ibtechintl.com" },
-    { role: "SUPPORT_ENGINEER", first: "Deepa", last: "Nair", email: "support@ibtechintl.com" },
-    { role: "FINANCE", first: "Yusuf", last: "Rahman", email: "finance@ibtechintl.com" },
-    { role: "ACCOUNTS", first: "Priya", last: "Suresh", email: "accounts@ibtechintl.com" },
-    { role: "WAREHOUSE", first: "Ahmed", last: "Saleh", email: "warehouse@ibtechintl.com" },
-    { role: "PROCUREMENT", first: "Noor", last: "Aziz", email: "procurement@ibtechintl.com" },
-    { role: "CUSTOMER_PORTAL_USER", first: "Client", last: "Contact", email: "client@customer.com" },
+  const demoUsers: DemoUser[] = [
+    { role: demoRole("SUPER_ADMIN"), first: "Admin", last: "User", email: "admin@ibtechintl.com" },
+    { role: demoRole("MANAGING_DIRECTOR"), first: "Anil", last: "Kapoor", email: "md@ibtechintl.com" },
+    { role: demoRole("SALES_DIRECTOR"), first: "Sara", last: "Al Farsi", email: "sales.director@ibtechintl.com" },
+    { role: demoRole("SALES_MANAGER"), first: "Omar", last: "Hassan", email: "sales.manager@ibtechintl.com" },
+    { role: demoRole("SALES_EXECUTIVE"), first: "Ravi", last: "Menon", email: "ravi@ibtechintl.com" },
+    { role: demoRole("SALES_COORDINATOR"), first: "Maya", last: "Joseph", email: "coordinator@ibtechintl.com" },
+    { role: demoRole("PRE_SALES_ENGINEER"), first: "Lina", last: "Choudhury", email: "presales@ibtechintl.com" },
+    { role: demoRole("TECHNICAL_CONSULTANT"), first: "Karim", last: "Idris", email: "techconsultant@ibtechintl.com" },
+    { role: demoRole("PROJECT_MANAGER"), first: "Fatima", last: "Zahra", email: "pm@ibtechintl.com" },
+    { role: demoRole("IMPLEMENTATION_ENGINEER"), first: "John", last: "Dsouza", email: "engineer@ibtechintl.com" },
+    { role: demoRole("DELIVERY_PERSON"), first: "Samir", last: "Khan", email: "driver@ibtechintl.com" },
+    { role: demoRole("SUPPORT_ENGINEER"), first: "Deepa", last: "Nair", email: "support@ibtechintl.com" },
+    { role: demoRole("FINANCE"), first: "Yusuf", last: "Rahman", email: "finance@ibtechintl.com" },
+    { role: demoRole("ACCOUNTS"), first: "Priya", last: "Suresh", email: "accounts@ibtechintl.com" },
+    { role: demoRole("WAREHOUSE"), first: "Ahmed", last: "Saleh", email: "warehouse@ibtechintl.com" },
+    { role: demoRole("PROCUREMENT"), first: "Noor", last: "Aziz", email: "procurement@ibtechintl.com" },
+    { role: demoRole("CUSTOMER_PORTAL_USER"), first: "Client", last: "Contact", email: "client@customer.com" },
   ];
 
   const userIds = new Map<RoleKey, string>();
@@ -160,8 +168,15 @@ async function main() {
         lastName: u.last,
         email: u.email,
         passwordHash,
+        status: "ACTIVE",
       },
-      update: {},
+      update: {
+        roleId: role.id,
+        firstName: u.first,
+        lastName: u.last,
+        passwordHash,
+        status: "ACTIVE",
+      },
     });
     userIds.set(u.role, user.id);
   }
@@ -330,7 +345,7 @@ async function main() {
     await prisma.user.update({ where: { id: portalUserId }, data: { customerId: customers[0].id } });
   }
 
-  const oppStages = ["REQUIREMENT_GATHERING", "DEMO", "QUOTATION_SENT", "NEGOTIATION", "INTERNAL_REVIEW"] as const;
+  const oppStages = ["REQUIREMENT_GATHERING", "TECHNICAL_DISCUSSION", "QUOTATION_SENT", "NEGOTIATION", "INTERNAL_REVIEW"] as const;
   const opportunities: Array<{ id: string; customerId: string }> = [];
   for (const [i, cust] of customers.entries()) {
     const code = `OPP-2026-${String(i + 1).padStart(4, "0")}`;

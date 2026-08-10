@@ -94,7 +94,7 @@ export const DOC_ITEMS_BY_JOB: Record<string, SopItem[]> = {
 export type SopChecklistState = Partial<Record<SopSection, Record<string, boolean>>>;
 
 export function defaultSopChecklist(jobType: string): SopChecklistState {
-  const docs = Object.fromEntries((DOC_ITEMS_BY_JOB[jobType] ?? DOC_ITEMS_BY_JOB.OTHER).map((i) => [i.key, false]));
+  const docs = Object.fromEntries(requiredDocsForJob(jobType).map((i) => [i.key, false]));
   return {
     preDay: Object.fromEntries(PRE_DAY_ITEMS.map((i) => [i.key, false])),
     warehouse: Object.fromEntries(WAREHOUSE_ITEMS.map((i) => [i.key, false])),
@@ -124,7 +124,7 @@ export function sectionProgress(section: Record<string, boolean> | undefined, it
 }
 
 export function requiredDocsForJob(jobType: string): SopItem[] {
-  return DOC_ITEMS_BY_JOB[jobType] ?? DOC_ITEMS_BY_JOB.OTHER;
+  return DOC_ITEMS_BY_JOB[jobType] ?? DOC_ITEMS_BY_JOB.OTHER ?? [];
 }
 
 export function assertRequiredDocsChecked(jobType: string, checklist: SopChecklistState | null | undefined) {

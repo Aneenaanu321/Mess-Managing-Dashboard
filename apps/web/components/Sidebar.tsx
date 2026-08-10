@@ -32,7 +32,6 @@ import {
   CalendarDays,
   CheckSquare,
   ArrowLeftRight,
-  Filter,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { NAV_GROUPS } from "@/lib/nav-labels";
@@ -47,7 +46,6 @@ const NAV_ICONS: Record<string, LucideIcon> = {
   "/orders": FileText,
   "/pending-approvals": CheckSquare,
   "/handoffs": ArrowLeftRight,
-  "/sales-ops/hygiene": Filter,
   "/calendar": CalendarDays,
   "/customer-orders": ShoppingCart,
   "/order-completed": ClipboardCheck,

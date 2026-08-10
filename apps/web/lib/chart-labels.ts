@@ -16,7 +16,8 @@ export const LEAD_STATUS_MEANINGS: Record<string, string> = {
 
 export const PIPELINE_STAGE_MEANINGS: Record<string, string> = {
   "Requirement Gathering": "Collecting customer needs",
-  Demo: "Product demonstration scheduled or done",
+  "Site Survey": "On-site assessment",
+  "Technical Discussion": "Technical fit under discussion",
   "Quotation Sent": "Quote delivered to customer",
   Negotiation: "Pricing or terms under discussion",
   "Internal Review": "Awaiting internal sign-off",

@@ -50,7 +50,9 @@ async function request<T>(path: string, options: RequestInit = {}, retry = true)
     },
   });
 
-  if (res.status === 401 && retry) {
+  // Don't attempt refresh+retry on auth endpoints (login 401 must surface as-is).
+  const isAuthEndpoint = path.startsWith("/auth/login") || path.startsWith("/auth/register") || path.startsWith("/auth/forgot-password") || path.startsWith("/auth/reset-password");
+  if (res.status === 401 && retry && !isAuthEndpoint) {
     const refreshed = await tryRefresh();
     if (refreshed) return request<T>(path, options, false);
   }
