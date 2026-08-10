@@ -31,6 +31,14 @@ const detailInclude = {
       totalAmount: true,
       currency: true,
       customer: { select: { id: true, name: true, code: true } },
+      lineItems: {
+        select: {
+          id: true,
+          quantity: true,
+          product: { select: { id: true, name: true, sku: true } },
+          allocations: { select: { quantity: true, status: true } },
+        },
+      },
     },
   },
   customerPo: {

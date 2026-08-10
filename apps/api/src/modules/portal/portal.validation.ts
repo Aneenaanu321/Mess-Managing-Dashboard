@@ -17,5 +17,8 @@ export const portalSignOffSchema = z.object({
   name: z.string().min(1, "Signer name is required"),
   document: z.enum(["DO", "INVOICE", "BOTH"]).default("BOTH"),
   signatureDataUrl: z.string().min(32).optional(),
+  contactPhone: z.string().min(5, "Contact number is required").max(40),
+  companyStampApplied: z.boolean().optional().default(false),
+  stampNote: z.string().max(200).optional(),
 });
 export type PortalSignOffInput = z.infer<typeof portalSignOffSchema>;

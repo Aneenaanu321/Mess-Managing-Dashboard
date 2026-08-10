@@ -31,7 +31,7 @@ const SECTIONS: GuideSection[] = [
     title: "2. Warehouse activities",
     where: "Job card → Warehouse checklist · Open job → Packing on Delivery Order",
     bullets: [
-      "Complete and continuously update the Sales Order checklist; mark available / unavailable items.",
+      "Complete and continuously update the Sales Order checklist; mark available / unavailable items on the job (Sales order checklist section).",
       "Inform the coordinator if any reserved items are used for urgent requirements (tick urgent use — coordinators are notified).",
       "Keep a copy of the checklist with the relevant items.",
       "Keep DO items separate from general stock and attach a copy of the DO.",
@@ -54,9 +54,9 @@ const SECTIONS: GuideSection[] = [
     title: "3. Customer visits",
     where: "Job card → Customer visit checklist",
     bullets: [
-      "Inform the customer before arrival.",
-      "Inform the coordinator immediately about any delay or issue.",
-      "Obtain customer signature, company stamp (where applicable), and contact number.",
+      "Inform the customer before arrival (tick notifies and emails when an address is on file).",
+      "Inform the coordinator immediately about any delay or issue (tick sends coordinator notification).",
+      "Obtain customer signature, company stamp (where applicable), and contact number via digital sign-off.",
       "Obtain signatures on the DO and invoice.",
       "For cash/cheque collection, issue the proper receipt and keep a copy.",
     ],
@@ -114,14 +114,14 @@ const SECTIONS: GuideSection[] = [
   },
   {
     title: "9. Import shipments",
-    where: "Job type: Import receiving → Warehouse + Document submission",
+    where: "Job type: Import receiving → Import receiving details + Document submission",
     bullets: [
       "Submit all original import documents.",
-      "Count all items according to the Packing List (same day or next day; return the PL to the coordinator).",
-      "Store items in their assigned rack/location; FIFO for consumables.",
-      "Mark items with PO number / arrival date where possible.",
-      "Record driver details where applicable.",
-      "Report immediately: expiry dates, pallet pictures, damaged items, any discrepancies (upload photos before ticking damages).",
+      "Record count vs packing list on the job (same day or next day; return the PL to the coordinator).",
+      "Enter rack/location and confirm FIFO for consumables.",
+      "Mark items with PO number / arrival date on the job form.",
+      "Record driver name, contact, and vehicle.",
+      "Report expiry dates and discrepancies on the form; upload pallet/damage photos before ticking damages.",
     ],
   },
   {

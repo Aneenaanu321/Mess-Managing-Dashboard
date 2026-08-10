@@ -25,6 +25,41 @@ export const sopChecklistSchema = z
   })
   .partial();
 
+const soAvailabilityLineSchema = z.object({
+  lineItemId: z.string().min(1),
+  name: z.string().min(1),
+  qty: z.coerce.number().nonnegative(),
+  status: z.enum(["available", "unavailable", "partial"]),
+  notes: z.string().optional(),
+});
+
+const importReceivingSchema = z
+  .object({
+    driverName: z.string().optional(),
+    driverContact: z.string().optional(),
+    vehicleNumber: z.string().optional(),
+    rackLocation: z.string().optional(),
+    fifoFollowed: z.boolean().optional(),
+    poNumber: z.string().optional(),
+    arrivalDate: z.string().optional(),
+    countedSameDay: z.boolean().optional(),
+    countCompletedNextDay: z.boolean().optional(),
+    plReturned: z.boolean().optional(),
+    discrepancies: z.string().optional(),
+    expiryNotes: z.string().optional(),
+    countedLines: z
+      .array(
+        z.object({
+          name: z.string().min(1),
+          expectedQty: z.coerce.number().nonnegative().nullable().optional(),
+          countedQty: z.coerce.number().nonnegative().nullable().optional(),
+          notes: z.string().optional(),
+        }),
+      )
+      .optional(),
+  })
+  .partial();
+
 export const packingDetailsSchema = z
   .object({
     itemCount: z.coerce.number().int().nonnegative().optional(),
@@ -47,6 +82,8 @@ export const packingDetailsSchema = z
       .optional(),
     totalPalletWeight: z.coerce.number().nonnegative().nullable().optional(),
     notes: z.string().optional(),
+    soAvailability: z.array(soAvailabilityLineSchema).optional(),
+    importReceiving: importReceivingSchema.optional(),
   })
   .partial();
 
@@ -129,6 +166,11 @@ export const taskSignOffSchema = z.object({
   document: z.enum(["DO", "INVOICE", "BOTH"]).default("DO"),
   /** PNG/JPEG data URL from signature pad */
   signatureDataUrl: z.string().min(32).optional(),
+  /** Customer contact number (SOP: obtain contact with signature/stamp) */
+  contactPhone: z.string().min(5, "Contact number is required").max(40),
+  /** Company stamp obtained where applicable */
+  companyStampApplied: z.boolean().optional().default(false),
+  stampNote: z.string().max(200).optional(),
 });
 export type TaskSignOffInput = z.infer<typeof taskSignOffSchema>;
 

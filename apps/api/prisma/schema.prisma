@@ -1197,9 +1197,9 @@ model EngineerTask {
   paymentReference    String?
   /// Field SOP checklists: { preDay, warehouse, visit, docs, eod }
   sopChecklist        Json?
-  /// Packing DO details: item counts, weights, pallets
+  /// Packing DO details: item counts, weights, pallets, SO availability, import receiving
   packingDetails      Json?
-  /// Digital customer sign-off: { name, signedAt, document: DO|INVOICE|BOTH, source, fileAssetId? }
+  /// Digital customer sign-off: { name, contactPhone, companyStampApplied, stampNote?, signedAt, document, source, fileAssetId? }
   customerSignOff     Json?
   customerNotifiedAt  DateTime?
   incompleteReason    String?

@@ -26,6 +26,8 @@ import {
   TaskJobType,
   PaymentMethod,
   SopSection,
+  SoLineAvailability,
+  ImportReceivingDetails,
 } from "@/lib/tasks";
 import { hasPermission, useCurrentUser } from "@/lib/auth";
 import { Badge, Button, Card, Input, Label, Select } from "@/components/ui";
@@ -74,6 +76,12 @@ export default function TaskDetailPage() {
   const [itemCount, setItemCount] = useState("");
   const [packingNotes, setPackingNotes] = useState("");
   const [packItems, setPackItems] = useState<Array<{ name: string; weight: string }>>([{ name: "", weight: "" }]);
+  const [packPallets, setPackPallets] = useState<Array<{ label: string; itemNames: string; weight: string }>>([
+    { label: "", itemNames: "", weight: "" },
+  ]);
+  const [totalPalletWeight, setTotalPalletWeight] = useState("");
+  const [soAvailability, setSoAvailability] = useState<SoLineAvailability[]>([]);
+  const [importReceiving, setImportReceiving] = useState<ImportReceivingDetails>({});
   const [editTitle, setEditTitle] = useState("");
   const [editDescription, setEditDescription] = useState("");
   const [editDueAt, setEditDueAt] = useState("");
@@ -88,6 +96,39 @@ export default function TaskDetailPage() {
     if (task.packingDetails?.notes) setPackingNotes(task.packingDetails.notes);
     if (task.packingDetails?.items?.length) {
       setPackItems(task.packingDetails.items.map((i) => ({ name: i.name, weight: i.weight != null ? String(i.weight) : "" })));
+    }
+    if (task.packingDetails?.pallets?.length) {
+      setPackPallets(
+        task.packingDetails.pallets.map((p) => ({
+          label: p.label ?? "",
+          itemNames: p.itemNames ?? "",
+          weight: p.weight != null ? String(p.weight) : "",
+        })),
+      );
+    }
+    if (task.packingDetails?.totalPalletWeight != null) {
+      setTotalPalletWeight(String(task.packingDetails.totalPalletWeight));
+    }
+    if (task.packingDetails?.soAvailability?.length) {
+      setSoAvailability(task.packingDetails.soAvailability);
+    } else if (task.salesOrder?.lineItems?.length) {
+      setSoAvailability(
+        task.salesOrder.lineItems.map((li) => {
+          const reserved = (li.allocations ?? [])
+            .filter((a) => a.status === "RESERVED" || a.status === "ISSUED")
+            .reduce((sum, a) => sum + Number(a.quantity), 0);
+          const qty = Number(li.quantity);
+          return {
+            lineItemId: li.id,
+            name: li.product?.name ?? "Item",
+            qty,
+            status: reserved >= qty ? ("available" as const) : reserved > 0 ? ("partial" as const) : ("unavailable" as const),
+          };
+        }),
+      );
+    }
+    if (task.packingDetails?.importReceiving) {
+      setImportReceiving(task.packingDetails.importReceiving);
     }
     setEditTitle(task.title);
     setEditDescription(task.description ?? "");
@@ -108,6 +149,7 @@ export default function TaskDetailPage() {
   const isCreator = user?.id === task.createdBy?.id;
   const isCollection = task.jobType === "CHEQUE_COLLECTION";
   const needsPacking = task.jobType === "DELIVERY" || task.jobType === "EXPORT_SHIPMENT";
+  const isImport = task.jobType === "IMPORT_RECEIVING";
   const canAcknowledge = isAssignee && (task.status === "TODO" || task.status === "SEEN" || task.status === "IN_PROGRESS") && !task.seenAt;
   const canStart = isAssignee && task.status === "SEEN";
   const canSubmit = isAssignee && ["TODO", "SEEN", "IN_PROGRESS"].includes(task.status);
@@ -209,12 +251,28 @@ export default function TaskDetailPage() {
     const items = packItems
       .filter((i) => i.name.trim())
       .map((i) => ({ name: i.name.trim(), weight: i.weight === "" ? null : Number(i.weight) }));
+    const pallets = packPallets
+      .filter((p) => p.label.trim() || p.itemNames.trim() || p.weight !== "")
+      .map((p) => ({
+        label: p.label.trim() || undefined,
+        itemNames: p.itemNames.trim() || undefined,
+        weight: p.weight === "" ? null : Number(p.weight),
+      }));
+    const palletWeightSum = pallets.reduce((sum, p) => sum + (p.weight ?? 0), 0);
+    const totalWt =
+      totalPalletWeight !== ""
+        ? Number(totalPalletWeight)
+        : pallets.some((p) => p.weight != null)
+          ? palletWeightSum
+          : null;
     return {
       itemCount: itemCount === "" ? undefined : Number(itemCount),
       notes: packingNotes || undefined,
       items: items.length ? items : undefined,
-      pallets: [],
-      totalPalletWeight: null,
+      pallets: pallets.length ? pallets : [],
+      totalPalletWeight: totalWt,
+      ...(soAvailability.length ? { soAvailability } : {}),
+      ...(isImport ? { importReceiving } : {}),
     };
   }
 
@@ -227,6 +285,30 @@ export default function TaskDetailPage() {
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save packing");
+    }
+  }
+
+  async function saveSoAvailability() {
+    setError(null);
+    try {
+      await updateSop.mutateAsync({
+        id: task!.id,
+        input: { packingDetails: { soAvailability } },
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to save SO checklist");
+    }
+  }
+
+  async function saveImportReceiving() {
+    setError(null);
+    try {
+      await updateSop.mutateAsync({
+        id: task!.id,
+        input: { packingDetails: { importReceiving } },
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to save import details");
     }
   }
 
@@ -248,7 +330,7 @@ export default function TaskDetailPage() {
         input: {
           completionNote: completionNote.trim(),
           sopChecklist: task!.sopChecklist,
-          packingDetails: needsPacking ? buildPackingDetails() : undefined,
+          packingDetails: needsPacking || isImport ? buildPackingDetails() : undefined,
           ...(isCollection || paymentAmount
             ? {
                 paymentAmount: Number(paymentAmount || 0),
@@ -650,6 +732,65 @@ export default function TaskDetailPage() {
                   + Item
                 </Button>
               </div>
+              <div className="space-y-2">
+                <Label>Pallets (items per pallet + weight)</Label>
+                {packPallets.map((row, idx) => (
+                  <div key={idx} className="grid grid-cols-1 gap-2 sm:grid-cols-[8rem_1fr_7rem_auto]">
+                    <Input
+                      placeholder={`Pallet ${idx + 1}`}
+                      value={row.label}
+                      onChange={(e) =>
+                        setPackPallets((rows) => rows.map((r, i) => (i === idx ? { ...r, label: e.target.value } : r)))
+                      }
+                    />
+                    <Input
+                      placeholder="Items on this pallet"
+                      value={row.itemNames}
+                      onChange={(e) =>
+                        setPackPallets((rows) => rows.map((r, i) => (i === idx ? { ...r, itemNames: e.target.value } : r)))
+                      }
+                    />
+                    <Input
+                      type="number"
+                      min={0}
+                      placeholder="Wt"
+                      value={row.weight}
+                      onChange={(e) =>
+                        setPackPallets((rows) => rows.map((r, i) => (i === idx ? { ...r, weight: e.target.value } : r)))
+                      }
+                    />
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => setPackPallets((rows) => (rows.length <= 1 ? rows : rows.filter((_, i) => i !== idx)))}
+                    >
+                      −
+                    </Button>
+                  </div>
+                ))}
+                <div className="flex flex-wrap items-end gap-2">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setPackPallets((rows) => [...rows, { label: "", itemNames: "", weight: "" }])}
+                  >
+                    + Pallet
+                  </Button>
+                  <div className="min-w-[10rem] flex-1">
+                    <Label htmlFor="totalPalletWt">Total pallet weight</Label>
+                    <Input
+                      id="totalPalletWt"
+                      type="number"
+                      min={0}
+                      value={totalPalletWeight}
+                      onChange={(e) => setTotalPalletWeight(e.target.value)}
+                      placeholder="Auto-sums pallet weights if blank"
+                    />
+                  </div>
+                </div>
+              </div>
               <div>
                 <Label htmlFor="packNotes">Notes</Label>
                 <textarea
@@ -663,6 +804,267 @@ export default function TaskDetailPage() {
               </div>
               <Button variant="secondary" onClick={savePacking} disabled={updateSop.isPending}>
                 Save packing details
+              </Button>
+            </div>
+          )}
+
+          {soAvailability.length > 0 && (
+            <div className="space-y-2 border-t border-slate-100 pt-3 dark:border-slate-700">
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Sales order checklist — available / unavailable
+              </h3>
+              <p className="text-xs text-slate-500">
+                Mark each linked SO line. Saving auto-ticks the warehouse checklist when lines are marked.
+              </p>
+              <ul className="space-y-2">
+                {soAvailability.map((line, idx) => (
+                  <li key={line.lineItemId} className="rounded-lg border border-slate-200 p-2 dark:border-slate-700">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <p className="text-sm font-medium text-primary">
+                        {line.name} <span className="font-normal text-slate-500">× {line.qty}</span>
+                      </p>
+                      <Select
+                        value={line.status}
+                        onChange={(e) =>
+                          setSoAvailability((rows) =>
+                            rows.map((r, i) =>
+                              i === idx
+                                ? { ...r, status: e.target.value as SoLineAvailability["status"] }
+                                : r,
+                            ),
+                          )
+                        }
+                      >
+                        <option value="available">Available</option>
+                        <option value="partial">Partial</option>
+                        <option value="unavailable">Unavailable</option>
+                      </Select>
+                    </div>
+                    <Input
+                      className="mt-2"
+                      placeholder="Notes (optional)"
+                      value={line.notes ?? ""}
+                      onChange={(e) =>
+                        setSoAvailability((rows) =>
+                          rows.map((r, i) => (i === idx ? { ...r, notes: e.target.value } : r)),
+                        )
+                      }
+                    />
+                  </li>
+                ))}
+              </ul>
+              <Button variant="secondary" onClick={saveSoAvailability} disabled={updateSop.isPending}>
+                Save SO availability
+              </Button>
+            </div>
+          )}
+
+          {isImport && (
+            <div className="space-y-3 border-t border-slate-100 pt-3 dark:border-slate-700">
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">Import receiving details</h3>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                <div>
+                  <Label htmlFor="driverName">Driver name</Label>
+                  <Input
+                    id="driverName"
+                    value={importReceiving.driverName ?? ""}
+                    onChange={(e) => setImportReceiving((d) => ({ ...d, driverName: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="driverContact">Driver contact</Label>
+                  <Input
+                    id="driverContact"
+                    value={importReceiving.driverContact ?? ""}
+                    onChange={(e) => setImportReceiving((d) => ({ ...d, driverContact: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="vehicleNumber">Vehicle</Label>
+                  <Input
+                    id="vehicleNumber"
+                    value={importReceiving.vehicleNumber ?? ""}
+                    onChange={(e) => setImportReceiving((d) => ({ ...d, vehicleNumber: e.target.value }))}
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                <div>
+                  <Label htmlFor="rackLocation">Rack / location</Label>
+                  <Input
+                    id="rackLocation"
+                    value={importReceiving.rackLocation ?? ""}
+                    onChange={(e) => setImportReceiving((d) => ({ ...d, rackLocation: e.target.value }))}
+                    placeholder="Aisle / rack / bin"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="importPo">PO number</Label>
+                  <Input
+                    id="importPo"
+                    value={importReceiving.poNumber ?? ""}
+                    onChange={(e) => setImportReceiving((d) => ({ ...d, poNumber: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="arrivalDate">Arrival date</Label>
+                  <Input
+                    id="arrivalDate"
+                    type="date"
+                    value={importReceiving.arrivalDate ?? ""}
+                    onChange={(e) => setImportReceiving((d) => ({ ...d, arrivalDate: e.target.value }))}
+                  />
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-4 text-sm">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={Boolean(importReceiving.fifoFollowed)}
+                    onChange={(e) => setImportReceiving((d) => ({ ...d, fifoFollowed: e.target.checked }))}
+                  />
+                  FIFO followed (consumables)
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={Boolean(importReceiving.countedSameDay)}
+                    onChange={(e) =>
+                      setImportReceiving((d) => ({
+                        ...d,
+                        countedSameDay: e.target.checked,
+                        ...(e.target.checked ? { countCompletedNextDay: false } : {}),
+                      }))
+                    }
+                  />
+                  Counted vs PL same day
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={Boolean(importReceiving.countCompletedNextDay)}
+                    onChange={(e) =>
+                      setImportReceiving((d) => ({
+                        ...d,
+                        countCompletedNextDay: e.target.checked,
+                        ...(e.target.checked ? { countedSameDay: false } : {}),
+                      }))
+                    }
+                  />
+                  Count completed next day
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={Boolean(importReceiving.plReturned)}
+                    onChange={(e) => setImportReceiving((d) => ({ ...d, plReturned: e.target.checked }))}
+                  />
+                  Packing list returned to coordinator
+                </label>
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                  <Label>Count vs packing list</Label>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={() =>
+                      setImportReceiving((d) => ({
+                        ...d,
+                        countedLines: [...(d.countedLines ?? []), { name: "", expectedQty: null, countedQty: null }],
+                      }))
+                    }
+                  >
+                    + Line
+                  </Button>
+                </div>
+                {(importReceiving.countedLines ?? []).map((row, idx) => (
+                  <div key={idx} className="grid grid-cols-[1fr_5rem_5rem_auto] gap-2">
+                    <Input
+                      placeholder="Item"
+                      value={row.name}
+                      onChange={(e) =>
+                        setImportReceiving((d) => ({
+                          ...d,
+                          countedLines: (d.countedLines ?? []).map((r, i) =>
+                            i === idx ? { ...r, name: e.target.value } : r,
+                          ),
+                        }))
+                      }
+                    />
+                    <Input
+                      type="number"
+                      min={0}
+                      placeholder="Exp"
+                      value={row.expectedQty ?? ""}
+                      onChange={(e) =>
+                        setImportReceiving((d) => ({
+                          ...d,
+                          countedLines: (d.countedLines ?? []).map((r, i) =>
+                            i === idx
+                              ? { ...r, expectedQty: e.target.value === "" ? null : Number(e.target.value) }
+                              : r,
+                          ),
+                        }))
+                      }
+                    />
+                    <Input
+                      type="number"
+                      min={0}
+                      placeholder="Cnt"
+                      value={row.countedQty ?? ""}
+                      onChange={(e) =>
+                        setImportReceiving((d) => ({
+                          ...d,
+                          countedLines: (d.countedLines ?? []).map((r, i) =>
+                            i === idx
+                              ? { ...r, countedQty: e.target.value === "" ? null : Number(e.target.value) }
+                              : r,
+                          ),
+                        }))
+                      }
+                    />
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={() =>
+                        setImportReceiving((d) => ({
+                          ...d,
+                          countedLines: (d.countedLines ?? []).filter((_, i) => i !== idx),
+                        }))
+                      }
+                    >
+                      −
+                    </Button>
+                  </div>
+                ))}
+              </div>
+              <div>
+                <Label htmlFor="expiryNotes">Expiry dates / notes</Label>
+                <textarea
+                  id="expiryNotes"
+                  rows={2}
+                  className="block w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm dark:border-slate-600 dark:bg-slate-800"
+                  value={importReceiving.expiryNotes ?? ""}
+                  onChange={(e) => setImportReceiving((d) => ({ ...d, expiryNotes: e.target.value }))}
+                  placeholder="Report expiry dates here; upload pallet photos under Attachments"
+                />
+              </div>
+              <div>
+                <Label htmlFor="discrepancies">Damages / discrepancies</Label>
+                <textarea
+                  id="discrepancies"
+                  rows={2}
+                  className="block w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm dark:border-slate-600 dark:bg-slate-800"
+                  value={importReceiving.discrepancies ?? ""}
+                  onChange={(e) => setImportReceiving((d) => ({ ...d, discrepancies: e.target.value }))}
+                  placeholder="Describe issues; tick damages on docs checklist after uploading photos"
+                />
+              </div>
+              <Button variant="secondary" onClick={saveImportReceiving} disabled={updateSop.isPending}>
+                Save import details
               </Button>
             </div>
           )}
@@ -859,10 +1261,21 @@ export default function TaskDetailPage() {
         <Card className="space-y-3 p-5">
           <h2 className="text-sm font-semibold text-primary">Digital customer sign-off</h2>
           {task.customerSignOff ? (
-            <p className="text-sm text-emerald-700 dark:text-emerald-300">
-              Signed by {task.customerSignOff.name} ({task.customerSignOff.document}) via {task.customerSignOff.source}{" "}
-              · {new Date(task.customerSignOff.signedAt).toLocaleString()}
-            </p>
+            <div className="space-y-1 text-sm text-emerald-700 dark:text-emerald-300">
+              <p>
+                Signed by {task.customerSignOff.name} ({task.customerSignOff.document}) via {task.customerSignOff.source}{" "}
+                · {new Date(task.customerSignOff.signedAt).toLocaleString()}
+              </p>
+              {task.customerSignOff.contactPhone && (
+                <p className="text-slate-600 dark:text-slate-400">Contact: {task.customerSignOff.contactPhone}</p>
+              )}
+              <p className="text-slate-600 dark:text-slate-400">
+                Company stamp:{" "}
+                {task.customerSignOff.companyStampApplied
+                  ? `Yes${task.customerSignOff.stampNote ? ` (${task.customerSignOff.stampNote})` : ""}`
+                  : "Not applied / N/A"}
+              </p>
+            </div>
           ) : (
             <>
               <p className="text-xs text-slate-500">

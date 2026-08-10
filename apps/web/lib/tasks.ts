@@ -21,12 +21,43 @@ export type SopChecklist = Partial<Record<SopSection, Record<string, boolean>>>;
 export type SopProgress = Record<SopSection, { done: number; total: number; complete: boolean }>;
 export type SopItem = { key: string; label: string; requiresEvidence?: boolean };
 
+export type SoLineAvailability = {
+  lineItemId: string;
+  name: string;
+  qty: number;
+  status: "available" | "unavailable" | "partial";
+  notes?: string;
+};
+
+export type ImportReceivingDetails = {
+  driverName?: string;
+  driverContact?: string;
+  vehicleNumber?: string;
+  rackLocation?: string;
+  fifoFollowed?: boolean;
+  poNumber?: string;
+  arrivalDate?: string;
+  countedSameDay?: boolean;
+  countCompletedNextDay?: boolean;
+  plReturned?: boolean;
+  discrepancies?: string;
+  expiryNotes?: string;
+  countedLines?: Array<{
+    name: string;
+    expectedQty?: number | null;
+    countedQty?: number | null;
+    notes?: string;
+  }>;
+};
+
 export type PackingDetails = {
   itemCount?: number;
   items?: Array<{ name: string; weight?: number | null }>;
   pallets?: Array<{ label?: string; itemNames?: string; weight?: number | null }>;
   totalPalletWeight?: number | null;
   notes?: string;
+  soAvailability?: SoLineAvailability[];
+  importReceiving?: ImportReceivingDetails;
 };
 
 export interface AssignableUser {
@@ -47,6 +78,12 @@ export interface TaskOrderLink {
   poNumber?: string;
   dueDate?: string | null;
   customer?: { id: string; name: string; code?: string };
+  lineItems?: Array<{
+    id: string;
+    quantity: string | number;
+    product: { id: string; name: string; sku: string };
+    allocations?: Array<{ quantity: string | number; status: string }>;
+  }>;
 }
 
 export interface TaskLinkOptions {
@@ -109,6 +146,9 @@ export interface EngineerTask {
   packingDetails?: PackingDetails | null;
   customerSignOff?: {
     name: string;
+    contactPhone?: string;
+    companyStampApplied?: boolean;
+    stampNote?: string;
     signedAt: string;
     document: string;
     source: string;
@@ -482,7 +522,14 @@ export function useTaskSignOff() {
       input,
     }: {
       id: string;
-      input: { name: string; document: "DO" | "INVOICE" | "BOTH"; signatureDataUrl?: string };
+      input: {
+        name: string;
+        document: "DO" | "INVOICE" | "BOTH";
+        signatureDataUrl?: string;
+        contactPhone: string;
+        companyStampApplied?: boolean;
+        stampNote?: string;
+      };
     }) => (await apiClient.post<EngineerTask>(`/tasks/${id}/sign-off`, input)).data,
     onSuccess: (_data, vars) => {
       invalidateTask(queryClient, vars.id);

@@ -279,7 +279,14 @@ export function usePortalSignOff() {
       input,
     }: {
       id: string;
-      input: { name: string; document: "DO" | "INVOICE" | "BOTH"; signatureDataUrl?: string };
+      input: {
+        name: string;
+        document: "DO" | "INVOICE" | "BOTH";
+        signatureDataUrl?: string;
+        contactPhone: string;
+        companyStampApplied?: boolean;
+        stampNote?: string;
+      };
     }) => (await apiClient.post(`/portal/jobs/${id}/sign-off`, input)).data,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["portal", "jobs"] });

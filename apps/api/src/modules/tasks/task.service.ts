@@ -22,6 +22,7 @@ import {
   assertEvidenceAttachmentsForSubmit,
   assertEvidenceTicksAllowed,
   assertRequiredDocsChecked,
+  checklistPatchFromPacking,
   countCheckedEvidenceDocs,
   defaultSopChecklist,
   evidenceRequiredDocs,
@@ -1145,16 +1146,38 @@ export const taskService = {
     }
 
     const nextPacking = input.packingDetails
-      ? { ...asPacking(existing.packingDetails), ...input.packingDetails }
+      ? {
+          ...asPacking(existing.packingDetails),
+          ...input.packingDetails,
+          ...(input.packingDetails.importReceiving
+            ? {
+                importReceiving: {
+                  ...asPacking(existing.packingDetails).importReceiving,
+                  ...input.packingDetails.importReceiving,
+                },
+              }
+            : {}),
+        }
       : asPacking(existing.packingDetails);
 
-    const visitNotified = input.customerNotified || nextChecklist.visit?.customerNotified;
-    const prevUrgent = Boolean(asChecklist(existing.sopChecklist).warehouse?.urgentUseNotified);
-    const nextUrgent = Boolean(nextChecklist.warehouse?.urgentUseNotified);
+    let checklistForSave = nextChecklist;
+    if (input.packingDetails) {
+      checklistForSave = mergeSopChecklist(
+        nextChecklist,
+        existing.jobType,
+        checklistPatchFromPacking(existing.jobType, nextPacking),
+      );
+    }
+
+    const visitNotified = input.customerNotified || checklistForSave.visit?.customerNotified;
+    const prevUrgent = Boolean(previousChecklist.warehouse?.urgentUseNotified);
+    const nextUrgent = Boolean(checklistForSave.warehouse?.urgentUseNotified);
+    const prevDelay = Boolean(previousChecklist.visit?.delayEscalated);
+    const nextDelay = Boolean(checklistForSave.visit?.delayEscalated);
 
     const updated = await taskRepository.update(id, {
-      ...(input.sopChecklist
-        ? { sopChecklist: nextChecklist as Prisma.InputJsonValue }
+      ...((input.sopChecklist || input.packingDetails)
+        ? { sopChecklist: checklistForSave as Prisma.InputJsonValue }
         : {}),
       ...(input.packingDetails
         ? { packingDetails: nextPacking as Prisma.InputJsonValue }
@@ -1164,7 +1187,7 @@ export const taskService = {
       ...(visitNotified && !existing.customerNotifiedAt
         ? {
             customerNotifiedAt: new Date(),
-            sopChecklist: mergeSopChecklist(nextChecklist, existing.jobType, {
+            sopChecklist: mergeSopChecklist(checklistForSave, existing.jobType, {
               visit: { customerNotified: true },
             }) as Prisma.InputJsonValue,
           }
@@ -1243,6 +1266,39 @@ export const taskService = {
       }
     }
 
+    if (!prevDelay && nextDelay) {
+      await notifyCoordinators(
+        ctx.companyId,
+        {
+          title: "Site delay / issue reported",
+          emailSubject: `Delay at site: ${existing.title}`,
+          body: `"${existing.title}" — field staff escalated a delay or issue at the customer site.`,
+          link: `/team-tasks/${id}`,
+        },
+        ctx.userId,
+      );
+      if (existing.createdById && existing.createdById !== ctx.userId) {
+        await notificationService.notify({
+          userId: existing.createdById,
+          type: "SYSTEM",
+          title: "Site delay / issue reported",
+          body: `"${existing.title}" — delay or issue escalated from the field.`,
+          link: `/team-tasks/${id}`,
+          emailSubject: `Delay at site: ${existing.title}`,
+          linkLabel: "Open job",
+          copyToWatchers: true,
+        });
+      } else {
+        await notificationService.copyWatchers({
+          title: "Site delay / issue reported",
+          body: `"${existing.title}" — delay or issue escalated from the field.`,
+          link: `/team-tasks/${id}`,
+          emailSubject: `Delay at site: ${existing.title}`,
+          linkLabel: "Open job",
+        });
+      }
+    }
+
     return this.getById(ctx, updated.id);
   },
 
@@ -1285,14 +1341,18 @@ export const taskService = {
       visitPatch.invoiceSigned = true;
       if (fileAssetId) docsPatch.signedInvoiceScanned = true;
     }
+    docsPatch.customerDetailsComplete = true;
 
     const checklist = mergeSopChecklist(asChecklist(existing.sopChecklist), existing.jobType, {
       visit: visitPatch,
-      ...(Object.keys(docsPatch).length ? { docs: docsPatch } : {}),
+      docs: docsPatch,
     });
 
     const signOff = {
       name: input.name.trim(),
+      contactPhone: input.contactPhone.trim(),
+      companyStampApplied: Boolean(input.companyStampApplied),
+      ...(input.stampNote?.trim() ? { stampNote: input.stampNote.trim() } : {}),
       signedAt: new Date().toISOString(),
       document: input.document,
       source,
@@ -1310,7 +1370,7 @@ export const taskService = {
       event: "updated",
       jobId: id,
       jobTitle: existing.title,
-      detail: `Customer signed ${input.document} digitally (${input.name.trim()})`,
+      detail: `Customer signed ${input.document} digitally (${input.name.trim()}, ${input.contactPhone.trim()}${input.companyStampApplied ? ", stamp applied" : ""})`,
     });
 
     return this.getById(ctx, id);
@@ -1379,7 +1439,20 @@ export const taskService = {
     const packing =
       existing.jobType === "DELIVERY" || existing.jobType === "EXPORT_SHIPMENT"
         ? { ...asPacking(existing.packingDetails), ...(input.packingDetails ?? {}) }
-        : asPacking(existing.packingDetails);
+        : existing.jobType === "IMPORT_RECEIVING" && input.packingDetails
+          ? {
+              ...asPacking(existing.packingDetails),
+              ...input.packingDetails,
+              ...(input.packingDetails.importReceiving
+                ? {
+                    importReceiving: {
+                      ...asPacking(existing.packingDetails).importReceiving,
+                      ...input.packingDetails.importReceiving,
+                    },
+                  }
+                : {}),
+            }
+          : asPacking(existing.packingDetails);
 
     if (
       (existing.jobType === "DELIVERY" || existing.jobType === "EXPORT_SHIPMENT") &&
@@ -1388,13 +1461,19 @@ export const taskService = {
       throw ApiError.badRequest("Record packing item count before submitting a delivery/export job");
     }
 
+    const checklistWithPacking = mergeSopChecklist(
+      checklist,
+      existing.jobType,
+      checklistPatchFromPacking(existing.jobType, packing),
+    );
+
     const updated = await taskRepository.update(id, {
       status: "SUBMITTED",
       seenAt: existing.seenAt ?? new Date(),
       submittedAt: new Date(),
       completionNote: input.completionNote,
       incompleteReason: null,
-      sopChecklist: checklist as Prisma.InputJsonValue,
+      sopChecklist: checklistWithPacking as Prisma.InputJsonValue,
       packingDetails: packing as Prisma.InputJsonValue,
       ...(input.paymentAmount != null ? { paymentAmount: input.paymentAmount } : {}),
       ...(input.paymentMethod ? { paymentMethod: input.paymentMethod } : {}),

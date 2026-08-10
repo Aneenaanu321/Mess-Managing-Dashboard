@@ -191,10 +191,87 @@ export function assertEvidenceAttachmentsForSubmit(
   return labels;
 }
 
+export type SoLineAvailability = {
+  lineItemId: string;
+  name: string;
+  qty: number;
+  /** available | unavailable | partial */
+  status: "available" | "unavailable" | "partial";
+  notes?: string;
+};
+
+export type ImportReceivingDetails = {
+  driverName?: string;
+  driverContact?: string;
+  vehicleNumber?: string;
+  rackLocation?: string;
+  fifoFollowed?: boolean;
+  poNumber?: string;
+  arrivalDate?: string;
+  countedSameDay?: boolean;
+  countCompletedNextDay?: boolean;
+  plReturned?: boolean;
+  discrepancies?: string;
+  expiryNotes?: string;
+  countedLines?: Array<{
+    name: string;
+    expectedQty?: number | null;
+    countedQty?: number | null;
+    notes?: string;
+  }>;
+};
+
 export type PackingDetails = {
   itemCount?: number;
   items?: Array<{ name: string; weight?: number | null }>;
   pallets?: Array<{ label?: string; itemNames?: string; weight?: number | null }>;
   totalPalletWeight?: number | null;
   notes?: string;
+  /** Sales-order line available / unavailable marks (warehouse checklist). */
+  soAvailability?: SoLineAvailability[];
+  /** Structured import receiving fields (IMPORT_RECEIVING jobs). */
+  importReceiving?: ImportReceivingDetails;
 };
+
+/** Derive warehouse/docs checklist ticks from structured packing / import data. */
+export function checklistPatchFromPacking(
+  jobType: string,
+  packing: PackingDetails | null | undefined,
+): SopChecklistState {
+  const patch: SopChecklistState = {};
+  const warehouse: Record<string, boolean> = {};
+  const docs: Record<string, boolean> = {};
+
+  const lines = packing?.soAvailability ?? [];
+  if (lines.length > 0) {
+    warehouse.soChecklistMarked = true;
+    if (lines.every((l) => l.status === "available")) {
+      warehouse.soChecklistComplete = true;
+    }
+  }
+
+  if (packing?.itemCount != null || (packing?.items?.length ?? 0) > 0) {
+    warehouse.packingCounts = true;
+  }
+  if ((packing?.items ?? []).some((i) => i.weight != null) || (packing?.pallets ?? []).some((p) => p.weight != null)) {
+    warehouse.packingWeights = true;
+  }
+
+  const imp = packing?.importReceiving;
+  if (jobType === "IMPORT_RECEIVING" && imp) {
+    if (imp.driverName || imp.driverContact || imp.vehicleNumber) docs.driverDetails = true;
+    if (imp.rackLocation || imp.fifoFollowed) docs.rackedFifo = true;
+    if (imp.poNumber || imp.arrivalDate) docs.markedPoDate = true;
+    if (imp.countedSameDay || imp.countCompletedNextDay || (imp.countedLines?.length ?? 0) > 0) {
+      docs.countedVsPl = true;
+    }
+    if (imp.plReturned) docs.plReturned = true;
+    if (imp.discrepancies?.trim() || imp.expiryNotes?.trim()) {
+      // Damages/expiry still need photo evidence — only note presence does not auto-tick damagesReported
+    }
+  }
+
+  if (Object.keys(warehouse).length) patch.warehouse = warehouse;
+  if (Object.keys(docs).length) patch.docs = docs;
+  return patch;
+}

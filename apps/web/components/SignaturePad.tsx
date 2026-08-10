@@ -3,8 +3,17 @@
 import { useEffect, useRef, useState } from "react";
 import { Button, Input, Label } from "@/components/ui";
 
+export type SignOffPayload = {
+  name: string;
+  signatureDataUrl: string;
+  document: "DO" | "INVOICE" | "BOTH";
+  contactPhone: string;
+  companyStampApplied: boolean;
+  stampNote?: string;
+};
+
 type Props = {
-  onSubmit: (payload: { name: string; signatureDataUrl: string; document: "DO" | "INVOICE" | "BOTH" }) => Promise<void>;
+  onSubmit: (payload: SignOffPayload) => Promise<void>;
   defaultDocument?: "DO" | "INVOICE" | "BOTH";
   pending?: boolean;
 };
@@ -14,6 +23,9 @@ export function SignaturePad({ onSubmit, defaultDocument = "BOTH", pending }: Pr
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const drawing = useRef(false);
   const [name, setName] = useState("");
+  const [contactPhone, setContactPhone] = useState("");
+  const [companyStampApplied, setCompanyStampApplied] = useState(false);
+  const [stampNote, setStampNote] = useState("");
   const [docKind, setDocKind] = useState<"DO" | "INVOICE" | "BOTH">(defaultDocument);
   const [error, setError] = useState<string | null>(null);
 
@@ -52,6 +64,10 @@ export function SignaturePad({ onSubmit, defaultDocument = "BOTH", pending }: Pr
       setError("Enter the signer name");
       return;
     }
+    if (!contactPhone.trim() || contactPhone.trim().length < 5) {
+      setError("Enter the customer contact number");
+      return;
+    }
     const canvas = canvasRef.current;
     if (!canvas) return;
     const blank = window.document.createElement("canvas");
@@ -68,9 +84,15 @@ export function SignaturePad({ onSubmit, defaultDocument = "BOTH", pending }: Pr
         name: name.trim(),
         signatureDataUrl: canvas.toDataURL("image/png"),
         document: docKind,
+        contactPhone: contactPhone.trim(),
+        companyStampApplied,
+        ...(stampNote.trim() ? { stampNote: stampNote.trim() } : {}),
       });
       clear();
       setName("");
+      setContactPhone("");
+      setCompanyStampApplied(false);
+      setStampNote("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Sign-off failed");
     }
@@ -81,6 +103,16 @@ export function SignaturePad({ onSubmit, defaultDocument = "BOTH", pending }: Pr
       <div>
         <Label htmlFor="signerName">Signer name</Label>
         <Input id="signerName" value={name} onChange={(e) => setName(e.target.value)} placeholder="Customer name" />
+      </div>
+      <div>
+        <Label htmlFor="signerPhone">Contact number</Label>
+        <Input
+          id="signerPhone"
+          type="tel"
+          value={contactPhone}
+          onChange={(e) => setContactPhone(e.target.value)}
+          placeholder="Mobile / office number"
+        />
       </div>
       <div>
         <Label htmlFor="signDoc">Document</Label>
@@ -95,6 +127,26 @@ export function SignaturePad({ onSubmit, defaultDocument = "BOTH", pending }: Pr
           <option value="BOTH">DO + Invoice</option>
         </select>
       </div>
+      <label className="flex items-start gap-2 text-sm cursor-pointer">
+        <input
+          type="checkbox"
+          className="mt-0.5 rounded border-slate-300"
+          checked={companyStampApplied}
+          onChange={(e) => setCompanyStampApplied(e.target.checked)}
+        />
+        <span>Company stamp obtained (where applicable)</span>
+      </label>
+      {companyStampApplied && (
+        <div>
+          <Label htmlFor="stampNote">Stamp note (optional)</Label>
+          <Input
+            id="stampNote"
+            value={stampNote}
+            onChange={(e) => setStampNote(e.target.value)}
+            placeholder="e.g. Official company seal"
+          />
+        </div>
+      )}
       <div>
         <Label>Signature</Label>
         <canvas
