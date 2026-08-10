@@ -339,8 +339,8 @@ function RolesSection() {
   return (
     <div className="space-y-3">
       <p className="text-xs text-slate-500">
-        Active users only. Working team roles: Super Admin (Admin, Aneena), Sales Coordinator (Susan), Sales Manager
-        (Jeremy), Delivery Person (Rakesh).
+        Active working team only — Super Admin (Admin, Aneena), Sales Coordinator (Susan), Sales Manager (Jeremy),
+        Delivery Person (Rakesh).
       </p>
       <Card className="overflow-hidden">
         {isLoading && <p className="p-6 text-sm text-slate-500">Loading roles…</p>}
