@@ -19,5 +19,6 @@ router.post("/refresh", asyncHandler(authController.refresh));
 router.post("/logout", asyncHandler(authController.logout));
 router.get("/me", authenticate, asyncHandler(authController.me));
 router.patch("/preferences", authenticate, asyncHandler(authController.updatePreferences));
+router.patch("/branch", authenticate, asyncHandler(authController.switchBranch));
 
 export default router;

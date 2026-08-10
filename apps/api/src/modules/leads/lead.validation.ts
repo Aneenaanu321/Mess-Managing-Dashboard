@@ -9,6 +9,8 @@ export const leadSourceEnum = z.enum([
   "SOCIAL_MEDIA",
   "EMAIL_CAMPAIGN",
   "INBOUND_CALL",
+  "EMAIL",
+  "WHATSAPP",
   "OTHER",
 ]);
 

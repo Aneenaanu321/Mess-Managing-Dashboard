@@ -6,6 +6,7 @@ import {
   forgotPasswordSchema,
   resetPasswordSchema,
   updatePreferencesSchema,
+  switchBranchSchema,
 } from "./auth.validation";
 import { env } from "../../config/env";
 import { ApiError } from "../../utils/ApiError";
@@ -94,5 +95,18 @@ export const authController = {
     const input = updatePreferencesSchema.parse(req.body);
     const user = await authService.updateEmailNotifications(req.auth!.sub, input.emailNotifications);
     res.json({ success: true, data: user });
+  },
+
+  async switchBranch(req: Request, res: Response) {
+    const input = switchBranchSchema.parse(req.body);
+    const { accessToken, refreshToken, user } = await authService.switchBranch(
+      req.auth!.sub,
+      req.auth!.companyId,
+      input.branchId,
+      req.ip,
+    );
+    const rememberMe = Boolean(req.cookies?.[REMEMBER_COOKIE]);
+    setSessionCookies(res, refreshToken, rememberMe);
+    res.json({ success: true, data: { accessToken, user } });
   },
 };

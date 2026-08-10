@@ -27,6 +27,9 @@ import {
 import { ApiError } from "../../utils/ApiError";
 import { writeAuditLog } from "../../utils/audit";
 import { notificationService } from "../notifications/notification.service";
+import { prisma } from "../../config/prisma";
+import { financeService } from "../finance/finance.service";
+import { RoleKey } from "@prisma/client";
 
 interface ActorCtx {
   companyId: string;
@@ -40,6 +43,80 @@ function asChecklist(value: unknown): SopChecklistState {
 
 function asPacking(value: unknown): PackingDetails {
   return (value && typeof value === "object" ? value : {}) as PackingDetails;
+}
+
+async function notifyCoordinators(
+  companyId: string,
+  payload: { title: string; body: string; link: string },
+  exceptUserId?: string,
+) {
+  const coordinators = await prisma.user.findMany({
+    where: {
+      companyId,
+      status: "ACTIVE",
+      role: { key: { in: [RoleKey.SALES_COORDINATOR, RoleKey.SALES_MANAGER, RoleKey.SUPER_ADMIN] } },
+      ...(exceptUserId ? { id: { not: exceptUserId } } : {}),
+    },
+    select: { id: true },
+    take: 20,
+  });
+  await Promise.all(
+    coordinators.map((u) =>
+      notificationService.notify({
+        userId: u.id,
+        type: "SYSTEM",
+        title: payload.title,
+        body: payload.body,
+        link: payload.link,
+      }),
+    ),
+  );
+}
+
+/** When field collection is verified, post a finance Payment against an open invoice if one exists. */
+async function autoRecordFieldPayment(ctx: ActorCtx, task: {
+  id: string;
+  projectId: string | null;
+  paymentAmount: unknown;
+  paymentMethod: string | null;
+  paymentReference: string | null;
+  title: string;
+}) {
+  const amount = task.paymentAmount != null ? Number(task.paymentAmount) : NaN;
+  if (!task.paymentMethod || !Number.isFinite(amount) || amount <= 0) return null;
+
+  let customerId: string | null = null;
+  if (task.projectId) {
+    const project = await prisma.project.findFirst({
+      where: { id: task.projectId, companyId: ctx.companyId },
+      select: { customerId: true },
+    });
+    customerId = project?.customerId ?? null;
+  }
+  if (!customerId) return null;
+
+  const invoice = await prisma.invoice.findFirst({
+    where: {
+      companyId: ctx.companyId,
+      customerId,
+      status: { in: ["SENT", "PARTIALLY_PAID", "OVERDUE"] },
+      ...(task.projectId ? { OR: [{ projectId: task.projectId }, { projectId: null }] } : {}),
+    },
+    orderBy: [{ projectId: "desc" }, { dueDate: "asc" }],
+  });
+  if (!invoice) return null;
+
+  try {
+    return await financeService.recordPayment(ctx, invoice.id, {
+      amount,
+      method: task.paymentMethod as "CHEQUE" | "CASH" | "BANK_TRANSFER" | "CARD" | "ONLINE",
+      reference: task.paymentReference ?? `Field job ${task.id}`,
+      receivedAt: new Date(),
+    });
+  } catch {
+    // Don't block job verify if invoice payment fails (e.g. overpay) — coordinator can record manually.
+    return null;
+  }
 }
 
 export const taskService = {
@@ -124,6 +201,29 @@ export const taskService = {
         eod: sectionProgress(checklist.eod, EOD_ITEMS),
       },
       requiredDocs: docs,
+    };
+  },
+
+  async getPackingSlipData(ctx: ActorCtx, id: string) {
+    const task = await this.getById(ctx, id);
+    const company = await prisma.company.findUnique({ where: { id: ctx.companyId } });
+    if (!company) throw ApiError.notFound("Company not found");
+    return {
+      task: {
+        id: task.id,
+        title: task.title,
+        jobType: task.jobType,
+        status: task.status,
+        dueDate: task.dueDate,
+        packingDetails: asPacking(task.packingDetails),
+        project: task.project,
+        assignee: task.assignee,
+      },
+      company: {
+        name: company.name,
+        legalName: company.legalName,
+        taxId: company.taxId,
+      },
     };
   },
 
@@ -230,6 +330,8 @@ export const taskService = {
       : asPacking(existing.packingDetails);
 
     const visitNotified = input.customerNotified || nextChecklist.visit?.customerNotified;
+    const prevUrgent = Boolean(asChecklist(existing.sopChecklist).warehouse?.urgentUseNotified);
+    const nextUrgent = Boolean(nextChecklist.warehouse?.urgentUseNotified);
 
     const updated = await taskRepository.update(id, {
       ...(input.sopChecklist
@@ -248,6 +350,27 @@ export const taskService = {
           }
         : {}),
     });
+
+    if (!prevUrgent && nextUrgent) {
+      await notifyCoordinators(
+        ctx.companyId,
+        {
+          title: "Urgent: checklist stock used",
+          body: `"${existing.title}" — warehouse flagged checklist items used for urgent needs.`,
+          link: `/team-tasks/${id}`,
+        },
+        ctx.userId,
+      );
+      if (existing.createdById && existing.createdById !== ctx.userId) {
+        await notificationService.notify({
+          userId: existing.createdById,
+          type: "SYSTEM",
+          title: "Urgent: checklist stock used",
+          body: `"${existing.title}" — warehouse flagged urgent use of checklist stock.`,
+          link: `/team-tasks/${id}`,
+        });
+      }
+    }
 
     return this.getById(ctx, updated.id);
   },
@@ -454,6 +577,25 @@ export const taskService = {
         title: "Job verified & closed",
         body: `Coordinator confirmed docs/payment for "${updated.title}". Return originals at end of day.`,
         link: `/team-tasks/${id}`,
+      });
+    }
+
+    const paymentResult = await autoRecordFieldPayment(ctx, {
+      id: existing.id,
+      projectId: existing.projectId,
+      paymentAmount: existing.paymentAmount,
+      paymentMethod: existing.paymentMethod,
+      paymentReference: existing.paymentReference,
+      title: existing.title,
+    });
+
+    if (paymentResult?.payment) {
+      await notificationService.notify({
+        userId: ctx.userId,
+        type: "SYSTEM",
+        title: "Payment recorded from field job",
+        body: `${Number(existing.paymentAmount).toLocaleString()} posted to invoice from "${existing.title}".`,
+        link: `/invoices-payments/${paymentResult.invoice.id}`,
       });
     }
 

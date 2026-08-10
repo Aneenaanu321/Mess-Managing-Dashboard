@@ -218,6 +218,20 @@ export const authService = {
     const user = await authRepository.updateEmailNotifications(userId, emailNotifications);
     return toPublicUser(user);
   },
+
+  async switchBranch(userId: string, companyId: string, branchId: string | null, ip?: string) {
+    let user;
+    try {
+      user = await authRepository.updateBranch(userId, companyId, branchId);
+    } catch (err) {
+      if (err instanceof Error && err.message === "BRANCH_NOT_FOUND") {
+        throw ApiError.badRequest("Branch not found for this company");
+      }
+      throw err;
+    }
+    // Re-issue tokens so JWT branchId matches the new home branch.
+    return issueSession(user, ip);
+  },
 };
 
 export { PERMISSIONS };

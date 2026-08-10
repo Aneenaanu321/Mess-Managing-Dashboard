@@ -109,4 +109,47 @@ export const portalRepository = {
   addComment(data: Prisma.TicketCommentCreateInput) {
     return prisma.ticketComment.create({ data });
   },
+
+  async accountOverview(companyId: string, customerId: string) {
+    const [customer, quotations, invoices, projects, tickets, coordinator, primaryContact] = await Promise.all([
+      prisma.customer.findFirst({
+        where: { id: customerId, companyId },
+        select: { id: true, name: true, code: true },
+      }),
+      prisma.quotation.count({ where: { companyId, customerId, status: { in: ["SENT", "PENDING_APPROVAL"] } } }),
+      prisma.invoice.count({
+        where: { companyId, customerId, status: { in: ["SENT", "PARTIALLY_PAID", "OVERDUE"] } },
+      }),
+      prisma.project.count({ where: { companyId, customerId, status: { not: "CLOSED" } } }),
+      prisma.ticket.count({ where: { companyId, customerId, status: { notIn: ["CLOSED", "RESOLVED"] } } }),
+      prisma.user.findFirst({
+        where: { companyId, status: "ACTIVE", role: { key: "SALES_COORDINATOR" } },
+        select: { firstName: true, lastName: true, email: true },
+        orderBy: { createdAt: "asc" },
+      }),
+      prisma.contact.findFirst({
+        where: { customerId, isPrimary: true },
+        select: { email: true, phone: true },
+      }),
+    ]);
+    return {
+      customer: customer
+        ? {
+            ...customer,
+            email: primaryContact?.email ?? null,
+            phone: primaryContact?.phone ?? null,
+          }
+        : null,
+      openQuotations: quotations,
+      openInvoices: invoices,
+      activeProjects: projects,
+      openTickets: tickets,
+      coordinator: coordinator
+        ? {
+            name: `${coordinator.firstName} ${coordinator.lastName}`,
+            email: coordinator.email,
+          }
+        : null,
+    };
+  },
 };

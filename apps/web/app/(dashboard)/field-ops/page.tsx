@@ -62,22 +62,22 @@ export default function FieldOpsPage() {
         title="Field Ops"
         description="Your assigned jobs, SOP checklists, document packs, and end-of-day originals return."
         actions={
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-nowrap items-center gap-2">
             <Input
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="h-10 w-[11.5rem] py-2"
+              className="!h-10 !w-[11.5rem] shrink-0 py-2"
               aria-label="Board date"
             />
-            <Link href="/team-tasks">
+            <Link href="/team-tasks" className="shrink-0">
               <Button variant="secondary" size="sm" className="h-10 px-3.5 text-sm">
                 <ClipboardList size={15} />
                 My jobs
               </Button>
             </Link>
             {canAssign && (
-              <Link href="/team-tasks/new">
+              <Link href="/team-tasks/new" className="shrink-0">
                 <Button size="sm" className="h-10 px-3.5 text-sm">
                   + Assign job
                 </Button>

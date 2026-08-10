@@ -6,6 +6,7 @@ import { useCurrentUser, useLogout, useUpdateEmailNotifications } from "@/lib/au
 import { useRouter } from "next/navigation";
 import { NotificationBell } from "@/components/NotificationBell";
 import { GlobalSearch } from "@/components/GlobalSearch";
+import { BranchSwitcher } from "@/components/BranchSwitcher";
 import { useTheme } from "@/lib/ThemeProvider";
 
 type TopbarProps = {
@@ -68,6 +69,9 @@ export function Topbar({ sidebarOpen, onMenuClick }: TopbarProps) {
       <GlobalSearch />
 
       <div className="ml-auto flex items-center gap-1.5 sm:gap-2">
+        <div className="hidden md:block">
+          <BranchSwitcher className="w-40" />
+        </div>
         <button
           type="button"
           onClick={toggleTheme}

@@ -14,6 +14,7 @@ router.get("/field-day", authorize(PERMISSIONS.TASK_VIEW), asyncHandler(taskCont
 router.get("/sop-templates", authorize(PERMISSIONS.TASK_VIEW), asyncHandler(taskController.sopTemplates));
 router.get("/assignable-users", authorize(PERMISSIONS.TASK_VIEW), asyncHandler(taskController.assignableUsers));
 router.get("/:id", authorize(PERMISSIONS.TASK_VIEW), asyncHandler(taskController.getById));
+router.get("/:id/packing-slip.pdf", authorize(PERMISSIONS.TASK_VIEW), asyncHandler(taskController.packingSlipPdf));
 router.post("/", authorize(PERMISSIONS.TASK_UPDATE), asyncHandler(taskController.create));
 router.patch("/:id", authorize(PERMISSIONS.TASK_UPDATE), asyncHandler(taskController.update));
 router.patch("/:id/sop", authorize(PERMISSIONS.TASK_UPDATE), asyncHandler(taskController.updateSop));

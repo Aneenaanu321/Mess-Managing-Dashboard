@@ -54,12 +54,28 @@ export default function TaskDetailPage() {
   const [itemCount, setItemCount] = useState("");
   const [totalPalletWeight, setTotalPalletWeight] = useState("");
   const [packingNotes, setPackingNotes] = useState("");
+  const [packItems, setPackItems] = useState<Array<{ name: string; weight: string }>>([{ name: "", weight: "" }]);
+  const [packPallets, setPackPallets] = useState<Array<{ label: string; itemNames: string; weight: string }>>([
+    { label: "", itemNames: "", weight: "" },
+  ]);
 
   useEffect(() => {
     if (!task) return;
     if (task.packingDetails?.itemCount != null) setItemCount(String(task.packingDetails.itemCount));
     if (task.packingDetails?.totalPalletWeight != null) setTotalPalletWeight(String(task.packingDetails.totalPalletWeight));
     if (task.packingDetails?.notes) setPackingNotes(task.packingDetails.notes);
+    if (task.packingDetails?.items?.length) {
+      setPackItems(task.packingDetails.items.map((i) => ({ name: i.name, weight: i.weight != null ? String(i.weight) : "" })));
+    }
+    if (task.packingDetails?.pallets?.length) {
+      setPackPallets(
+        task.packingDetails.pallets.map((p) => ({
+          label: p.label ?? "",
+          itemNames: p.itemNames ?? "",
+          weight: p.weight != null ? String(p.weight) : "",
+        })),
+      );
+    }
   }, [task?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (isLoading) return <p className="text-sm text-slate-500">Loading…</p>;
@@ -111,18 +127,32 @@ export default function TaskDetailPage() {
     }
   }
 
+  function buildPackingDetails() {
+    const items = packItems
+      .filter((i) => i.name.trim())
+      .map((i) => ({ name: i.name.trim(), weight: i.weight === "" ? null : Number(i.weight) }));
+    const pallets = packPallets
+      .filter((p) => p.label.trim() || p.itemNames.trim())
+      .map((p) => ({
+        label: p.label.trim() || undefined,
+        itemNames: p.itemNames.trim() || undefined,
+        weight: p.weight === "" ? null : Number(p.weight),
+      }));
+    return {
+      itemCount: itemCount === "" ? undefined : Number(itemCount),
+      totalPalletWeight: totalPalletWeight === "" ? null : Number(totalPalletWeight),
+      notes: packingNotes || undefined,
+      items: items.length ? items : undefined,
+      pallets: pallets.length ? pallets : undefined,
+    };
+  }
+
   async function savePacking() {
     setError(null);
     try {
       await updateSop.mutateAsync({
         id: task!.id,
-        input: {
-          packingDetails: {
-            itemCount: itemCount === "" ? undefined : Number(itemCount),
-            totalPalletWeight: totalPalletWeight === "" ? null : Number(totalPalletWeight),
-            notes: packingNotes || undefined,
-          },
-        },
+        input: { packingDetails: buildPackingDetails() },
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save packing");
@@ -147,13 +177,7 @@ export default function TaskDetailPage() {
         input: {
           completionNote: completionNote.trim(),
           sopChecklist: task!.sopChecklist,
-          packingDetails: needsPacking
-            ? {
-                itemCount: itemCount === "" ? undefined : Number(itemCount),
-                totalPalletWeight: totalPalletWeight === "" ? null : Number(totalPalletWeight),
-                notes: packingNotes || undefined,
-              }
-            : undefined,
+          packingDetails: needsPacking ? buildPackingDetails() : undefined,
           ...(isCollection || paymentAmount
             ? {
                 paymentAmount: Number(paymentAmount || 0),
@@ -366,7 +390,23 @@ export default function TaskDetailPage() {
 
           {needsPacking && (
             <div className="space-y-3 border-t border-slate-100 pt-4 dark:border-slate-700">
-              <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">Packing on Delivery Order</h3>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">Packing on Delivery Order</h3>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={async () => {
+                    try {
+                      const { openPackingSlipPdf } = await import("@/lib/tasks");
+                      await openPackingSlipPdf(task.id);
+                    } catch (err) {
+                      setError(err instanceof Error ? err.message : "PDF failed");
+                    }
+                  }}
+                >
+                  Print packing slip PDF
+                </Button>
+              </div>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div>
                   <Label htmlFor="itemCount">Number of items packed</Label>
@@ -383,15 +423,95 @@ export default function TaskDetailPage() {
                   />
                 </div>
               </div>
+              <div className="space-y-2">
+                <Label>Line items (name + weight)</Label>
+                {packItems.map((row, idx) => (
+                  <div key={idx} className="grid grid-cols-[1fr_7rem_auto] gap-2">
+                    <Input
+                      placeholder="Item name"
+                      value={row.name}
+                      onChange={(e) =>
+                        setPackItems((rows) => rows.map((r, i) => (i === idx ? { ...r, name: e.target.value } : r)))
+                      }
+                    />
+                    <Input
+                      type="number"
+                      min={0}
+                      placeholder="Wt"
+                      value={row.weight}
+                      onChange={(e) =>
+                        setPackItems((rows) => rows.map((r, i) => (i === idx ? { ...r, weight: e.target.value } : r)))
+                      }
+                    />
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => setPackItems((rows) => (rows.length <= 1 ? rows : rows.filter((_, i) => i !== idx)))}
+                    >
+                      −
+                    </Button>
+                  </div>
+                ))}
+                <Button type="button" variant="secondary" size="sm" onClick={() => setPackItems((rows) => [...rows, { name: "", weight: "" }])}>
+                  + Item
+                </Button>
+              </div>
+              <div className="space-y-2">
+                <Label>Pallets</Label>
+                {packPallets.map((row, idx) => (
+                  <div key={idx} className="grid grid-cols-1 gap-2 sm:grid-cols-[8rem_1fr_7rem_auto]">
+                    <Input
+                      placeholder="Pallet #"
+                      value={row.label}
+                      onChange={(e) =>
+                        setPackPallets((rows) => rows.map((r, i) => (i === idx ? { ...r, label: e.target.value } : r)))
+                      }
+                    />
+                    <Input
+                      placeholder="Contents / item names"
+                      value={row.itemNames}
+                      onChange={(e) =>
+                        setPackPallets((rows) => rows.map((r, i) => (i === idx ? { ...r, itemNames: e.target.value } : r)))
+                      }
+                    />
+                    <Input
+                      type="number"
+                      min={0}
+                      placeholder="Wt"
+                      value={row.weight}
+                      onChange={(e) =>
+                        setPackPallets((rows) => rows.map((r, i) => (i === idx ? { ...r, weight: e.target.value } : r)))
+                      }
+                    />
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => setPackPallets((rows) => (rows.length <= 1 ? rows : rows.filter((_, i) => i !== idx)))}
+                    >
+                      −
+                    </Button>
+                  </div>
+                ))}
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setPackPallets((rows) => [...rows, { label: "", itemNames: "", weight: "" }])}
+                >
+                  + Pallet
+                </Button>
+              </div>
               <div>
-                <Label htmlFor="packNotes">Items / weights / pallet notes</Label>
+                <Label htmlFor="packNotes">Notes</Label>
                 <textarea
                   id="packNotes"
                   rows={2}
                   className="block w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm dark:border-slate-600 dark:bg-slate-800"
                   value={packingNotes}
                   onChange={(e) => setPackingNotes(e.target.value)}
-                  placeholder="Item weights, pallet contents…"
+                  placeholder="Other packing notes…"
                 />
               </div>
               <Button variant="secondary" onClick={savePacking} disabled={updateSop.isPending}>

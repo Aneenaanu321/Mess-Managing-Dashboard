@@ -34,7 +34,8 @@ import {
   ArrowLeftRight,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { NAV_GROUPS } from "@/lib/nav-labels";
+import { useCurrentUser } from "@/lib/auth";
+import { canAccessNavHref, getHomeHref, NAV_GROUPS } from "@/lib/nav-labels";
 
 const NAV_ICONS: Record<string, LucideIcon> = {
   "/dashboard": LayoutDashboard,
@@ -64,16 +65,6 @@ const NAV_ICONS: Record<string, LucideIcon> = {
   "/settings": Settings,
 };
 
-const NAV = NAV_GROUPS.map((group) => ({
-  section: group.section,
-  items: group.items
-    .filter((item) => item.href in NAV_ICONS)
-    .map((item) => ({
-      ...item,
-      icon: NAV_ICONS[item.href]!,
-    })),
-}));
-
 type SidebarProps = {
   open: boolean;
   onClose: () => void;
@@ -82,8 +73,22 @@ type SidebarProps = {
 
 export function Sidebar({ open, onClose, onToggle }: SidebarProps) {
   const pathname = usePathname();
+  const { data: user } = useCurrentUser();
   const [isDesktop, setIsDesktop] = useState(false);
   const collapsed = !open && isDesktop;
+
+  const nav = NAV_GROUPS.map((group) => ({
+    section: group.section,
+    items: group.items
+      .filter((item) => item.href in NAV_ICONS)
+      .filter((item) => canAccessNavHref(user?.permissions, item.href))
+      .map((item) => ({
+        ...item,
+        icon: NAV_ICONS[item.href]!,
+      })),
+  })).filter((group) => group.items.length > 0);
+
+  const homeHref = getHomeHref(user?.permissions);
 
   useEffect(() => {
     const mq = window.matchMedia("(min-width: 1024px)");
@@ -122,7 +127,7 @@ export function Sidebar({ open, onClose, onToggle }: SidebarProps) {
       <aside
         className={clsx(
           "fixed inset-y-0 left-0 z-50 flex h-screen max-h-screen shrink-0 flex-col border-r border-slate-200 dark:border-slate-700/80 bg-surface transition-[width,transform] duration-200 ease-out dark:border-slate-700/80 dark:bg-slate-900 lg:sticky lg:top-0 lg:z-auto",
-          open ? "w-[17rem] translate-x-0" : "-translate-x-full w-[17rem] lg:translate-x-0 lg:w-[4.5rem]",
+          open ? "w-[14.5rem] translate-x-0" : "-translate-x-full w-[14.5rem] lg:translate-x-0 lg:w-[4.5rem]",
         )}
         aria-hidden={!open && !isDesktop}
       >
@@ -134,7 +139,7 @@ export function Sidebar({ open, onClose, onToggle }: SidebarProps) {
         >
           {!collapsed && (
             <Link
-              href="/new-inquiries"
+              href={homeHref}
               className="min-w-0 flex-1"
               aria-label="ibTech home"
               onClick={closeIfMobile}
@@ -161,7 +166,7 @@ export function Sidebar({ open, onClose, onToggle }: SidebarProps) {
             collapsed ? "space-y-2 p-2" : "space-y-5 p-3",
           )}
         >
-          {NAV.map((group) => (
+          {nav.map((group) => (
             <div key={group.section}>
               {!collapsed && (
                 <p className="mb-1.5 px-2.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400 dark:text-slate-500">

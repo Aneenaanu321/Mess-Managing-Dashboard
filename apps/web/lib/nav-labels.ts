@@ -33,6 +33,43 @@ export const ROUTES = {
 
 export type RouteKey = keyof typeof ROUTES;
 
+/**
+ * View permissions required to show a nav tab / open a page.
+ * Multiple entries = OR (same as API `authorize(...)`).
+ * UI-only — the API remains the real boundary.
+ */
+export const NAV_PERMISSIONS: Record<string, readonly string[]> = {
+  [ROUTES.dashboard]: ["reports:view", "reports:executive"],
+  [ROUTES.coordinator]: ["lead:view", "approval:view"],
+  [ROUTES.leads]: ["lead:view"],
+  [ROUTES.customers]: ["customer:view"],
+  [ROUTES.opportunities]: ["opportunity:view"],
+  [ROUTES.pipeline]: ["opportunity:view"],
+  [ROUTES.quotations]: ["quotation:view"],
+  [ROUTES.approvals]: ["approval:view"],
+  [ROUTES.handoffs]: ["opportunity:view", "customer_po:view"],
+  [ROUTES.calendar]: ["calendar:view"],
+  [ROUTES.customerOrders]: ["customer_po:view"],
+  [ROUTES.salesOrders]: ["sales_order:view"],
+  [ROUTES.inventory]: ["inventory:view"],
+  [ROUTES.warehouse]: ["inventory:view"],
+  [ROUTES.procurement]: ["procurement:view"],
+  [ROUTES.vendors]: ["procurement:view"],
+  [ROUTES.projects]: ["project:view"],
+  [ROUTES.installations]: ["project:view"],
+  [ROUTES.devices]: ["device:view"],
+  [ROUTES.tasks]: ["task:view"],
+  [ROUTES.fieldOps]: ["task:view"],
+  [ROUTES.finance]: ["finance:view"],
+  [ROUTES.reports]: ["reports:view", "reports:executive"],
+  [ROUTES.aiAssistant]: ["ai_assistant:use"],
+  [ROUTES.settings]: ["settings:manage_org", "settings:manage_roles", "settings:manage_catalog", "lead:assign"],
+  [ROUTES.hygiene]: ["lead:view", "customer:view"],
+  [ROUTES.support]: ["support:view"],
+  [ROUTES.amc]: ["amc:view"],
+  [ROUTES.campaigns]: ["campaign:view"],
+};
+
 export const NAV_GROUPS = [
   {
     section: "Home",
@@ -89,6 +126,35 @@ export const NAV_GROUPS = [
     items: [{ href: ROUTES.settings, label: "Settings" }],
   },
 ] as const;
+
+export function getNavPermissions(href: string): readonly string[] | undefined {
+  const exact = NAV_PERMISSIONS[href];
+  if (exact) return exact;
+  // Match nested paths (e.g. /new-inquiries/abc → lead:view)
+  const base = Object.keys(NAV_PERMISSIONS)
+    .filter((route) => href === route || href.startsWith(`${route}/`))
+    .sort((a, b) => b.length - a.length)[0];
+  return base ? NAV_PERMISSIONS[base] : undefined;
+}
+
+/** UI-only: whether a route should appear / be used as a home landing for this permission set. */
+export function canAccessNavHref(userPermissions: string[] | undefined, href: string): boolean {
+  if (!userPermissions) return false;
+  if (userPermissions.includes("*:*")) return true;
+  const required = getNavPermissions(href);
+  if (!required) return true;
+  return required.some((permission) => userPermissions.includes(permission));
+}
+
+/** First sidebar tab the user can open — used after login and for the logo home link. */
+export function getHomeHref(userPermissions: string[] | undefined): string {
+  for (const group of NAV_GROUPS) {
+    for (const item of group.items) {
+      if (canAccessNavHref(userPermissions, item.href)) return item.href;
+    }
+  }
+  return ROUTES.dashboard;
+}
 
 const HIDDEN_PAGE_LABELS: Record<string, string> = {
   [ROUTES.hygiene]: "Data Hygiene",

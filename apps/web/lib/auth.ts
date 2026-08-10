@@ -47,6 +47,21 @@ export function useUpdateEmailNotifications() {
   });
 }
 
+export function useSwitchBranch() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (branchId: string | null) => {
+      const res = await apiClient.patch<{ accessToken: string; user: CurrentUser }>("/auth/branch", { branchId });
+      return res.data;
+    },
+    onSuccess: (data) => {
+      setAccessToken(data.accessToken, true);
+      queryClient.setQueryData(["me"], data.user);
+      queryClient.invalidateQueries();
+    },
+  });
+}
+
 export function useLogin() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -118,4 +133,10 @@ export function useLogout() {
 export function hasPermission(user: CurrentUser | undefined, permission: string): boolean {
   if (!user) return false;
   return user.permissions.includes("*:*") || user.permissions.includes(permission);
+}
+
+/** True if the user holds any of the listed permissions (OR), matching authorize(...). */
+export function hasAnyPermission(user: CurrentUser | undefined, permissions: string[]): boolean {
+  if (!user || permissions.length === 0) return false;
+  return permissions.some((permission) => hasPermission(user, permission));
 }

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { useRegister } from "@/lib/auth";
+import { getHomeHref } from "@/lib/nav-labels";
 import { AuthError, AuthLink, AuthShell } from "@/components/AuthShell";
 
 export default function SignupPage() {
@@ -20,8 +21,8 @@ export default function SignupPage() {
     e.preventDefault();
     setError(null);
     try {
-      await register.mutateAsync({ firstName, lastName, email, password });
-      router.push("/new-inquiries");
+      const result = await register.mutateAsync({ firstName, lastName, email, password });
+      router.push(getHomeHref(result.permissions));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not create account");
     }

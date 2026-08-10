@@ -5,10 +5,11 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import clsx from "clsx";
-import { FileText, ShoppingCart, FolderKanban, Receipt, LifeBuoy, LogOut } from "lucide-react";
+import { FileText, ShoppingCart, FolderKanban, Receipt, LifeBuoy, LogOut, Building2 } from "lucide-react";
 import { useCurrentUser, useLogout } from "@/lib/auth";
 
 const NAV = [
+  { href: "/portal/account", label: "Account", icon: Building2 },
   { href: "/portal/quotations", label: "Quotations", icon: FileText },
   { href: "/portal/purchase-orders", label: "Purchase Orders", icon: ShoppingCart },
   { href: "/portal/projects", label: "Projects", icon: FolderKanban },

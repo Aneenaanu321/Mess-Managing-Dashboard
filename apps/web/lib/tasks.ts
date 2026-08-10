@@ -269,6 +269,18 @@ export function useUpdateTaskSop() {
   });
 }
 
+export async function openPackingSlipPdf(id: string) {
+  const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api/v1";
+  const { getAccessToken } = await import("./api-client");
+  const res = await fetch(`${API_URL}/tasks/${id}/packing-slip.pdf`, {
+    headers: { Authorization: `Bearer ${getAccessToken() ?? ""}` },
+  });
+  if (!res.ok) throw new Error("Failed to open packing slip PDF");
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  window.open(url, "_blank", "noopener,noreferrer");
+}
+
 export function useAcknowledgeTask() {
   const queryClient = useQueryClient();
   return useMutation({

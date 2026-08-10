@@ -5,6 +5,7 @@ import { useCoordinatorWorklist, useCoordinatorMetrics, useShiftHandovers, useCr
 import { Badge, Button, Card, Input } from "@/components/ui";
 import { useState } from "react";
 import { PageHeader } from "@/components/PageHeader";
+import { BranchSwitcher } from "@/components/BranchSwitcher";
 
 function Tile({ label, value, href, tone = "slate" }: { label: string; value: number; href?: string; tone?: "slate" | "amber" | "red" | "blue" }) {
   const inner = (
@@ -33,6 +34,7 @@ export default function CoordinatorPage() {
         eyebrow="Sales Ops"
         title="Coordinator"
         description="Worklist for unassigned leads, SLA breaches, quote chase, POs, and handoffs."
+        actions={<BranchSwitcher />}
       />
 
       {isError && <Card className="p-4 text-sm text-red-600">Couldn&apos;t load worklist.</Card>}
@@ -48,6 +50,8 @@ export default function CoordinatorPage() {
           <Tile label="POs awaiting verify" value={counts.posAwaitingVerify} href="/customer-orders" tone="blue" />
           <Tile label="Stuck approvals" value={counts.stuckApprovals} href="/pending-approvals" tone="red" />
           <Tile label="Stale deals (7d+)" value={counts.staleOpportunities7} href="/active-deals" tone="amber" />
+          <Tile label="Stale deals (14d+)" value={counts.staleOpportunities14} href="/active-deals" tone="amber" />
+          <Tile label="Stale deals (30d+)" value={counts.staleOpportunities30} href="/active-deals" tone="red" />
           <Tile label="Open handoffs" value={counts.openHandoffs ?? 0} href="/handoffs" tone="blue" />
         </div>
       )}

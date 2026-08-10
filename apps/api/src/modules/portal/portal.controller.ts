@@ -45,6 +45,9 @@ export const portalController = {
   async tickets(req: Request, res: Response) {
     res.json({ success: true, data: await portalService.listTickets(ctxFrom(req)) });
   },
+  async accountOverview(req: Request, res: Response) {
+    res.json({ success: true, data: await portalService.accountOverview(ctxFrom(req)) });
+  },
   async ticket(req: Request, res: Response) {
     const id = requireParam(req.params.id, "id");
     res.json({ success: true, data: await portalService.getTicket(ctxFrom(req), id) });

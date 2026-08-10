@@ -29,6 +29,7 @@ router.get("/projects/:id", asyncHandler(portalController.project));
 router.get("/invoices", asyncHandler(portalController.invoices));
 router.get("/invoices/:id", asyncHandler(portalController.invoice));
 
+router.get("/account", asyncHandler(portalController.accountOverview));
 router.get("/support", asyncHandler(portalController.tickets));
 router.get("/support/:id", asyncHandler(portalController.ticket));
 router.post("/support", asyncHandler(portalController.createTicket));

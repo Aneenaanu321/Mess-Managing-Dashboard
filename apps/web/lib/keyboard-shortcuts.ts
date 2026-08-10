@@ -2,6 +2,8 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useCurrentUser } from "@/lib/auth";
+import { canAccessNavHref } from "@/lib/nav-labels";
 
 const SHORTCUTS: Record<string, string> = {
   l: "/new-inquiries",
@@ -16,6 +18,7 @@ const SHORTCUTS: Record<string, string> = {
 
 export function useKeyboardShortcuts() {
   const router = useRouter();
+  const { data: user } = useCurrentUser();
 
   useEffect(() => {
     let pendingG = false;
@@ -36,7 +39,7 @@ export function useKeyboardShortcuts() {
 
       if (pendingG) {
         const path = SHORTCUTS[e.key];
-        if (path) {
+        if (path && canAccessNavHref(user?.permissions, path)) {
           e.preventDefault();
           pendingG = false;
           router.push(path);
@@ -46,5 +49,5 @@ export function useKeyboardShortcuts() {
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [router]);
+  }, [router, user]);
 }

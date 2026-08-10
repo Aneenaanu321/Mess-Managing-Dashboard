@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { taskService } from "./task.service";
+import { streamPackingSlipPdf } from "./task-packing-pdf";
 import {
   createTaskSchema,
   updateTaskSchema,
@@ -101,5 +102,11 @@ export const taskController = {
   async assignableUsers(req: Request, res: Response) {
     const users = await taskService.assignableUsers(ctxFrom(req));
     res.json({ success: true, data: users });
+  },
+
+  async packingSlipPdf(req: Request, res: Response) {
+    const id = requireParam(req.params.id, "id");
+    const { task, company } = await taskService.getPackingSlipData(ctxFrom(req), id);
+    streamPackingSlipPdf(res, task, company);
   },
 };

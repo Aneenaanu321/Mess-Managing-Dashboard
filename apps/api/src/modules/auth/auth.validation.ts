@@ -44,3 +44,8 @@ export const updatePreferencesSchema = z.object({
   emailNotifications: z.boolean(),
 });
 export type UpdatePreferencesInput = z.infer<typeof updatePreferencesSchema>;
+
+export const switchBranchSchema = z.object({
+  branchId: z.string().min(1).nullable(),
+});
+export type SwitchBranchInput = z.infer<typeof switchBranchSchema>;

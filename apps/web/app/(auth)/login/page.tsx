@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { getRememberedEmail, useLogin } from "@/lib/auth";
+import { getHomeHref } from "@/lib/nav-labels";
 import { AuthError, AuthLink, AuthShell } from "@/components/AuthShell";
 
 export default function LoginPage() {
@@ -32,7 +33,7 @@ export default function LoginPage() {
         password: password.trim(),
         rememberMe,
       });
-      router.push(result.user.portalCustomer ? "/portal" : "/new-inquiries");
+      router.push(result.user.portalCustomer ? "/portal" : getHomeHref(result.user.permissions));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login failed");
     }

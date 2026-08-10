@@ -18,7 +18,7 @@ import {
   Trophy,
   Sparkles,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { useCurrentUser } from "@/lib/auth";
 import { useDashboardSpotlight, useExecutiveSummary } from "@/lib/dashboard";
@@ -84,10 +84,29 @@ const TONES = {
 export default function ExecutiveDashboardPage() {
   const { data: user } = useCurrentUser();
   const [branchId, setBranchId] = useState("");
+  const [hiddenWidgets, setHiddenWidgets] = useState<string[]>([]);
+  const [customizeOpen, setCustomizeOpen] = useState(false);
   const { data: summary, isLoading, isError } = useExecutiveSummary(branchId || undefined);
   const { data: spotlight, isLoading: spotlightLoading } = useDashboardSpotlight(branchId || undefined);
   const { data: reports, isLoading: reportsLoading } = useReportsSummary(branchId || undefined);
   const currency = user?.company?.currency ?? "AED";
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("rfidcore_dashboard_hidden_widgets");
+      if (raw) setHiddenWidgets(JSON.parse(raw) as string[]);
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  function toggleWidget(id: string) {
+    setHiddenWidgets((prev) => {
+      const next = prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id];
+      localStorage.setItem("rfidcore_dashboard_hidden_widgets", JSON.stringify(next));
+      return next;
+    });
+  }
 
   const pipelineByStage = (reports?.opportunityByStage ?? [])
     .filter((row) => row.stage !== "WON" && row.stage !== "LOST")
@@ -100,6 +119,7 @@ export default function ExecutiveDashboardPage() {
   const collectionsByMonth = reports?.collections.byMonth ?? [];
 
   const cards: {
+    id: string;
     label: string;
     value: string;
     href: string;
@@ -108,6 +128,7 @@ export default function ExecutiveDashboardPage() {
     hint: string;
   }[] = [
     {
+      id: "leads",
       label: getPageLabel("/new-inquiries"),
       value: String(summary?.leadCount ?? 0),
       href: "/new-inquiries",
@@ -116,6 +137,7 @@ export default function ExecutiveDashboardPage() {
       hint: `${summary?.newLeadCount7d ?? 0} new in last 7 days`,
     },
     {
+      id: "unassigned",
       label: `Unassigned ${getPageLabel("/new-inquiries")}`,
       value: String(summary?.unassignedLeadCount ?? 0),
       href: "/new-inquiries",
@@ -124,6 +146,7 @@ export default function ExecutiveDashboardPage() {
       hint: "Need an owner",
     },
     {
+      id: "deals",
       label: `Open ${getPageLabel("/active-deals")}`,
       value: String(summary?.openOpportunityCount ?? 0),
       href: "/active-deals",
@@ -132,6 +155,7 @@ export default function ExecutiveDashboardPage() {
       hint: `Active on the ${getPageLabel("/deal-board").toLowerCase()}`,
     },
     {
+      id: "pipeline",
       label: `${getPageLabel("/deal-board")} Value`,
       value: formatCurrency(summary?.pipelineValue ?? 0, currency),
       href: "/deal-board",
@@ -140,6 +164,7 @@ export default function ExecutiveDashboardPage() {
       hint: "Sum of open estimated value",
     },
     {
+      id: "won",
       label: "Won Deals",
       value: String(summary?.wonOpportunityCount ?? 0),
       href: "/active-deals",
@@ -148,6 +173,7 @@ export default function ExecutiveDashboardPage() {
       hint: `Closed-won ${getPageLabel("/active-deals").toLowerCase()}`,
     },
     {
+      id: "approvals",
       label: getPageLabel("/pending-approvals"),
       value: String(summary?.pendingApprovalCount ?? 0),
       href: "/pending-approvals",
@@ -156,6 +182,7 @@ export default function ExecutiveDashboardPage() {
       hint: `${getPageLabel("/orders")} awaiting decision`,
     },
     {
+      id: "followups",
       label: "Upcoming Follow-ups",
       value: String(summary?.upcomingEventCount ?? 0),
       href: "/calendar",
@@ -164,6 +191,7 @@ export default function ExecutiveDashboardPage() {
       hint: "Next 14 days",
     },
     {
+      id: "orders",
       label: getPageLabel("/orders"),
       value: String(summary?.quotationCount ?? 0),
       href: "/orders",
@@ -172,6 +200,7 @@ export default function ExecutiveDashboardPage() {
       hint: `Total ${getPageLabel("/orders").toLowerCase()} issued`,
     },
     {
+      id: "projects",
       label: `Open ${getPageLabel("/customer-projects")}`,
       value: String(summary?.openProjectCount ?? 0),
       href: "/customer-projects",
@@ -180,6 +209,7 @@ export default function ExecutiveDashboardPage() {
       hint: "In delivery, not yet closed",
     },
     {
+      id: "support",
       label: getPageLabel("/customer-support"),
       value: String(summary?.openTicketCount ?? 0),
       href: "/customer-support",
@@ -188,6 +218,7 @@ export default function ExecutiveDashboardPage() {
       hint: "Awaiting resolution",
     },
     {
+      id: "overdue",
       label: "Overdue Invoices",
       value: String(summary?.overdueInvoiceCount ?? 0),
       href: "/invoices-payments",
@@ -196,6 +227,7 @@ export default function ExecutiveDashboardPage() {
       hint: "Past due date, unpaid",
     },
     {
+      id: "amc",
       label: `${getPageLabel("/service-contracts")} Expiring`,
       value: String(summary?.amcExpiringSoonCount ?? 0),
       href: "/service-contracts",
@@ -204,6 +236,8 @@ export default function ExecutiveDashboardPage() {
       hint: "Renewing within 90 days",
     },
   ];
+
+  const visibleCards = cards.filter((c) => !hiddenWidgets.includes(c.id));
 
   const attention = [
     {
@@ -262,8 +296,43 @@ export default function ExecutiveDashboardPage() {
             {user?.company ? ` for ${user.company.name}` : ""}.
           </p>
         </div>
-        <BranchFilter value={branchId} onChange={setBranchId} />
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setCustomizeOpen((o) => !o)}
+            className="rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-800"
+          >
+            {customizeOpen ? "Done" : "Customize widgets"}
+          </button>
+          <BranchFilter value={branchId} onChange={setBranchId} />
+        </div>
       </div>
+
+      {customizeOpen && (
+        <Card className="mb-6 p-4">
+          <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-400">Show / hide KPI widgets</p>
+          <div className="flex flex-wrap gap-2">
+            {cards.map((card) => {
+              const on = !hiddenWidgets.includes(card.id);
+              return (
+                <button
+                  key={card.id}
+                  type="button"
+                  onClick={() => toggleWidget(card.id)}
+                  className={`rounded-full px-3 py-1 text-xs font-medium ring-1 ${
+                    on
+                      ? "bg-brand-50 text-brand-800 ring-brand-100 dark:bg-brand-900/30 dark:text-brand-200"
+                      : "bg-slate-50 text-slate-400 ring-slate-200 dark:bg-slate-800 dark:ring-slate-700"
+                  }`}
+                >
+                  {on ? "✓ " : ""}
+                  {card.label}
+                </button>
+              );
+            })}
+          </div>
+        </Card>
+      )}
 
       {isError && (
         <Card className="mb-6 p-4 text-sm text-red-600 dark:text-red-400">
@@ -314,11 +383,11 @@ export default function ExecutiveDashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-4">
-        {cards.map((card) => {
+        {visibleCards.map((card) => {
           const Icon = card.icon;
           const tone = TONES[card.tone];
           return (
-            <Link key={card.label} href={card.href} className="group">
+            <Link key={card.id} href={card.href} className="group">
               <Card className="flex h-full flex-col justify-between p-4 transition-shadow group-hover:shadow-md">
                 <div className="flex items-start justify-between">
                   <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${tone.bg} ${tone.text}`}>

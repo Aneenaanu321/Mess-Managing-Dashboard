@@ -13,5 +13,7 @@ const router = Router();
 const intakeLimiter = rateLimit({ windowMs: 60 * 1000, max: 20, standardHeaders: true, legacyHeaders: false });
 
 router.post("/leads", intakeLimiter, asyncHandler(publicController.intakeLead));
+router.post("/leads/email", intakeLimiter, asyncHandler(publicController.intakeEmailLead));
+router.post("/leads/whatsapp", intakeLimiter, asyncHandler(publicController.intakeWhatsAppLead));
 
 export default router;

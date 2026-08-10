@@ -22,6 +22,7 @@ export function ActivityTimeline({ scope }: { scope: ActivityScope }) {
   const [type, setType] = useState<ActivityType>("NOTE");
   const [subject, setSubject] = useState("");
   const [durationMins, setDurationMins] = useState("");
+  const [callPhone, setCallPhone] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   async function handleLog(override?: { type: ActivityType; subject: string }) {
@@ -79,15 +80,33 @@ export function ActivityTimeline({ scope }: { scope: ActivityScope }) {
               className="min-w-[160px] flex-1 rounded-lg border border-slate-200 px-2.5 py-1.5 text-sm text-slate-700 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:border-slate-700 dark:text-slate-300"
             />
             {type === "CALL" && (
-              <Input
-                type="number"
-                min={0}
-                placeholder="Mins"
-                value={durationMins}
-                onChange={(e) => setDurationMins(e.target.value)}
-                className="w-20"
-                aria-label="Call duration minutes"
-              />
+              <>
+                <Input
+                  type="tel"
+                  placeholder="Phone"
+                  value={callPhone}
+                  onChange={(e) => setCallPhone(e.target.value)}
+                  className="w-32"
+                  aria-label="Phone number for click-to-call"
+                />
+                {callPhone.trim() && (
+                  <a
+                    href={`tel:${callPhone.replace(/[^\d+]/g, "")}`}
+                    className="rounded-lg bg-brand-50 px-2.5 py-1.5 text-xs font-medium text-brand-800 ring-1 ring-brand-100 dark:bg-brand-900/30 dark:text-brand-200"
+                  >
+                    Call
+                  </a>
+                )}
+                <Input
+                  type="number"
+                  min={0}
+                  placeholder="Mins"
+                  value={durationMins}
+                  onChange={(e) => setDurationMins(e.target.value)}
+                  className="w-20"
+                  aria-label="Call duration minutes"
+                />
+              </>
             )}
             <Button size="sm" onClick={() => handleLog()} disabled={createActivity.isPending || !subject.trim()}>
               Log

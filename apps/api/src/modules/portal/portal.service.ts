@@ -45,6 +45,8 @@ export const portalService = {
 
   listTickets: (ctx: PortalCtx) => portalRepository.listTickets(ctx.companyId, ctx.customerId),
 
+  accountOverview: (ctx: PortalCtx) => portalRepository.accountOverview(ctx.companyId, ctx.customerId),
+
   async getTicket(ctx: PortalCtx, id: string) {
     const ticket = await portalRepository.findTicket(ctx.companyId, ctx.customerId, id);
     if (!ticket) throw ApiError.notFound("Ticket not found");

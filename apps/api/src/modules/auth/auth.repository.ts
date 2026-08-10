@@ -111,4 +111,21 @@ export const authRepository = {
       },
     });
   },
+
+  async updateBranch(userId: string, companyId: string, branchId: string | null) {
+    if (branchId) {
+      const branch = await prisma.branch.findFirst({ where: { id: branchId, companyId } });
+      if (!branch) throw new Error("BRANCH_NOT_FOUND");
+    }
+    return prisma.user.update({
+      where: { id: userId },
+      data: { branchId },
+      include: {
+        role: { include: { permissions: { include: { permission: true } } } },
+        company: true,
+        branch: true,
+        portalCustomer: { select: { id: true, name: true } },
+      },
+    });
+  },
 };
