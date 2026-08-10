@@ -784,6 +784,7 @@ model CustomerPO {
   createdAt     DateTime         @default(now())
 
   salesOrder SalesOrder?
+  engineerTasks EngineerTask[]
 
   @@unique([companyId, code])
   @@map("customer_pos")
@@ -816,6 +817,7 @@ model SalesOrder {
   allocations InventoryAllocation[]
   project     Project?
   invoices    Invoice[]
+  engineerTasks EngineerTask[]
 
   @@unique([companyId, code])
   @@map("sales_orders")
@@ -1167,6 +1169,12 @@ model EngineerTask {
   companyId           String
   projectId           String?
   project             Project?       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  salesOrderId        String?
+  salesOrder          SalesOrder?    @relation(fields: [salesOrderId], references: [id], onDelete: SetNull)
+  customerPoId        String?
+  customerPo          CustomerPO?    @relation(fields: [customerPoId], references: [id], onDelete: SetNull)
+  invoiceId           String?
+  invoice             Invoice?       @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
   createdById         String?
   createdBy           User?          @relation("TaskCreator", fields: [createdById], references: [id])
   assigneeId          String?
@@ -1191,18 +1199,53 @@ model EngineerTask {
   sopChecklist        Json?
   /// Packing DO details: item counts, weights, pallets
   packingDetails      Json?
+  /// Digital customer sign-off: { name, signedAt, document: DO|INVOICE|BOTH, source, fileAssetId? }
+  customerSignOff     Json?
   customerNotifiedAt  DateTime?
   incompleteReason    String?
   rescheduleDate      DateTime?
   originalsReturnedAt DateTime?
   isOfflineSynced     Boolean        @default(true)
+  recurrenceId        String?
+  recurrence          TaskRecurrence? @relation(fields: [recurrenceId], references: [id], onDelete: SetNull)
   createdAt           DateTime       @default(now())
   updatedAt           DateTime       @updatedAt
 
   @@index([assigneeId, status])
   @@index([createdById, status])
   @@index([assigneeId, dueDate])
+  @@index([salesOrderId])
+  @@index([customerPoId])
+  @@index([invoiceId])
+  @@index([recurrenceId])
   @@map("engineer_tasks")
+}
+
+/// Template for weekly / biweekly / monthly field jobs (spawned by worker).
+model TaskRecurrence {
+  id           String      @id @default(cuid())
+  companyId    String
+  title        String
+  description  String?
+  jobType      TaskJobType @default(OTHER)
+  assigneeId   String?
+  projectId    String?
+  salesOrderId String?
+  customerPoId String?
+  invoiceId    String?
+  /// WEEKLY | BIWEEKLY | MONTHLY
+  cadence      String
+  /// 0=Sun … 6=Sat (weekly / biweekly)
+  dayOfWeek    Int?
+  nextRunAt    DateTime
+  active       Boolean     @default(true)
+  createdById  String?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  jobs         EngineerTask[]
+
+  @@index([companyId, active, nextRunAt])
+  @@map("task_recurrences")
 }
 
 enum DeviceType {
@@ -1290,6 +1333,7 @@ model Invoice {
 
   lineItems InvoiceLineItem[]
   payments  Payment[]
+  engineerTasks EngineerTask[]
 
   @@unique([companyId, code])
   @@index([companyId, status])

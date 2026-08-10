@@ -2,9 +2,19 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useTasks, TASK_STATUSES, TASK_STATUS_TONE, TASK_STATUS_LABELS, TASK_JOB_LABELS, EngineerTask } from "@/lib/tasks";
+import { Trash2 } from "lucide-react";
+import {
+  useTasks,
+  useDeleteTask,
+  TASK_STATUSES,
+  TASK_STATUS_TONE,
+  TASK_STATUS_LABELS,
+  TASK_JOB_LABELS,
+  EngineerTask,
+} from "@/lib/tasks";
 import { hasPermission, useCurrentUser } from "@/lib/auth";
 import { Badge, Button, Input, Select, Card } from "@/components/ui";
+import { useConfirm } from "@/components/ConfirmDialog";
 import { getPageLabel } from "@/lib/nav-labels";
 
 type ViewFilter = "all" | "mine" | "assignedByMe" | "awaitingVerify";
@@ -14,6 +24,8 @@ export default function TasksPage() {
   const [search, setSearch] = useState("");
   const [view, setView] = useState<ViewFilter>("all");
   const { data: user } = useCurrentUser();
+  const deleteTask = useDeleteTask();
+  const confirm = useConfirm();
   const { data, isLoading, isError } = useTasks({
     status: status || undefined,
     search: search || undefined,
@@ -23,7 +35,18 @@ export default function TasksPage() {
   });
 
   const tasks = data?.data ?? [];
-  const canCreate = hasPermission(user, "task:update");
+  const canManage = hasPermission(user, "task:update") && user?.role?.key !== "DELIVERY_PERSON";
+
+  async function handleDelete(task: EngineerTask) {
+    const ok = await confirm({
+      title: "Delete this job?",
+      message: `"${task.title}" will be permanently removed. The assignee will be notified.`,
+      confirmLabel: "Delete job",
+      variant: "danger",
+    });
+    if (!ok) return;
+    await deleteTask.mutateAsync(task.id);
+  }
 
   return (
     <div>
@@ -39,7 +62,7 @@ export default function TasksPage() {
             {data?.meta?.total === 1 ? "" : "s"} shown.
           </p>
         </div>
-        {canCreate && (
+        {canManage && (
           <Link href="/team-tasks/new">
             <Button>+ Assign Job</Button>
           </Link>
@@ -98,6 +121,7 @@ export default function TasksPage() {
                 <th className="px-4 py-2.5">Assigned by</th>
                 <th className="px-4 py-2.5">Due</th>
                 <th className="px-4 py-2.5">Status</th>
+                {canManage && <th className="px-4 py-2.5 text-right">Actions</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
@@ -124,6 +148,22 @@ export default function TasksPage() {
                   <td className="px-4 py-3">
                     <Badge tone={TASK_STATUS_TONE[t.status]}>{TASK_STATUS_LABELS[t.status]}</Badge>
                   </td>
+                  {canManage && (
+                    <td className="px-4 py-3 text-right">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="text-red-600 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-950/40"
+                        disabled={deleteTask.isPending}
+                        onClick={() => handleDelete(t)}
+                        aria-label={`Delete ${t.title}`}
+                      >
+                        <Trash2 size={14} />
+                        Delete
+                      </Button>
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>

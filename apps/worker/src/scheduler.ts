@@ -23,6 +23,10 @@ export async function scheduleRecurringJobs(queue: Queue) {
   await queue.upsertJobScheduler(JOB_NAMES.COORDINATOR_DIGEST, { pattern: "0 7 * * *" }, {
     name: JOB_NAMES.COORDINATOR_DIGEST,
   });
+
+  await queue.upsertJobScheduler(JOB_NAMES.SPAWN_RECURRING_TASKS, { pattern: "15 5 * * *" }, {
+    name: JOB_NAMES.SPAWN_RECURRING_TASKS,
+  });
 }
 
 export function createJobQueue() {

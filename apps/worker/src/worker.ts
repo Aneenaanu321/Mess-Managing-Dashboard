@@ -5,6 +5,7 @@ import { runAmcRenewalCheck } from "./jobs/amcRenewal.job";
 import { runSlaBreachCheck } from "./jobs/slaBreach.job";
 import { runInvoiceOverdueCheck } from "./jobs/invoiceOverdue.job";
 import { runCoordinatorDigest } from "./jobs/coordinatorDigest.job";
+import { runSpawnRecurringTasks } from "./jobs/spawnRecurringTasks.job";
 
 async function processJob(job: Job) {
   switch (job.name) {
@@ -16,6 +17,8 @@ async function processJob(job: Job) {
       return runInvoiceOverdueCheck();
     case JOB_NAMES.COORDINATOR_DIGEST:
       return runCoordinatorDigest();
+    case JOB_NAMES.SPAWN_RECURRING_TASKS:
+      return runSpawnRecurringTasks();
     default:
       throw new Error(`Unknown job name: ${job.name}`);
   }

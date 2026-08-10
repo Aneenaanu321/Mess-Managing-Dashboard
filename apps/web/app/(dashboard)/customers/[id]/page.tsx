@@ -2,17 +2,32 @@
 
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { useCustomer } from "@/lib/customers";
-import { Badge, Card } from "@/components/ui";
+import { useCustomer, useUpdateSite, mapsUrl } from "@/lib/customers";
+import { Badge, Button, Card } from "@/components/ui";
 import { ActivityTimeline } from "@/components/ActivityTimeline";
 import { getPageLabel } from "@/lib/nav-labels";
 
 export default function CustomerDetailPage() {
   const params = useParams<{ id: string }>();
   const { data: customer, isLoading } = useCustomer(params.id);
+  const updateSite = useUpdateSite(params.id);
 
   if (isLoading) return <p className="text-sm text-slate-500">Loading…</p>;
   if (!customer) return <p className="text-sm text-slate-500">Customer not found.</p>;
+
+  async function useMyLocation(siteId: string) {
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        await updateSite.mutateAsync({
+          siteId,
+          input: { geoLat: pos.coords.latitude, geoLng: pos.coords.longitude },
+        });
+      },
+      () => undefined,
+      { enableHighAccuracy: true, timeout: 15000 },
+    );
+  }
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -66,7 +81,9 @@ export default function CustomerDetailPage() {
                     </span>
                     {contact.isPrimary && <Badge tone="blue">Primary</Badge>}
                   </div>
-                  <p className="text-slate-500">{contact.email ?? "—"} · {contact.phone ?? "—"}</p>
+                  <p className="text-slate-500">
+                    {contact.email ?? "—"} · {contact.phone ?? "—"}
+                  </p>
                 </li>
               ))}
             </ul>
@@ -85,6 +102,23 @@ export default function CustomerDetailPage() {
                   <p className="text-slate-500">
                     {[site.addressLine, site.city, site.country].filter(Boolean).join(", ") || "—"}
                   </p>
+                  <div className="mt-1.5 flex flex-wrap gap-2">
+                    {site.geoLat != null && site.geoLng != null ? (
+                      <a
+                        href={mapsUrl(site.geoLat, site.geoLng)}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-xs font-medium text-brand-700 hover:underline dark:text-brand-400"
+                      >
+                        Open in maps ({site.geoLat.toFixed(4)}, {site.geoLng.toFixed(4)})
+                      </a>
+                    ) : (
+                      <span className="text-xs text-slate-400">No GPS pin yet</span>
+                    )}
+                    <Button size="sm" variant="secondary" onClick={() => useMyLocation(site.id)} disabled={updateSite.isPending}>
+                      Use my location
+                    </Button>
+                  </div>
                 </li>
               ))}
             </ul>
@@ -93,7 +127,10 @@ export default function CustomerDetailPage() {
       </div>
 
       <div className="mt-4">
-        <ActivityTimeline scope={{ customerId: customer.id }} />
+        <ActivityTimeline
+          scope={{ customerId: customer.id }}
+          defaultPhone={customer.contacts?.find((c) => c.isPrimary)?.phone ?? customer.contacts?.[0]?.phone}
+        />
       </div>
     </div>
   );

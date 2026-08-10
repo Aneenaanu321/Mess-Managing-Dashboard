@@ -124,7 +124,7 @@ async function main() {
     });
   }
 
-  console.log("Seeding: demo users (one per role, password: Password123!)...");
+  console.log("Seeding: working users only (Admin, Aneena, Susan, Jeremy, Rakesh)...");
   const passwordHash = await bcrypt.hash(DEMO_PASSWORD, 12);
 
   // Migrate legacy demo domains → ibtechintl.com (idempotent)
@@ -137,23 +137,15 @@ async function main() {
 
   const demoUsers: DemoUser[] = [
     { role: demoRole("SUPER_ADMIN"), first: "Admin", last: "User", email: "admin@ibtechintl.com" },
-    { role: demoRole("MANAGING_DIRECTOR"), first: "Anil", last: "Kapoor", email: "md@ibtechintl.com" },
-    { role: demoRole("SALES_DIRECTOR"), first: "Sara", last: "Al Farsi", email: "sales.director@ibtechintl.com" },
-    { role: demoRole("SALES_MANAGER"), first: "Omar", last: "Hassan", email: "sales.manager@ibtechintl.com" },
-    { role: demoRole("SALES_EXECUTIVE"), first: "Ravi", last: "Menon", email: "ravi@ibtechintl.com" },
-    { role: demoRole("SALES_COORDINATOR"), first: "Maya", last: "Joseph", email: "coordinator@ibtechintl.com" },
-    { role: demoRole("PRE_SALES_ENGINEER"), first: "Lina", last: "Choudhury", email: "presales@ibtechintl.com" },
-    { role: demoRole("TECHNICAL_CONSULTANT"), first: "Karim", last: "Idris", email: "techconsultant@ibtechintl.com" },
-    { role: demoRole("PROJECT_MANAGER"), first: "Fatima", last: "Zahra", email: "pm@ibtechintl.com" },
-    { role: demoRole("IMPLEMENTATION_ENGINEER"), first: "John", last: "Dsouza", email: "engineer@ibtechintl.com" },
-    { role: demoRole("DELIVERY_PERSON"), first: "Samir", last: "Khan", email: "driver@ibtechintl.com" },
-    { role: demoRole("SUPPORT_ENGINEER"), first: "Deepa", last: "Nair", email: "support@ibtechintl.com" },
-    { role: demoRole("FINANCE"), first: "Yusuf", last: "Rahman", email: "finance@ibtechintl.com" },
-    { role: demoRole("ACCOUNTS"), first: "Priya", last: "Suresh", email: "accounts@ibtechintl.com" },
-    { role: demoRole("WAREHOUSE"), first: "Ahmed", last: "Saleh", email: "warehouse@ibtechintl.com" },
-    { role: demoRole("PROCUREMENT"), first: "Noor", last: "Aziz", email: "procurement@ibtechintl.com" },
-    { role: demoRole("CUSTOMER_PORTAL_USER"), first: "Client", last: "Contact", email: "client@customer.com" },
+    { role: demoRole("SALES_COORDINATOR"), first: "Susan", last: "Coordinator", email: "susan@ibtechintl.com" },
+    { role: demoRole("SALES_MANAGER"), first: "Jeremy", last: "Manager", email: "jeremy@ibtechintl.com" },
+    { role: demoRole("DELIVERY_PERSON"), first: "Rakesh", last: "Driver", email: "rakesh@ibtechintl.com" },
   ];
+
+  const keepEmails = new Set([
+    ...demoUsers.map((u) => u.email.toLowerCase()),
+    "aneena.antony@ibtechintl.com",
+  ]);
 
   const userIds = new Map<RoleKey, string>();
   for (const u of demoUsers) {
@@ -183,7 +175,7 @@ async function main() {
 
   console.log("Seeding: ibTech super admin (aneena.antony@ibtechintl.com)...");
   const aneenaPasswordHash = await bcrypt.hash("AneenaAntony@123", 12);
-  await prisma.user.upsert({
+  const aneena = await prisma.user.upsert({
     where: { email: "aneena.antony@ibtechintl.com" },
     create: {
       companyId: company.id,
@@ -193,6 +185,7 @@ async function main() {
       lastName: "Antony",
       email: "aneena.antony@ibtechintl.com",
       passwordHash: aneenaPasswordHash,
+      status: "ACTIVE",
     },
     update: {
       roleId: superAdminRole.id,
@@ -202,6 +195,23 @@ async function main() {
       status: "ACTIVE",
     },
   });
+  userIds.set(RoleKey.SUPER_ADMIN, userIds.get(RoleKey.SUPER_ADMIN) ?? aneena.id);
+
+  // Deactivate every other login for this company — only the working team stays ACTIVE
+  await prisma.user.updateMany({
+    where: {
+      companyId: company.id,
+      status: "ACTIVE",
+      email: { notIn: [...keepEmails] },
+    },
+    data: { status: "INACTIVE" },
+  });
+
+  const adminId = assertDefined(userIds.get(RoleKey.SUPER_ADMIN), "Admin user missing");
+  const susanId = assertDefined(userIds.get(RoleKey.SALES_COORDINATOR), "Susan user missing");
+  const jeremyId = assertDefined(userIds.get(RoleKey.SALES_MANAGER), "Jeremy user missing");
+  const rakeshId = assertDefined(userIds.get(RoleKey.DELIVERY_PERSON), "Rakesh user missing");
+  void rakeshId;
 
   console.log("Seeding: product catalog...");
   const products = [
@@ -280,17 +290,15 @@ async function main() {
         industry: lead.industry as never,
         score: lead.score,
         status: leadStatuses[i] ?? "NEW",
-        ownerId: userIds.get("SALES_EXECUTIVE"),
+        ownerId: jeremyId,
       },
       update: { status: leadStatuses[i] ?? "NEW" },
     });
   }
 
   console.log("Seeding: customers + opportunities + quotations...");
-  const raviId = userIds.get("SALES_EXECUTIVE");
-  const pmId = userIds.get("PROJECT_MANAGER");
-  const engineerId = userIds.get("IMPLEMENTATION_ENGINEER");
-  const financeId = userIds.get("FINANCE");
+  const salesOwnerId = jeremyId;
+  const financeRecorderId = adminId;
 
   function monthsAgo(months: number, day = 15): Date {
     const d = new Date();
@@ -322,7 +330,7 @@ async function main() {
         code: spec.code,
         name: spec.name,
         industry: spec.industry as never,
-        ownerId: raviId,
+        ownerId: salesOwnerId,
         contacts: {
           create: { ...spec.contact, isPrimary: true, title: "Primary Contact" },
         },
@@ -337,13 +345,7 @@ async function main() {
     customers.push({ id: customer.id, code: customer.code, siteId });
   }
 
-  // Link the demo portal user to the first seeded customer now that customers
-  // exist — CUSTOMER_PORTAL_USER was created earlier (users are seeded before
-  // customers) without a customerId, so it needs a follow-up update here.
-  const portalUserId = userIds.get("CUSTOMER_PORTAL_USER");
-  if (portalUserId && customers[0]) {
-    await prisma.user.update({ where: { id: portalUserId }, data: { customerId: customers[0].id } });
-  }
+  // Portal demo user removed — working team only.
 
   const oppStages = ["REQUIREMENT_GATHERING", "TECHNICAL_DISCUSSION", "QUOTATION_SENT", "NEGOTIATION", "INTERNAL_REVIEW"] as const;
   const opportunities: Array<{ id: string; customerId: string }> = [];
@@ -357,7 +359,7 @@ async function main() {
         code,
         title: `${customerSpecs[i]!.name} — RFID rollout`,
         customerId: cust.id,
-        ownerId: raviId,
+        ownerId: salesOwnerId,
         stage: oppStages[i] ?? "REQUIREMENT_GATHERING",
         probability: 20 + i * 20,
         estimatedValue: 85000 + i * 40000,
@@ -425,7 +427,7 @@ async function main() {
           taxTotal,
           grandTotal: taxable + taxTotal,
           paymentTerms: "40% advance / 40% on delivery / 20% on go-live",
-          createdById: raviId!,
+          createdById: salesOwnerId,
           sentAt: spec.status === "SENT" ? new Date() : null,
           lineItems: {
             create: [
@@ -454,7 +456,7 @@ async function main() {
           entityType: "Quotation",
           entityId: qt.id,
           quotationId: qt.id,
-          requestedById: raviId!,
+          requestedById: salesOwnerId,
           status: "PENDING",
           reason: `Discount on ${qt.code} exceeds approval threshold`,
         },
@@ -612,7 +614,7 @@ async function main() {
             method: payment.method,
             reference: payment.ref,
             receivedAt: monthsAgo(payment.monthsAgo),
-            recordedById: financeId,
+            recordedById: financeRecorderId,
           },
         });
       }
@@ -665,7 +667,7 @@ async function main() {
           method: "BANK_TRANSFER",
           reference: `HIST-${code}`,
           receivedAt: monthsAgo(extra.monthsAgo),
-          recordedById: financeId,
+          recordedById: financeRecorderId,
         },
       });
     }
@@ -690,7 +692,7 @@ async function main() {
     await prisma.calendarEvent.create({
       data: {
         companyId: company.id,
-        ownerId: raviId!,
+        ownerId: salesOwnerId,
         type: event.type,
         title: event.title,
         startAt,
@@ -758,7 +760,7 @@ async function main() {
             status: ticket.status as never,
             customerId: customer.id,
             deviceId: device.id,
-            assigneeId: userIds.get("SUPPORT_ENGINEER"),
+            assigneeId: susanId,
           },
           update: {},
         });
@@ -784,16 +786,16 @@ async function main() {
     }
   }
 
-  // Soft-reference unused vars so TS stays quiet if roles missing
-  void pmId;
-  void engineerId;
-
   console.log("\nSeed complete.");
   if (process.env.NODE_ENV !== "production") {
-    console.log("ibTech super admin: aneena.antony@ibtechintl.com / AneenaAntony@123");
-    console.log(`Demo login (any role): <email> / ${DEMO_PASSWORD}`);
-    console.log("e.g. admin@ibtechintl.com, ravi@ibtechintl.com, pm@ibtechintl.com ...");
+    console.log("Working logins:");
+    console.log("  aneena.antony@ibtechintl.com / AneenaAntony@123  (Super Admin)");
+    console.log(`  admin@ibtechintl.com / ${DEMO_PASSWORD}  (Super Admin)`);
+    console.log(`  susan@ibtechintl.com / ${DEMO_PASSWORD}  (Sales Coordinator)`);
+    console.log(`  jeremy@ibtechintl.com / ${DEMO_PASSWORD}  (Sales Manager)`);
+    console.log(`  rakesh@ibtechintl.com / ${DEMO_PASSWORD}  (Delivery Person)`);
   }
+
 }
 
 main()

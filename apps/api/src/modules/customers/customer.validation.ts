@@ -41,6 +41,16 @@ export const updateCustomerSchema = z.object({
 });
 export type UpdateCustomerInput = z.infer<typeof updateCustomerSchema>;
 
+export const updateSiteSchema = z.object({
+  label: z.string().min(1).optional(),
+  addressLine: z.string().optional().nullable(),
+  city: z.string().optional().nullable(),
+  country: z.string().optional().nullable(),
+  geoLat: z.coerce.number().min(-90).max(90).optional().nullable(),
+  geoLng: z.coerce.number().min(-180).max(180).optional().nullable(),
+});
+export type UpdateSiteInput = z.infer<typeof updateSiteSchema>;
+
 export const listCustomersQuerySchema = z.object({
   industry: industryEnum.optional(),
   search: z.string().optional(),

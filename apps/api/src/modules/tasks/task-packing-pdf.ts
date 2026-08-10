@@ -44,10 +44,6 @@ export function streamPackingSlipPdf(res: Response, task: TaskPdfView, company: 
     },
     { label: "Due", value: task.dueDate ? new Date(task.dueDate).toLocaleDateString() : "—" },
     { label: "Item count", value: packing.itemCount != null ? String(packing.itemCount) : "—" },
-    {
-      label: "Total pallet weight",
-      value: packing.totalPalletWeight != null ? String(packing.totalPalletWeight) : "—",
-    },
   ]);
 
   const items = packing.items ?? [];
@@ -63,23 +59,6 @@ export function streamPackingSlipPdf(res: Response, task: TaskPdfView, company: 
     })),
     onNewPage: () => drawContinuationHeader(doc, companyName, code),
     emptyLabel: "No line items recorded",
-  });
-
-  const pallets = packing.pallets ?? [];
-  drawSectionLabel(doc, "Pallets");
-  drawTable(doc, {
-    columns: [
-      { key: "label", label: "Pallet", width: 120 },
-      { key: "contents", label: "Contents", width: 240 },
-      { key: "weight", label: "Weight", width: 100, align: "right" },
-    ],
-    rows: pallets.map((p) => ({
-      label: p.label ?? "—",
-      contents: p.itemNames ?? "—",
-      weight: p.weight != null ? String(p.weight) : "—",
-    })),
-    onNewPage: () => drawContinuationHeader(doc, companyName, code),
-    emptyLabel: "No pallets recorded",
   });
 
   if (packing.notes) {

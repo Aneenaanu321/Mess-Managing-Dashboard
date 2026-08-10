@@ -12,3 +12,10 @@ export const createPortalTicketCommentSchema = z.object({
   body: z.string().min(1, "Comment is required").max(5000),
 });
 export type CreatePortalTicketCommentInput = z.infer<typeof createPortalTicketCommentSchema>;
+
+export const portalSignOffSchema = z.object({
+  name: z.string().min(1, "Signer name is required"),
+  document: z.enum(["DO", "INVOICE", "BOTH"]).default("BOTH"),
+  signatureDataUrl: z.string().min(32).optional(),
+});
+export type PortalSignOffInput = z.infer<typeof portalSignOffSchema>;

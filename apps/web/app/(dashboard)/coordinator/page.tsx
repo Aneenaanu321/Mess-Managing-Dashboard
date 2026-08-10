@@ -56,6 +56,18 @@ export default function CoordinatorPage() {
         </div>
       )}
 
+      <Card className="flex flex-wrap items-center justify-between gap-3 p-4">
+        <div>
+          <p className="text-sm font-semibold text-primary">Field Ops SOP compliance</p>
+          <p className="text-xs text-muted">Missing scans, incomplete checklists, originals, urgent stock — full job detail for managers.</p>
+        </div>
+        <Link href="/sop-compliance">
+          <Button variant="secondary" size="sm">
+            Open SOP board
+          </Button>
+        </Link>
+      </Card>
+
       {metrics && (
         <Card className="p-5">
           <h2 className="mb-3 text-sm font-semibold text-primary">Performance (30 days)</h2>

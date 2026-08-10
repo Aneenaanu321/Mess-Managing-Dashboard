@@ -208,7 +208,7 @@ export default function LeadDetailPage() {
       </div>
 
       <div className="mt-4">
-        <ActivityTimeline scope={{ leadId: lead.id }} />
+        <ActivityTimeline scope={{ leadId: lead.id }} defaultPhone={lead.phone} />
       </div>
     </div>
   );

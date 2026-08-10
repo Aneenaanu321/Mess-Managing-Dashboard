@@ -10,13 +10,22 @@ import {
   updateSopSchema,
   reportIncompleteSchema,
   fieldDayQuerySchema,
+  sopComplianceQuerySchema,
+  returnOriginalsDaySchema,
+  reorderFieldDaySchema,
+  taskSignOffSchema,
 } from "./task.validation";
 import { ApiError } from "../../utils/ApiError";
 import { requireParam } from "../../utils/assert";
 
 function ctxFrom(req: Request) {
   if (!req.auth) throw ApiError.unauthorized();
-  return { companyId: req.auth.companyId, branchId: req.auth.branchId, userId: req.auth.sub };
+  return {
+    companyId: req.auth.companyId,
+    branchId: req.auth.branchId,
+    userId: req.auth.sub,
+    roleKey: req.auth.roleKey,
+  };
 }
 
 export const taskController = {
@@ -33,6 +42,12 @@ export const taskController = {
   async fieldDay(req: Request, res: Response) {
     const query = fieldDayQuerySchema.parse(req.query);
     const result = await taskService.fieldDay(ctxFrom(req), query);
+    res.json({ success: true, data: result });
+  },
+
+  async reorderFieldDay(req: Request, res: Response) {
+    const input = reorderFieldDaySchema.parse(req.body ?? {});
+    const result = await taskService.reorderFieldDay(ctxFrom(req), input);
     res.json({ success: true, data: result });
   },
 
@@ -59,10 +74,23 @@ export const taskController = {
     res.json({ success: true, data: task });
   },
 
+  async remove(req: Request, res: Response) {
+    const id = requireParam(req.params.id, "id");
+    const result = await taskService.remove(ctxFrom(req), id);
+    res.json({ success: true, data: result });
+  },
+
   async updateSop(req: Request, res: Response) {
     const id = requireParam(req.params.id, "id");
     const input = updateSopSchema.parse(req.body);
     const task = await taskService.updateSop(ctxFrom(req), id, input);
+    res.json({ success: true, data: task });
+  },
+
+  async signOff(req: Request, res: Response) {
+    const id = requireParam(req.params.id, "id");
+    const input = taskSignOffSchema.parse(req.body);
+    const task = await taskService.signOff(ctxFrom(req), id, input, "FIELD");
     res.json({ success: true, data: task });
   },
 
@@ -92,6 +120,12 @@ export const taskController = {
     res.json({ success: true, data: task });
   },
 
+  async returnOriginalsForDay(req: Request, res: Response) {
+    const input = returnOriginalsDaySchema.parse(req.body ?? {});
+    const result = await taskService.returnOriginalsForDay(ctxFrom(req), input);
+    res.json({ success: true, data: result });
+  },
+
   async verify(req: Request, res: Response) {
     const id = requireParam(req.params.id, "id");
     const input = verifyTaskSchema.parse(req.body ?? {});
@@ -102,6 +136,17 @@ export const taskController = {
   async assignableUsers(req: Request, res: Response) {
     const users = await taskService.assignableUsers(ctxFrom(req));
     res.json({ success: true, data: users });
+  },
+
+  async linkOptions(req: Request, res: Response) {
+    const data = await taskService.linkOptions(ctxFrom(req));
+    res.json({ success: true, data });
+  },
+
+  async sopCompliance(req: Request, res: Response) {
+    const query = sopComplianceQuerySchema.parse(req.query);
+    const data = await taskService.sopCompliance(ctxFrom(req), query);
+    res.json({ success: true, data });
   },
 
   async packingSlipPdf(req: Request, res: Response) {

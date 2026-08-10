@@ -21,6 +21,8 @@ export interface Site {
   addressLine: string | null;
   city: string | null;
   country: string | null;
+  geoLat?: number | null;
+  geoLng?: number | null;
 }
 
 export interface CustomerOpportunitySummary {
@@ -108,6 +110,27 @@ export function useUpdateCustomer() {
       queryClient.invalidateQueries({ queryKey: ["customers", vars.id] });
     },
   });
+}
+
+export function useUpdateSite(customerId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      siteId,
+      input,
+    }: {
+      siteId: string;
+      input: { geoLat?: number | null; geoLng?: number | null; label?: string };
+    }) => (await apiClient.patch<Site>(`/customers/${customerId}/sites/${siteId}`, input)).data,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["customers", customerId] });
+      toast.success("Site location saved");
+    },
+  });
+}
+
+export function mapsUrl(lat: number, lng: number) {
+  return `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=16/${lat}/${lng}`;
 }
 
 export function useMergeCustomers() {

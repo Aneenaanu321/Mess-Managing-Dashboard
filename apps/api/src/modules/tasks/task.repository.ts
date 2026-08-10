@@ -14,7 +14,48 @@ interface ListParams {
 }
 
 const detailInclude = {
-  project: { select: { id: true, code: true, name: true, customer: { select: { id: true, name: true } } } },
+  project: {
+    select: {
+      id: true,
+      code: true,
+      name: true,
+      customer: { select: { id: true, name: true } },
+      site: { select: { id: true, label: true, addressLine: true, city: true, geoLat: true, geoLng: true } },
+    },
+  },
+  salesOrder: {
+    select: {
+      id: true,
+      code: true,
+      status: true,
+      totalAmount: true,
+      currency: true,
+      customer: { select: { id: true, name: true, code: true } },
+    },
+  },
+  customerPo: {
+    select: {
+      id: true,
+      code: true,
+      poNumber: true,
+      amount: true,
+      currency: true,
+      status: true,
+      customer: { select: { id: true, name: true, code: true } },
+    },
+  },
+  invoice: {
+    select: {
+      id: true,
+      code: true,
+      status: true,
+      totalAmount: true,
+      amountPaid: true,
+      currency: true,
+      dueDate: true,
+      customer: { select: { id: true, name: true, code: true } },
+    },
+  },
   assignee: { select: { id: true, firstName: true, lastName: true } },
   createdBy: { select: { id: true, firstName: true, lastName: true } },
   verifiedBy: { select: { id: true, firstName: true, lastName: true } },
@@ -91,6 +132,10 @@ export const taskRepository = {
 
   update(id: string, data: Prisma.EngineerTaskUpdateInput) {
     return prisma.engineerTask.update({ where: { id }, data, include: detailInclude });
+  },
+
+  delete(id: string) {
+    return prisma.engineerTask.delete({ where: { id } });
   },
 
   assignableUsers(companyId: string) {

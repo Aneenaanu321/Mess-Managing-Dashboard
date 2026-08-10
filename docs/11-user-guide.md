@@ -2,7 +2,7 @@
 
 End-to-end walkthrough of every page in the app. All data is live from the API (`NEXT_PUBLIC_API_URL`) backed by PostgreSQL — there is no mock data layer in the frontend.
 
-**Demo login:** seeded users in `apps/api/prisma/seed.ts` (e.g. `admin@ibtechintl.com` / `Password123!`).
+**Demo login:** only the working team is active after seed — `admin@ibtechintl.com`, `susan@ibtechintl.com`, `jeremy@ibtechintl.com`, `rakesh@ibtechintl.com` (`Password123!`), plus `aneena.antony@ibtechintl.com` / `AneenaAntony@123`.
 
 ---
 

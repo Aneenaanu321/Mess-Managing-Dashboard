@@ -19,7 +19,7 @@ export type PaymentMethod = "BANK_TRANSFER" | "CHEQUE" | "CASH" | "CARD" | "ONLI
 export type SopSection = "preDay" | "warehouse" | "visit" | "docs" | "eod";
 export type SopChecklist = Partial<Record<SopSection, Record<string, boolean>>>;
 export type SopProgress = Record<SopSection, { done: number; total: number; complete: boolean }>;
-export type SopItem = { key: string; label: string };
+export type SopItem = { key: string; label: string; requiresEvidence?: boolean };
 
 export type PackingDetails = {
   itemCount?: number;
@@ -34,6 +34,59 @@ export interface AssignableUser {
   firstName: string;
   lastName: string;
   role: { name: string; key: string };
+}
+
+export interface TaskOrderLink {
+  id: string;
+  code: string;
+  status?: string;
+  totalAmount?: string | number;
+  amount?: string | number;
+  amountPaid?: string | number;
+  currency?: string;
+  poNumber?: string;
+  dueDate?: string | null;
+  customer?: { id: string; name: string; code?: string };
+}
+
+export interface TaskLinkOptions {
+  salesOrders: Array<{
+    id: string;
+    code: string;
+    status: string;
+    totalAmount: string | number;
+    currency: string;
+    customerPOId: string;
+    label: string;
+    customer: { id: string; name: string; code: string };
+    project: { id: string; code: string; name: string } | null;
+    customerPO: { id: string; code: string; poNumber: string } | null;
+  }>;
+  customerPos: Array<{
+    id: string;
+    code: string;
+    poNumber: string;
+    amount: string | number;
+    currency: string;
+    status: string;
+    label: string;
+    customer: { id: string; name: string; code: string };
+    salesOrder: { id: string; code: string } | null;
+  }>;
+  invoices: Array<{
+    id: string;
+    code: string;
+    status: string;
+    totalAmount: string | number;
+    amountPaid: string | number;
+    currency: string;
+    dueDate: string | null;
+    salesOrderId: string | null;
+    projectId: string | null;
+    outstanding: number;
+    label: string;
+    customer: { id: string; name: string; code: string };
+  }>;
 }
 
 export interface EngineerTask {
@@ -54,13 +107,39 @@ export interface EngineerTask {
   paymentReference: string | null;
   sopChecklist?: SopChecklist;
   packingDetails?: PackingDetails | null;
+  customerSignOff?: {
+    name: string;
+    signedAt: string;
+    document: string;
+    source: string;
+    fileAssetId?: string;
+  } | null;
   customerNotifiedAt?: string | null;
   incompleteReason?: string | null;
   rescheduleDate?: string | null;
   originalsReturnedAt?: string | null;
   sopProgress?: SopProgress;
   requiredDocs?: SopItem[];
-  project: { id: string; code: string; name: string; customer?: { id: string; name: string } } | null;
+  salesOrderId?: string | null;
+  customerPoId?: string | null;
+  invoiceId?: string | null;
+  project: {
+    id: string;
+    code: string;
+    name: string;
+    customer?: { id: string; name: string };
+    site?: {
+      id: string;
+      label: string;
+      addressLine: string | null;
+      city: string | null;
+      geoLat: number | null;
+      geoLng: number | null;
+    } | null;
+  } | null;
+  salesOrder?: TaskOrderLink | null;
+  customerPo?: TaskOrderLink | null;
+  invoice?: TaskOrderLink | null;
   assignee: { id: string; firstName: string; lastName: string } | null;
   createdBy: { id: string; firstName: string; lastName: string } | null;
   verifiedBy: { id: string; firstName: string; lastName: string } | null;
@@ -90,14 +169,29 @@ export interface SopTemplates {
 }
 
 export interface CreateTaskInput {
-  title: string;
+  title?: string;
   projectId?: string;
+  salesOrderId?: string;
+  customerPoId?: string;
+  invoiceId?: string;
   assigneeId?: string;
   description?: string;
   dueAt?: string;
   jobType?: TaskJobType;
   scheduleOrder?: number;
+  recurrence?: { cadence: "WEEKLY" | "BIWEEKLY" | "MONTHLY"; dayOfWeek?: number };
 }
+
+export type UpdateTaskInput = Omit<
+  Partial<CreateTaskInput>,
+  "projectId" | "salesOrderId" | "customerPoId" | "invoiceId" | "recurrence"
+> & {
+  status?: TaskStatus;
+  projectId?: string | null;
+  salesOrderId?: string | null;
+  customerPoId?: string | null;
+  invoiceId?: string | null;
+};
 
 export interface SubmitTaskInput {
   completionNote: string;
@@ -113,6 +207,8 @@ export interface UpdateSopInput {
   packingDetails?: PackingDetails;
   customerNotified?: boolean;
   scheduleOrder?: number;
+  reserveStock?: boolean;
+  warehouseId?: string;
 }
 
 export const TASK_STATUSES: TaskStatus[] = ["TODO", "SEEN", "IN_PROGRESS", "SUBMITTED", "BLOCKED", "DONE"];
@@ -206,6 +302,18 @@ export function useFieldDay(params: { date?: string; assigneeId?: string; mine?:
   });
 }
 
+export function useReorderFieldDay() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { date?: string; orderedIds: string[] }) =>
+      (await apiClient.post<FieldDayData>("/tasks/field-day/reorder", input)).data,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tasks", "field-day"] });
+      toast.success("Visit order updated");
+    },
+  });
+}
+
 export function useSopTemplates() {
   return useQuery({
     queryKey: ["tasks", "sop-templates"],
@@ -218,6 +326,13 @@ export function useAssignableUsers() {
   return useQuery({
     queryKey: ["tasks", "assignable-users"],
     queryFn: async () => (await apiClient.get<AssignableUser[]>("/tasks/assignable-users")).data,
+  });
+}
+
+export function useTaskLinkOptions() {
+  return useQuery({
+    queryKey: ["tasks", "link-options"],
+    queryFn: async () => (await apiClient.get<TaskLinkOptions>("/tasks/link-options")).data,
   });
 }
 
@@ -248,11 +363,22 @@ export function useCreateTask() {
 export function useUpdateTask() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, input }: { id: string; input: Partial<CreateTaskInput> & { status?: TaskStatus } }) =>
+    mutationFn: async ({ id, input }: { id: string; input: UpdateTaskInput }) =>
       (await apiClient.patch<EngineerTask>(`/tasks/${id}`, input)).data,
     onSuccess: (_data, vars) => {
       invalidateTask(queryClient, vars.id);
       toast.success("Task updated");
+    },
+  });
+}
+
+export function useDeleteTask() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => (await apiClient.del<{ id: string }>(`/tasks/${id}`)).data,
+    onSuccess: () => {
+      invalidateTask(queryClient);
+      toast.success("Job deleted");
     },
   });
 }
@@ -327,6 +453,44 @@ export function useReturnOriginals() {
   });
 }
 
+export function useReturnOriginalsForDay() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { date?: string; mine?: boolean; assigneeId?: string } = {}) =>
+      (
+        await apiClient.post<{ date: string; assigneeId: string; count: number; ids: string[] }>(
+          "/tasks/return-originals-day",
+          input,
+        )
+      ).data,
+    onSuccess: (data) => {
+      invalidateTask(queryClient);
+      toast.success(
+        data.count === 0
+          ? "No done jobs waiting on originals"
+          : `Originals returned for ${data.count} job${data.count === 1 ? "" : "s"}`,
+      );
+    },
+  });
+}
+
+export function useTaskSignOff() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      id,
+      input,
+    }: {
+      id: string;
+      input: { name: string; document: "DO" | "INVOICE" | "BOTH"; signatureDataUrl?: string };
+    }) => (await apiClient.post<EngineerTask>(`/tasks/${id}/sign-off`, input)).data,
+    onSuccess: (_data, vars) => {
+      invalidateTask(queryClient, vars.id);
+      toast.success("Customer signature saved");
+    },
+  });
+}
+
 export function useVerifyTask() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -336,5 +500,95 @@ export function useVerifyTask() {
       invalidateTask(queryClient, vars.id);
       toast.success("Job verified & closed");
     },
+  });
+}
+
+export type SopComplianceIssue = "missingScans" | "incompleteChecklist" | "originalsPending" | "urgentStock" | "blocked" | "any";
+
+export type SopComplianceJob = {
+  id: string;
+  title: string;
+  jobType: TaskJobType;
+  status: TaskStatus;
+  dueDate: string | null;
+  scheduleOrder: number | null;
+  seenAt: string | null;
+  submittedAt: string | null;
+  verifiedAt: string | null;
+  completedAt: string | null;
+  originalsReturnedAt: string | null;
+  customerNotifiedAt: string | null;
+  incompleteReason: string | null;
+  rescheduleDate: string | null;
+  paymentAmount: string | null;
+  paymentMethod: PaymentMethod | null;
+  paymentReference: string | null;
+  completionNote: string | null;
+  project: {
+    id: string;
+    code: string;
+    name: string;
+    customer: { id: string; name: string } | null;
+  } | null;
+  assignee: { id: string; firstName: string; lastName: string; email: string } | null;
+  createdBy: { id: string; firstName: string; lastName: string; email: string } | null;
+  verifiedBy: { id: string; firstName: string; lastName: string } | null;
+  attachmentCount: number;
+  missingDocLabels: string[];
+  progress: SopProgress;
+  checklistPct: number;
+  issues: {
+    missingScans: boolean;
+    incompleteChecklist: boolean;
+    originalsPending: boolean;
+    urgentStock: boolean;
+    blocked: boolean;
+  };
+  issueCount: number;
+  updatedAt: string;
+  createdAt: string;
+};
+
+export type SopComplianceData = {
+  filters: {
+    date: string | null;
+    days: number;
+    assigneeId: string | null;
+    jobType: string | null;
+    issue: SopComplianceIssue;
+  };
+  summary: {
+    totalJobs: number;
+    withIssues: number;
+    compliantJobs: number;
+    compliancePct: number;
+    missingScans: number;
+    incompleteChecklist: number;
+    originalsPending: number;
+    urgentStock: number;
+    blocked: number;
+    avgChecklistPct: number;
+    submittedAwaitingVerify: number;
+  };
+  jobs: SopComplianceJob[];
+};
+
+export function useSopCompliance(params: {
+  date?: string;
+  days?: number;
+  assigneeId?: string;
+  jobType?: string;
+  issue?: SopComplianceIssue;
+}) {
+  const q = new URLSearchParams();
+  if (params.date) q.set("date", params.date);
+  if (params.days) q.set("days", String(params.days));
+  if (params.assigneeId) q.set("assigneeId", params.assigneeId);
+  if (params.jobType) q.set("jobType", params.jobType);
+  if (params.issue) q.set("issue", params.issue);
+  return useQuery({
+    queryKey: ["tasks", "sop-compliance", params],
+    queryFn: async () => (await apiClient.get<SopComplianceData>(`/tasks/sop-compliance?${q}`)).data,
+    staleTime: 20_000,
   });
 }

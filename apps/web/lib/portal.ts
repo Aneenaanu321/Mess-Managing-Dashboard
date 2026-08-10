@@ -253,3 +253,37 @@ export function useAddPortalTicketComment(ticketId: string) {
     },
   });
 }
+
+export type PortalJobSignOff = {
+  id: string;
+  title: string;
+  jobType: string;
+  status: string;
+  dueDate: string | null;
+  invoice: { id: string; code: string } | null;
+  salesOrder: { id: string; code: string } | null;
+};
+
+export function usePortalJobsNeedingSignOff() {
+  return useQuery({
+    queryKey: ["portal", "jobs"],
+    queryFn: async () => (await apiClient.get<PortalJobSignOff[]>("/portal/jobs")).data,
+  });
+}
+
+export function usePortalSignOff() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      id,
+      input,
+    }: {
+      id: string;
+      input: { name: string; document: "DO" | "INVOICE" | "BOTH"; signatureDataUrl?: string };
+    }) => (await apiClient.post(`/portal/jobs/${id}/sign-off`, input)).data,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["portal", "jobs"] });
+      toast.success("Signature submitted");
+    },
+  });
+}

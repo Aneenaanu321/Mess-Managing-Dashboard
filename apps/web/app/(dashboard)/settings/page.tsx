@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import clsx from "clsx";
-import { Building2, ClipboardList, Hash, ScrollText, ShieldCheck, Timer, Users as UsersIcon } from "lucide-react";
+import { Building2, ClipboardList, Hash, Languages, ScrollText, ShieldCheck, Timer, Users as UsersIcon } from "lucide-react";
 import {
   useOrgSettings,
   useRoleSettings,
@@ -17,12 +17,14 @@ import { useLeadOpsSettings, useUpdateLeadOpsSettings } from "@/lib/sales-ops";
 import { hasPermission, useCurrentUser } from "@/lib/auth";
 import { Badge, Button, Card, Input, Select } from "@/components/ui";
 import { getPageLabel } from "@/lib/nav-labels";
+import { useLocale, Locale } from "@/lib/i18n";
 
-type Tab = "org" | "lead-ops" | "roles" | "users" | "sequences" | "sla" | "audit-log";
+type Tab = "org" | "lead-ops" | "roles" | "users" | "sequences" | "sla" | "audit-log" | "language";
 
 const TABS: { key: Tab; label: string; icon: typeof Building2 }[] = [
   { key: "org", label: "Organization", icon: Building2 },
   { key: "lead-ops", label: "Lead Ops", icon: ClipboardList },
+  { key: "language", label: "Language", icon: Languages },
   { key: "roles", label: "Roles", icon: ShieldCheck },
   { key: "users", label: "Users", icon: UsersIcon },
   { key: "sequences", label: "Number Sequences", icon: Hash },
@@ -68,12 +70,27 @@ export default function SettingsPage() {
 
       {tab === "org" && <OrgSection />}
       {tab === "lead-ops" && <LeadOpsSection />}
+      {tab === "language" && <LanguageSection />}
       {tab === "roles" && <RolesSection />}
       {tab === "users" && <UsersSection />}
       {tab === "sequences" && <SequencesSection />}
       {tab === "sla" && <SlaPoliciesSection />}
       {tab === "audit-log" && <AuditLogSection />}
     </div>
+  );
+}
+
+function LanguageSection() {
+  const { locale, setLocale, t } = useLocale();
+  return (
+    <Card className="max-w-lg space-y-3 p-5">
+      <h2 className="text-sm font-semibold text-primary">{t("settings.language")}</h2>
+      <p className="text-xs text-slate-500">{t("settings.languageHint")}</p>
+      <Select value={locale} onChange={(e) => setLocale(e.target.value as Locale)} aria-label="Language">
+        <option value="en">English</option>
+        <option value="ar">العربية (Arabic)</option>
+      </Select>
+    </Card>
   );
 }
 

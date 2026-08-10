@@ -1,13 +1,6 @@
-// Minimal offline support for field engineers (PRD §9: PWA offline support
-// where connectivity is poor on-site). Two caches, two strategies:
-//   - same-origin app shell (pages/scripts/styles): cache-first, so the UI
-//     itself still loads with no connection at all.
-//   - cross-origin GET API calls: network-first, falling back to the last
-//     successful response when offline (stale data beats a blank screen for
-//     an engineer checking their task list mid-install).
-// Mutations (non-GET) are never intercepted — they should fail loudly
-// offline rather than silently queue, since this app doesn't yet have a
-// conflict-resolution story for deferred writes.
+// Minimal offline support for field engineers. Shell cache-first; API GET
+// network-first with stale fallback. Mutations are queued in IndexedDB by the
+// Field Ops UI (see lib/offline-queue.ts) and flushed when back online.
 
 const SHELL_CACHE = "rfidcore-shell-v1";
 const API_CACHE = "rfidcore-api-v1";

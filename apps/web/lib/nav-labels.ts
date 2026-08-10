@@ -22,6 +22,7 @@ export const ROUTES = {
   devices: "/installed-equipment",
   tasks: "/team-tasks",
   fieldOps: "/field-ops",
+  sopCompliance: "/sop-compliance",
   finance: "/invoices-payments",
   reports: "/reports",
   aiAssistant: "/sales-assistant",
@@ -60,6 +61,7 @@ export const NAV_PERMISSIONS: Record<string, readonly string[]> = {
   [ROUTES.devices]: ["device:view"],
   [ROUTES.tasks]: ["task:view"],
   [ROUTES.fieldOps]: ["task:view"],
+  [ROUTES.sopCompliance]: ["reports:view", "lead:assign"],
   [ROUTES.finance]: ["finance:view"],
   [ROUTES.reports]: ["reports:view", "reports:executive"],
   [ROUTES.aiAssistant]: ["ai_assistant:use"],
@@ -108,6 +110,7 @@ export const NAV_GROUPS = [
       { href: ROUTES.devices, label: "Installed Equipment" },
       { href: ROUTES.tasks, label: "Team Tasks" },
       { href: ROUTES.fieldOps, label: "Field Ops" },
+      { href: ROUTES.sopCompliance, label: "SOP Compliance" },
     ],
   },
   {

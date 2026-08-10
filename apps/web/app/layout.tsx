@@ -4,6 +4,7 @@ import "./globals.css";
 import { QueryProvider } from "@/lib/QueryProvider";
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
 import { ThemeProvider } from "@/lib/ThemeProvider";
+import { LocaleProvider } from "@/lib/i18n";
 import { ConfirmProvider } from "@/components/ConfirmDialog";
 import { ToastContainer } from "@/components/Toast";
 
@@ -39,12 +40,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="font-sans antialiased">
         <ServiceWorkerRegister />
         <ThemeProvider>
-          <QueryProvider>
-            <ConfirmProvider>
-              {children}
-              <ToastContainer />
-            </ConfirmProvider>
-          </QueryProvider>
+          <LocaleProvider>
+            <QueryProvider>
+              <ConfirmProvider>
+                {children}
+                <ToastContainer />
+              </ConfirmProvider>
+            </QueryProvider>
+          </LocaleProvider>
         </ThemeProvider>
       </body>
     </html>

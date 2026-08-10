@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useActivities, useCreateActivity, ActivityScope, ActivityType, ACTIVITY_TYPE_LABELS } from "@/lib/activities";
 import { hasPermission, useCurrentUser } from "@/lib/auth";
 import { Badge, Button, Card, Input, Select } from "@/components/ui";
@@ -15,17 +15,28 @@ const TEMPLATES: { label: string; type: ActivityType; subject: string }[] = [
 ];
 
 /** Drop-in activity/note log, shared by Lead, Customer, and Opportunity detail pages. */
-export function ActivityTimeline({ scope }: { scope: ActivityScope }) {
+export function ActivityTimeline({
+  scope,
+  defaultPhone,
+}: {
+  scope: ActivityScope;
+  /** Prefill click-to-call (CTI-lite) from lead/contact phone. */
+  defaultPhone?: string | null;
+}) {
   const { data: user } = useCurrentUser();
   const { data: activities, isLoading } = useActivities(scope);
   const createActivity = useCreateActivity(scope);
   const [type, setType] = useState<ActivityType>("NOTE");
   const [subject, setSubject] = useState("");
   const [durationMins, setDurationMins] = useState("");
-  const [callPhone, setCallPhone] = useState("");
+  const [callPhone, setCallPhone] = useState(defaultPhone ?? "");
   const [error, setError] = useState<string | null>(null);
 
-  async function handleLog(override?: { type: ActivityType; subject: string }) {
+  useEffect(() => {
+    if (defaultPhone) setCallPhone(defaultPhone);
+  }, [defaultPhone]);
+
+  async function handleLog(override?: { type: ActivityType; subject: string; body?: string }) {
     const nextType = override?.type ?? type;
     const nextSubject = (override?.subject ?? subject).trim();
     if (!nextSubject) return;
@@ -34,6 +45,7 @@ export function ActivityTimeline({ scope }: { scope: ActivityScope }) {
       await createActivity.mutateAsync({
         type: nextType,
         subject: nextSubject,
+        ...(override?.body ? { body: override.body } : {}),
         ...(durationMins && nextType === "CALL" ? { durationMins: Number(durationMins) } : {}),
       });
       if (!override) {
@@ -43,6 +55,21 @@ export function ActivityTimeline({ scope }: { scope: ActivityScope }) {
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to log activity");
     }
+  }
+
+  async function handleCallAndLog() {
+    const phone = callPhone.trim();
+    if (!phone) {
+      setError("Enter a phone number to call");
+      return;
+    }
+    const dial = phone.replace(/[^\d+]/g, "");
+    window.location.href = `tel:${dial}`;
+    await handleLog({
+      type: "CALL",
+      subject: "Outbound call",
+      body: `Dialed ${phone} (CTI-lite click-to-call)`,
+    });
   }
 
   return (
@@ -86,17 +113,9 @@ export function ActivityTimeline({ scope }: { scope: ActivityScope }) {
                   placeholder="Phone"
                   value={callPhone}
                   onChange={(e) => setCallPhone(e.target.value)}
-                  className="w-32"
+                  className="w-36"
                   aria-label="Phone number for click-to-call"
                 />
-                {callPhone.trim() && (
-                  <a
-                    href={`tel:${callPhone.replace(/[^\d+]/g, "")}`}
-                    className="rounded-lg bg-brand-50 px-2.5 py-1.5 text-xs font-medium text-brand-800 ring-1 ring-brand-100 dark:bg-brand-900/30 dark:text-brand-200"
-                  >
-                    Call
-                  </a>
-                )}
                 <Input
                   type="number"
                   min={0}
@@ -106,7 +125,29 @@ export function ActivityTimeline({ scope }: { scope: ActivityScope }) {
                   className="w-20"
                   aria-label="Call duration minutes"
                 />
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  disabled={createActivity.isPending || !callPhone.trim()}
+                  onClick={handleCallAndLog}
+                  title="Open dialer and log an outbound CALL activity"
+                >
+                  Call & log
+                </Button>
               </>
+            )}
+            {type !== "CALL" && !!callPhone.trim() && (
+              <Button
+                size="sm"
+                variant="secondary"
+                disabled={createActivity.isPending}
+                onClick={() => {
+                  setType("CALL");
+                  void handleCallAndLog();
+                }}
+              >
+                Call & log
+              </Button>
             )}
             <Button size="sm" onClick={() => handleLog()} disabled={createActivity.isPending || !subject.trim()}>
               Log

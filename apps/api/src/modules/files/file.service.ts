@@ -53,11 +53,22 @@ export const fileService = {
 
   async upload(ctx: ActorCtx, entityType: string, entityId: string, file: UploadedFile) {
     requireEntityPermission(ctx, entityType, "manage");
+    return this.uploadInternal(ctx.companyId, ctx.userId, entityType, entityId, file);
+  },
+
+  /** Skip RBAC — used by portal customer sign-off and other trusted internal callers. */
+  async uploadInternal(
+    companyId: string,
+    uploadedById: string | null,
+    entityType: string,
+    entityId: string,
+    file: UploadedFile,
+  ) {
     await ensureBucket();
 
     const fileName = sanitizeFileName(file.originalname);
-    const version = await fileRepository.nextVersion(ctx.companyId, entityType, entityId, fileName);
-    const key = `${ctx.companyId}/${entityType}/${entityId}/${Date.now()}-${fileName}`;
+    const version = await fileRepository.nextVersion(companyId, entityType, entityId, fileName);
+    const key = `${companyId}/${entityType}/${entityId}/${Date.now()}-${fileName}`;
 
     await s3Client.send(
       new PutObjectCommand({
@@ -69,7 +80,7 @@ export const fileService = {
     );
 
     const asset = await fileRepository.create({
-      companyId: ctx.companyId,
+      companyId,
       entityType,
       entityId,
       fileName,
@@ -77,12 +88,12 @@ export const fileService = {
       mimeType: file.mimetype,
       sizeBytes: file.size,
       version,
-      uploadedById: ctx.userId,
+      uploadedById: uploadedById ?? undefined,
     });
 
     await writeAuditLog({
-      companyId: ctx.companyId,
-      actorId: ctx.userId,
+      companyId,
+      actorId: uploadedById,
       entityType: "FileAsset",
       entityId: asset.id,
       action: "CREATE",

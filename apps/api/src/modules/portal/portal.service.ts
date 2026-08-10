@@ -1,8 +1,10 @@
 import { portalRepository } from "./portal.repository";
-import { CreatePortalTicketInput, CreatePortalTicketCommentInput } from "./portal.validation";
+import { CreatePortalTicketInput, CreatePortalTicketCommentInput, PortalSignOffInput } from "./portal.validation";
 import { ApiError } from "../../utils/ApiError";
 import { nextNumber } from "../../utils/numberSequence";
 import { writeAuditLog } from "../../utils/audit";
+import { prisma } from "../../config/prisma";
+import { taskService } from "../tasks/task.service";
 
 interface PortalCtx {
   companyId: string;
@@ -53,6 +55,59 @@ export const portalService = {
     return ticket;
   },
 
+  /** Open field jobs linked to this customer that still need digital sign-off. */
+  async listJobsNeedingSignOff(ctx: PortalCtx) {
+    const jobs = await prisma.engineerTask.findMany({
+      where: {
+        companyId: ctx.companyId,
+        status: { in: ["TODO", "SEEN", "IN_PROGRESS", "SUBMITTED"] },
+        OR: [
+          { invoice: { customerId: ctx.customerId } },
+          { salesOrder: { customerId: ctx.customerId } },
+          { customerPo: { customerId: ctx.customerId } },
+          { project: { customerId: ctx.customerId } },
+        ],
+      },
+      select: {
+        id: true,
+        title: true,
+        jobType: true,
+        status: true,
+        dueDate: true,
+        customerSignOff: true,
+        invoice: { select: { id: true, code: true } },
+        salesOrder: { select: { id: true, code: true } },
+      },
+      orderBy: [{ dueDate: "asc" }, { createdAt: "desc" }],
+      take: 50,
+    });
+    return jobs.filter((j) => j.customerSignOff == null);
+  },
+
+  async signOffJob(ctx: PortalCtx, taskId: string, input: PortalSignOffInput) {
+    const task = await prisma.engineerTask.findFirst({
+      where: {
+        id: taskId,
+        companyId: ctx.companyId,
+        OR: [
+          { invoice: { customerId: ctx.customerId } },
+          { salesOrder: { customerId: ctx.customerId } },
+          { customerPo: { customerId: ctx.customerId } },
+          { project: { customerId: ctx.customerId } },
+        ],
+      },
+      select: { id: true },
+    });
+    if (!task) throw ApiError.notFound("Job not found");
+
+    return taskService.signOff(
+      { companyId: ctx.companyId, branchId: null, userId: ctx.userId },
+      taskId,
+      input,
+      "PORTAL",
+    );
+  },
+
   async createTicket(ctx: PortalCtx, input: CreatePortalTicketInput) {
     const code = await nextNumber(ctx.companyId, "TICKET", "TKT");
     const policy = await portalRepository.findSlaPolicy(ctx.companyId, input.priority);
@@ -91,7 +146,6 @@ export const portalService = {
     const ticket = await portalRepository.findTicket(ctx.companyId, ctx.customerId, ticketId);
     if (!ticket) throw ApiError.notFound("Ticket not found");
 
-    // A portal user's own comment is, by definition, never internal-only.
     return portalRepository.addComment({
       ticket: { connect: { id: ticketId } },
       body: input.body,

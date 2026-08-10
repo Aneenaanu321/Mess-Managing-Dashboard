@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import clsx from "clsx";
-import { FileText, ShoppingCart, FolderKanban, Receipt, LifeBuoy, LogOut, Building2 } from "lucide-react";
+import { FileText, ShoppingCart, FolderKanban, Receipt, LifeBuoy, LogOut, Building2, PenLine } from "lucide-react";
 import { useCurrentUser, useLogout } from "@/lib/auth";
 
 const NAV = [
@@ -14,6 +14,7 @@ const NAV = [
   { href: "/portal/purchase-orders", label: "Purchase Orders", icon: ShoppingCart },
   { href: "/portal/projects", label: "Projects", icon: FolderKanban },
   { href: "/portal/invoices", label: "Invoices", icon: Receipt },
+  { href: "/portal/sign-off", label: "Sign-off", icon: PenLine },
   { href: "/portal/support", label: "Support", icon: LifeBuoy },
 ];
 

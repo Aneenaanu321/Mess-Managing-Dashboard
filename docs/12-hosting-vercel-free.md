@@ -61,7 +61,8 @@ npm run prisma:seed -w apps/api
 ```
 
 Demo login after seed: `admin@ibtechintl.com` / `Password123!`  
-Coordinator: `coordinator@ibtechintl.com` / `Password123!`
+Coordinator: `susan@ibtechintl.com` / `Password123!` · Manager: `jeremyy@ibtechintl.com` · Driver: `rakesh@ibtechintl.com`  
+Super admin: `aneena.antony@ibtechintl.com` / `AneenaAntony@123`
 
 > Free Render services **spin down after idle**. First request after sleep can take ~30–60s.  
 > Scheduled digests / SLA breach jobs need a paid worker later — the UI works without them.

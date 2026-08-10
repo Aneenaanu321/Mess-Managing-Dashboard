@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { portalService } from "./portal.service";
-import { createPortalTicketSchema, createPortalTicketCommentSchema } from "./portal.validation";
+import { createPortalTicketSchema, createPortalTicketCommentSchema, portalSignOffSchema } from "./portal.validation";
 import { ApiError } from "../../utils/ApiError";
 import { requireParam } from "../../utils/assert";
 
@@ -62,5 +62,16 @@ export const portalController = {
     const input = createPortalTicketCommentSchema.parse(req.body);
     const comment = await portalService.addTicketComment(ctxFrom(req), id, input);
     res.status(201).json({ success: true, data: comment });
+  },
+
+  async jobsNeedingSignOff(req: Request, res: Response) {
+    res.json({ success: true, data: await portalService.listJobsNeedingSignOff(ctxFrom(req)) });
+  },
+
+  async signOffJob(req: Request, res: Response) {
+    const id = requireParam(req.params.id, "id");
+    const input = portalSignOffSchema.parse(req.body);
+    const task = await portalService.signOffJob(ctxFrom(req), id, input);
+    res.json({ success: true, data: task });
   },
 };

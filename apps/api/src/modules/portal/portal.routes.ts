@@ -35,4 +35,7 @@ router.get("/support/:id", asyncHandler(portalController.ticket));
 router.post("/support", asyncHandler(portalController.createTicket));
 router.post("/support/:id/comments", asyncHandler(portalController.addTicketComment));
 
+router.get("/jobs", asyncHandler(portalController.jobsNeedingSignOff));
+router.post("/jobs/:id/sign-off", asyncHandler(portalController.signOffJob));
+
 export default router;

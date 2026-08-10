@@ -50,15 +50,36 @@ export const packingDetailsSchema = z
   })
   .partial();
 
-export const createTaskSchema = z.object({
-  title: z.string().min(1, "title is required"),
-  projectId: z.string().optional(),
-  assigneeId: z.string().optional(),
-  description: z.string().optional(),
-  dueAt: z.coerce.date().optional(),
-  jobType: taskJobTypeEnum.optional(),
-  scheduleOrder: z.coerce.number().int().min(0).optional(),
-});
+export const createTaskSchema = z
+  .object({
+    title: z.string().optional().default(""),
+    projectId: z.string().optional(),
+    salesOrderId: z.string().optional(),
+    customerPoId: z.string().optional(),
+    invoiceId: z.string().optional(),
+    assigneeId: z.string().optional(),
+    description: z.string().optional(),
+    dueAt: z.coerce.date().optional(),
+    jobType: taskJobTypeEnum.optional(),
+    scheduleOrder: z.coerce.number().int().min(0).optional(),
+    /** Create a recurring template that keeps spawning jobs. */
+    recurrence: z
+      .object({
+        cadence: z.enum(["WEEKLY", "BIWEEKLY", "MONTHLY"]),
+        dayOfWeek: z.coerce.number().int().min(0).max(6).optional(),
+      })
+      .optional(),
+  })
+  .superRefine((data, ctx) => {
+    const hasLink = Boolean(data.salesOrderId || data.customerPoId || data.invoiceId || data.projectId);
+    if (!data.title?.trim() && !hasLink) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "title is required unless you link an order/PO/invoice",
+        path: ["title"],
+      });
+    }
+  });
 export type CreateTaskInput = z.infer<typeof createTaskSchema>;
 
 export const updateTaskSchema = z.object({
@@ -69,6 +90,10 @@ export const updateTaskSchema = z.object({
   dueAt: z.coerce.date().optional(),
   jobType: taskJobTypeEnum.optional(),
   scheduleOrder: z.coerce.number().int().min(0).optional(),
+  projectId: z.string().nullable().optional(),
+  salesOrderId: z.string().nullable().optional(),
+  customerPoId: z.string().nullable().optional(),
+  invoiceId: z.string().nullable().optional(),
 });
 export type UpdateTaskInput = z.infer<typeof updateTaskSchema>;
 
@@ -93,8 +118,19 @@ export const updateSopSchema = z.object({
   packingDetails: packingDetailsSchema.optional(),
   customerNotified: z.boolean().optional(),
   scheduleOrder: z.coerce.number().int().min(0).optional(),
+  /** When true and the job is linked to a sales order, reserve stock via allocate(). */
+  reserveStock: z.boolean().optional(),
+  warehouseId: z.string().optional(),
 });
 export type UpdateSopInput = z.infer<typeof updateSopSchema>;
+
+export const taskSignOffSchema = z.object({
+  name: z.string().min(1, "Signer name is required"),
+  document: z.enum(["DO", "INVOICE", "BOTH"]).default("DO"),
+  /** PNG/JPEG data URL from signature pad */
+  signatureDataUrl: z.string().min(32).optional(),
+});
+export type TaskSignOffInput = z.infer<typeof taskSignOffSchema>;
 
 export const reportIncompleteSchema = z.object({
   reason: z.string().min(1, "Reason is required"),
@@ -134,3 +170,28 @@ export const fieldDayQuerySchema = z.object({
     .transform((v) => v === "true"),
 });
 export type FieldDayQuery = z.infer<typeof fieldDayQuerySchema>;
+
+export const returnOriginalsDaySchema = z.object({
+  date: z.string().optional(), // YYYY-MM-DD — board date; defaults to today
+  assigneeId: z.string().optional(),
+  mine: z.boolean().optional().default(true),
+});
+export type ReturnOriginalsDayInput = z.infer<typeof returnOriginalsDaySchema>;
+
+export const reorderFieldDaySchema = z.object({
+  date: z.string().optional(),
+  orderedIds: z.array(z.string().min(1)).min(1),
+});
+export type ReorderFieldDayInput = z.infer<typeof reorderFieldDaySchema>;
+
+export const sopComplianceQuerySchema = z.object({
+  date: z.string().optional(), // YYYY-MM-DD — filters by dueDate day; omit = all open + recent
+  days: z.coerce.number().int().min(1).max(90).default(14),
+  assigneeId: z.string().optional(),
+  jobType: taskJobTypeEnum.optional(),
+  issue: z
+    .enum(["missingScans", "incompleteChecklist", "originalsPending", "urgentStock", "blocked", "any"])
+    .optional()
+    .default("any"),
+});
+export type SopComplianceQuery = z.infer<typeof sopComplianceQuerySchema>;

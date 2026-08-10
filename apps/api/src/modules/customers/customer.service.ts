@@ -1,5 +1,5 @@
 import { customerRepository } from "./customer.repository";
-import { CreateCustomerInput, UpdateCustomerInput } from "./customer.validation";
+import { CreateCustomerInput, UpdateCustomerInput, UpdateSiteInput } from "./customer.validation";
 import { ApiError } from "../../utils/ApiError";
 import { nextNumber } from "../../utils/numberSequence";
 import { writeAuditLog } from "../../utils/audit";
@@ -80,6 +80,38 @@ export const customerService = {
       entityId: id,
       action: "UPDATE",
       before: existing,
+      after: updated,
+    });
+
+    return updated;
+  },
+
+  async updateSite(ctx: ActorCtx, customerId: string, siteId: string, input: UpdateSiteInput) {
+    const customer = await customerRepository.findById(ctx.companyId, customerId);
+    if (!customer) throw ApiError.notFound("Customer not found");
+
+    const site = await prisma.site.findFirst({ where: { id: siteId, customerId } });
+    if (!site) throw ApiError.notFound("Site not found");
+
+    const updated = await prisma.site.update({
+      where: { id: siteId },
+      data: {
+        ...(input.label !== undefined ? { label: input.label } : {}),
+        ...(input.addressLine !== undefined ? { addressLine: input.addressLine } : {}),
+        ...(input.city !== undefined ? { city: input.city } : {}),
+        ...(input.country !== undefined ? { country: input.country } : {}),
+        ...(input.geoLat !== undefined ? { geoLat: input.geoLat } : {}),
+        ...(input.geoLng !== undefined ? { geoLng: input.geoLng } : {}),
+      },
+    });
+
+    await writeAuditLog({
+      companyId: ctx.companyId,
+      actorId: ctx.userId,
+      entityType: "Site",
+      entityId: siteId,
+      action: "UPDATE",
+      before: site,
       after: updated,
     });
 
