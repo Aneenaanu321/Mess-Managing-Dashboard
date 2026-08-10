@@ -16,6 +16,7 @@ const ROLE_LABELS: Record<RoleKey, string> = {
   TECHNICAL_CONSULTANT: "Technical Consultant",
   PROJECT_MANAGER: "Project Manager",
   IMPLEMENTATION_ENGINEER: "Implementation Engineer",
+  DELIVERY_PERSON: "Delivery Person",
   SUPPORT_ENGINEER: "Support Engineer",
   FINANCE: "Finance",
   ACCOUNTS: "Accounts",
@@ -117,23 +118,33 @@ async function main() {
 
   console.log("Seeding: demo users (one per role, password: Password123!)...");
   const passwordHash = await bcrypt.hash(DEMO_PASSWORD, 12);
+
+  // Migrate legacy demo domains → ibtechintl.com (idempotent)
+  await prisma.$executeRawUnsafe(
+    `UPDATE users SET email = REPLACE(email, '@falconrfid.demo', '@ibtechintl.com') WHERE email LIKE '%@falconrfid.demo'`,
+  );
+  await prisma.$executeRawUnsafe(
+    `UPDATE users SET email = REPLACE(email, '@falconrfid.com', '@ibtechintl.com') WHERE email LIKE '%@falconrfid.com'`,
+  );
+
   const demoUsers: Array<{ role: RoleKey; first: string; last: string; email: string }> = [
-    { role: "SUPER_ADMIN", first: "Admin", last: "User", email: "admin@falconrfid.demo" },
-    { role: "MANAGING_DIRECTOR", first: "Anil", last: "Kapoor", email: "md@falconrfid.demo" },
-    { role: "SALES_DIRECTOR", first: "Sara", last: "Al Farsi", email: "sales.director@falconrfid.demo" },
-    { role: "SALES_MANAGER", first: "Omar", last: "Hassan", email: "sales.manager@falconrfid.demo" },
-    { role: "SALES_EXECUTIVE", first: "Ravi", last: "Menon", email: "ravi@falconrfid.demo" },
-    { role: "SALES_COORDINATOR", first: "Maya", last: "Joseph", email: "coordinator@falconrfid.demo" },
-    { role: "PRE_SALES_ENGINEER", first: "Lina", last: "Choudhury", email: "presales@falconrfid.demo" },
-    { role: "TECHNICAL_CONSULTANT", first: "Karim", last: "Idris", email: "techconsultant@falconrfid.demo" },
-    { role: "PROJECT_MANAGER", first: "Fatima", last: "Zahra", email: "pm@falconrfid.demo" },
-    { role: "IMPLEMENTATION_ENGINEER", first: "John", last: "Dsouza", email: "engineer@falconrfid.demo" },
-    { role: "SUPPORT_ENGINEER", first: "Deepa", last: "Nair", email: "support@falconrfid.demo" },
-    { role: "FINANCE", first: "Yusuf", last: "Rahman", email: "finance@falconrfid.demo" },
-    { role: "ACCOUNTS", first: "Priya", last: "Suresh", email: "accounts@falconrfid.demo" },
-    { role: "WAREHOUSE", first: "Ahmed", last: "Saleh", email: "warehouse@falconrfid.demo" },
-    { role: "PROCUREMENT", first: "Noor", last: "Aziz", email: "procurement@falconrfid.demo" },
-    { role: "CUSTOMER_PORTAL_USER", first: "Client", last: "Contact", email: "client@customer.demo" },
+    { role: "SUPER_ADMIN", first: "Admin", last: "User", email: "admin@ibtechintl.com" },
+    { role: "MANAGING_DIRECTOR", first: "Anil", last: "Kapoor", email: "md@ibtechintl.com" },
+    { role: "SALES_DIRECTOR", first: "Sara", last: "Al Farsi", email: "sales.director@ibtechintl.com" },
+    { role: "SALES_MANAGER", first: "Omar", last: "Hassan", email: "sales.manager@ibtechintl.com" },
+    { role: "SALES_EXECUTIVE", first: "Ravi", last: "Menon", email: "ravi@ibtechintl.com" },
+    { role: "SALES_COORDINATOR", first: "Maya", last: "Joseph", email: "coordinator@ibtechintl.com" },
+    { role: "PRE_SALES_ENGINEER", first: "Lina", last: "Choudhury", email: "presales@ibtechintl.com" },
+    { role: "TECHNICAL_CONSULTANT", first: "Karim", last: "Idris", email: "techconsultant@ibtechintl.com" },
+    { role: "PROJECT_MANAGER", first: "Fatima", last: "Zahra", email: "pm@ibtechintl.com" },
+    { role: "IMPLEMENTATION_ENGINEER", first: "John", last: "Dsouza", email: "engineer@ibtechintl.com" },
+    { role: "DELIVERY_PERSON", first: "Samir", last: "Khan", email: "driver@ibtechintl.com" },
+    { role: "SUPPORT_ENGINEER", first: "Deepa", last: "Nair", email: "support@ibtechintl.com" },
+    { role: "FINANCE", first: "Yusuf", last: "Rahman", email: "finance@ibtechintl.com" },
+    { role: "ACCOUNTS", first: "Priya", last: "Suresh", email: "accounts@ibtechintl.com" },
+    { role: "WAREHOUSE", first: "Ahmed", last: "Saleh", email: "warehouse@ibtechintl.com" },
+    { role: "PROCUREMENT", first: "Noor", last: "Aziz", email: "procurement@ibtechintl.com" },
+    { role: "CUSTOMER_PORTAL_USER", first: "Client", last: "Contact", email: "client@customer.com" },
   ];
 
   const userIds = new Map<RoleKey, string>();
@@ -229,11 +240,11 @@ async function main() {
   });
 
   const demoLeads = [
-    { companyName: "Al Noor Retail Group", contactName: "Yasmin Ali", email: "yasmin@alnoorretail.demo", phone: "+971501234567", source: "EXHIBITION", industry: "RETAIL", score: 78 },
-    { companyName: "MedLife Pharmaceuticals", contactName: "Dr. Rashid Khan", email: "rashid@medlife.demo", phone: "+971502345678", source: "REFERRAL", industry: "PHARMACEUTICALS", score: 82 },
-    { companyName: "Silk Road Logistics", contactName: "Chen Wei", email: "chen@silkroadlog.demo", phone: "+971503456789", source: "WEBSITE", industry: "LOGISTICS", score: 55 },
-    { companyName: "Desert Crown Hospitality", contactName: "Mariam Saeed", email: "mariam@desertcrown.demo", phone: "+971504567891", source: "PARTNER", industry: "HOSPITALITY", score: 66 },
-    { companyName: "Vertex Manufacturing LLC", contactName: "Arjun Patel", email: "arjun@vertexmfg.demo", phone: "+971505678912", source: "INBOUND_CALL", industry: "MANUFACTURING", score: 73 },
+    { companyName: "Al Noor Retail Group", contactName: "Yasmin Ali", email: "yasmin@alnoorretail.com", phone: "+971501234567", source: "EXHIBITION", industry: "RETAIL", score: 78 },
+    { companyName: "MedLife Pharmaceuticals", contactName: "Dr. Rashid Khan", email: "rashid@medlife.com", phone: "+971502345678", source: "REFERRAL", industry: "PHARMACEUTICALS", score: 82 },
+    { companyName: "Silk Road Logistics", contactName: "Chen Wei", email: "chen@silkroadlog.com", phone: "+971503456789", source: "WEBSITE", industry: "LOGISTICS", score: 55 },
+    { companyName: "Desert Crown Hospitality", contactName: "Mariam Saeed", email: "mariam@desertcrown.com", phone: "+971504567891", source: "PARTNER", industry: "HOSPITALITY", score: 66 },
+    { companyName: "Vertex Manufacturing LLC", contactName: "Arjun Patel", email: "arjun@vertexmfg.com", phone: "+971505678912", source: "INBOUND_CALL", industry: "MANUFACTURING", score: 73 },
   ] as const;
 
   for (const [i, lead] of demoLeads.entries()) {
@@ -279,11 +290,11 @@ async function main() {
   }
 
   const customerSpecs = [
-    { code: "CUST-2026-0001", name: "Al Noor Retail Group", industry: "RETAIL", contact: { firstName: "Yasmin", lastName: "Ali", email: "yasmin@alnoorretail.demo", phone: "+971501234567" }, site: { label: "Dubai Mall Flagship", city: "Dubai", country: "UAE" } },
-    { code: "CUST-2026-0002", name: "MedLife Pharmaceuticals", industry: "PHARMACEUTICALS", contact: { firstName: "Rashid", lastName: "Khan", email: "rashid@medlife.demo", phone: "+971502345678" }, site: { label: "Jebel Ali Warehouse", city: "Dubai", country: "UAE" } },
-    { code: "CUST-2026-0003", name: "Silk Road Logistics", industry: "LOGISTICS", contact: { firstName: "Chen", lastName: "Wei", email: "chen@silkroadlog.demo", phone: "+971503456789" }, site: { label: "Main Hub", city: "Sharjah", country: "UAE" } },
-    { code: "CUST-2026-0004", name: "Desert Crown Hospitality", industry: "HOSPITALITY", contact: { firstName: "Mariam", lastName: "Saeed", email: "mariam@desertcrown.demo", phone: "+971504567891" }, site: { label: "Palm Resort Central Store", city: "Dubai", country: "UAE" } },
-    { code: "CUST-2026-0005", name: "Vertex Manufacturing LLC", industry: "MANUFACTURING", contact: { firstName: "Arjun", lastName: "Patel", email: "arjun@vertexmfg.demo", phone: "+971505678912" }, site: { label: "Industrial Zone Plant", city: "Abu Dhabi", country: "UAE" } },
+    { code: "CUST-2026-0001", name: "Al Noor Retail Group", industry: "RETAIL", contact: { firstName: "Yasmin", lastName: "Ali", email: "yasmin@alnoorretail.com", phone: "+971501234567" }, site: { label: "Dubai Mall Flagship", city: "Dubai", country: "UAE" } },
+    { code: "CUST-2026-0002", name: "MedLife Pharmaceuticals", industry: "PHARMACEUTICALS", contact: { firstName: "Rashid", lastName: "Khan", email: "rashid@medlife.com", phone: "+971502345678" }, site: { label: "Jebel Ali Warehouse", city: "Dubai", country: "UAE" } },
+    { code: "CUST-2026-0003", name: "Silk Road Logistics", industry: "LOGISTICS", contact: { firstName: "Chen", lastName: "Wei", email: "chen@silkroadlog.com", phone: "+971503456789" }, site: { label: "Main Hub", city: "Sharjah", country: "UAE" } },
+    { code: "CUST-2026-0004", name: "Desert Crown Hospitality", industry: "HOSPITALITY", contact: { firstName: "Mariam", lastName: "Saeed", email: "mariam@desertcrown.com", phone: "+971504567891" }, site: { label: "Palm Resort Central Store", city: "Dubai", country: "UAE" } },
+    { code: "CUST-2026-0005", name: "Vertex Manufacturing LLC", industry: "MANUFACTURING", contact: { firstName: "Arjun", lastName: "Patel", email: "arjun@vertexmfg.com", phone: "+971505678912" }, site: { label: "Industrial Zone Plant", city: "Abu Dhabi", country: "UAE" } },
   ] as const;
 
   const customers: Array<{ id: string; code: string; siteId: string }> = [];
@@ -684,7 +695,7 @@ async function main() {
         companyId: company.id,
         name: "Impinj Middle East Distribution",
         contactName: "Sales Desk",
-        email: "orders@impinj-me.demo",
+        email: "orders@impinj-me.com",
         phone: "+97144123456",
         leadTimeDays: 21,
       },
@@ -766,7 +777,7 @@ async function main() {
   if (process.env.NODE_ENV !== "production") {
     console.log("ibTech super admin: aneena.antony@ibtechintl.com / AneenaAntony@123");
     console.log(`Demo login (any role): <email> / ${DEMO_PASSWORD}`);
-    console.log("e.g. admin@falconrfid.demo, ravi@falconrfid.demo, pm@falconrfid.demo ...");
+    console.log("e.g. admin@ibtechintl.com, ravi@ibtechintl.com, pm@ibtechintl.com ...");
   }
 }
 

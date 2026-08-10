@@ -52,21 +52,9 @@ function formatCurrency(amount: number, currency: string) {
 export default function ReportsPage() {
   const { data: user } = useCurrentUser();
   const [branchId, setBranchId] = useState("");
-  const [downloadingPdf, setDownloadingPdf] = useState(false);
   const { data, isLoading, isError } = useReportsSummary(branchId || undefined);
   const { data: aging, isLoading: agingLoading } = useReceivablesAging(branchId || undefined);
   const currency = user?.company?.currency ?? "AED";
-
-  async function handleDownloadPdf() {
-    setDownloadingPdf(true);
-    try {
-      await openReportsPdf(branchId || undefined);
-    } catch {
-      toast.error("Failed to generate PDF");
-    } finally {
-      setDownloadingPdf(false);
-    }
-  }
 
   const leadFunnel = (data?.leadFunnel ?? []).map((row) => ({ ...row, name: label(row.status) }));
   const opportunityByStage = (data?.opportunityByStage ?? []).map((row) => ({ ...row, name: label(row.stage) }));
@@ -82,14 +70,6 @@ export default function ReportsPage() {
         <div className="flex flex-wrap items-center gap-3">
           <Button
             variant="secondary"
-            disabled={isLoading || agingLoading || isError || downloadingPdf}
-            onClick={handleDownloadPdf}
-          >
-            <FileText size={16} />
-            {downloadingPdf ? "Preparing…" : "Download PDF"}
-          </Button>
-          <Button
-            variant="secondary"
             disabled={isLoading || agingLoading || isError}
             onClick={() => {
               downloadReportsExport(data, aging, currency, branchId ? `Branch ${branchId}` : "All branches");
@@ -97,7 +77,7 @@ export default function ReportsPage() {
             }}
           >
             <Download size={16} />
-            Export CSV
+            Download Report
           </Button>
           <BranchFilter value={branchId} onChange={setBranchId} />
         </div>

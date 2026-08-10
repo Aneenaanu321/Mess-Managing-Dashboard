@@ -4,6 +4,7 @@ import { prisma } from "../../config/prisma";
 interface ListParams {
   companyId: string;
   status?: TaskStatus;
+  jobType?: import("@prisma/client").TaskJobType;
   projectId?: string;
   assigneeId?: string;
   createdById?: string;
@@ -16,15 +17,25 @@ const detailInclude = {
   project: { select: { id: true, code: true, name: true, customer: { select: { id: true, name: true } } } },
   assignee: { select: { id: true, firstName: true, lastName: true } },
   createdBy: { select: { id: true, firstName: true, lastName: true } },
+  verifiedBy: { select: { id: true, firstName: true, lastName: true } },
 } satisfies Prisma.EngineerTaskInclude;
+
+function dayBounds(dateStr?: string) {
+  const base = dateStr ? new Date(`${dateStr}T00:00:00.000Z`) : new Date();
+  const start = new Date(Date.UTC(base.getUTCFullYear(), base.getUTCMonth(), base.getUTCDate()));
+  const end = new Date(start);
+  end.setUTCDate(end.getUTCDate() + 1);
+  return { start, end };
+}
 
 export const taskRepository = {
   async list(params: ListParams) {
-    const { companyId, status, projectId, assigneeId, createdById, search, page, pageSize } = params;
+    const { companyId, status, jobType, projectId, assigneeId, createdById, search, page, pageSize } = params;
 
     const where: Prisma.EngineerTaskWhereInput = {
       companyId,
       ...(status ? { status } : {}),
+      ...(jobType ? { jobType } : {}),
       ...(projectId ? { projectId } : {}),
       ...(assigneeId ? { assigneeId } : {}),
       ...(createdById ? { createdById } : {}),
@@ -43,6 +54,27 @@ export const taskRepository = {
     ]);
 
     return { items, total, page, pageSize, totalPages: Math.ceil(total / pageSize) };
+  },
+
+  async fieldDay(params: { companyId: string; assigneeId: string; date?: string }) {
+    const { start, end } = dayBounds(params.date);
+    const openStatuses: TaskStatus[] = ["TODO", "SEEN", "IN_PROGRESS", "BLOCKED", "SUBMITTED"];
+
+    // Driver day board: all open jobs assigned to me, plus any jobs due on the
+    // selected calendar day (including done ones still pending originals return).
+    return prisma.engineerTask.findMany({
+      where: {
+        companyId: params.companyId,
+        assigneeId: params.assigneeId,
+        OR: [
+          { status: { in: openStatuses } },
+          { dueDate: { gte: start, lt: end } },
+          { status: "DONE", originalsReturnedAt: null },
+        ],
+      },
+      include: detailInclude,
+      orderBy: [{ scheduleOrder: "asc" }, { dueDate: "asc" }, { createdAt: "asc" }],
+    });
   },
 
   findById(companyId: string, id: string) {
@@ -66,7 +98,19 @@ export const taskRepository = {
       where: {
         companyId,
         status: "ACTIVE",
-        role: { key: { not: "CUSTOMER_PORTAL_USER" } },
+        role: {
+          key: {
+            in: [
+              "DELIVERY_PERSON",
+              "IMPLEMENTATION_ENGINEER",
+              "SUPPORT_ENGINEER",
+              "PROJECT_MANAGER",
+              "SALES_COORDINATOR",
+              "SALES_EXECUTIVE",
+              "WAREHOUSE",
+            ],
+          },
+        },
       },
       select: { id: true, firstName: true, lastName: true, role: { select: { name: true, key: true } } },
       orderBy: [{ firstName: "asc" }, { lastName: "asc" }],

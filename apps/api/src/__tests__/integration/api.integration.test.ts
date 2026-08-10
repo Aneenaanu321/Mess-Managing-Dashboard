@@ -30,7 +30,7 @@ describe("API validation", () => {
   it("POST /api/v1/leads rejects empty body when authenticated", async () => {
     const login = await request(app)
       .post("/api/v1/auth/login")
-      .send({ email: process.env.E2E_EMAIL ?? "admin@falconrfid.demo", password: process.env.E2E_PASSWORD ?? "Password123!" });
+      .send({ email: process.env.E2E_EMAIL ?? "admin@ibtechintl.com", password: process.env.E2E_PASSWORD ?? "Password123!" });
 
     if (login.status !== 200) {
       // Skip authenticated tests when DB/seed isn't available in CI

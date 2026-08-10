@@ -2,12 +2,12 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useTasks, TASK_STATUSES, TASK_STATUS_TONE, TASK_STATUS_LABELS, EngineerTask } from "@/lib/tasks";
+import { useTasks, TASK_STATUSES, TASK_STATUS_TONE, TASK_STATUS_LABELS, TASK_JOB_LABELS, EngineerTask } from "@/lib/tasks";
 import { hasPermission, useCurrentUser } from "@/lib/auth";
 import { Badge, Button, Input, Select, Card } from "@/components/ui";
 import { getPageLabel } from "@/lib/nav-labels";
 
-type ViewFilter = "all" | "mine" | "assignedByMe";
+type ViewFilter = "all" | "mine" | "assignedByMe" | "awaitingVerify";
 
 export default function TasksPage() {
   const [status, setStatus] = useState("");
@@ -19,6 +19,7 @@ export default function TasksPage() {
     search: search || undefined,
     mine: view === "mine",
     assignedByMe: view === "assignedByMe",
+    awaitingVerify: view === "awaitingVerify",
   });
 
   const tasks = data?.data ?? [];
@@ -30,24 +31,29 @@ export default function TasksPage() {
         <div>
           <h1 className="text-xl font-semibold text-primary">{getPageLabel("/team-tasks")}</h1>
           <p className="text-sm text-slate-500">
-            Coordinators assign jobs; assignees complete them and mark done. {data?.meta?.total ?? 0} task
+            Assign → seen → SOP + docs → submit → verify. Day board:{" "}
+            <Link href="/field-ops" className="text-brand-700 hover:underline dark:text-brand-400">
+              Field Ops
+            </Link>
+            . {data?.meta?.total ?? 0} job
             {data?.meta?.total === 1 ? "" : "s"} shown.
           </p>
         </div>
         {canCreate && (
           <Link href="/team-tasks/new">
-            <Button>+ Assign Task</Button>
+            <Button>+ Assign Job</Button>
           </Link>
         )}
       </div>
 
       <Card className="mb-4 flex flex-wrap items-center gap-3 p-4">
-        <div className="flex rounded-xl border border-slate-200 p-0.5 dark:border-slate-700">
+        <div className="flex flex-wrap rounded-xl border border-slate-200 p-0.5 dark:border-slate-700">
           {(
             [
-              ["all", "All tasks"],
-              ["mine", "My tasks"],
+              ["all", "All jobs"],
+              ["mine", "My jobs"],
               ["assignedByMe", "Assigned by me"],
+              ["awaitingVerify", "Awaiting verify"],
             ] as const
           ).map(([key, label]) => (
             <button
@@ -86,6 +92,7 @@ export default function TasksPage() {
             <thead className="border-b border-slate-200 bg-slate-50 text-left text-xs font-medium uppercase text-slate-500 dark:border-slate-700 dark:bg-slate-800/50">
               <tr>
                 <th className="px-4 py-2.5">Title</th>
+                <th className="px-4 py-2.5">Type</th>
                 <th className="px-4 py-2.5">Project</th>
                 <th className="px-4 py-2.5">Assignee</th>
                 <th className="px-4 py-2.5">Assigned by</th>
@@ -100,6 +107,9 @@ export default function TasksPage() {
                     <Link href={`/team-tasks/${t.id}`} className="font-medium text-brand-600 hover:underline dark:text-brand-400">
                       {t.title}
                     </Link>
+                  </td>
+                  <td className="px-4 py-3 text-slate-600 dark:text-slate-400">
+                    {TASK_JOB_LABELS[t.jobType] ?? t.jobType}
                   </td>
                   <td className="px-4 py-3 text-slate-600 dark:text-slate-400">{t.project?.code ?? "—"}</td>
                   <td className="px-4 py-3 text-slate-600 dark:text-slate-400">
@@ -123,3 +133,4 @@ export default function TasksPage() {
     </div>
   );
 }
+

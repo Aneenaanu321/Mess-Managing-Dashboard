@@ -31,7 +31,7 @@ npm run db:seed                   # seeds roles, demo company, demo users, sampl
 npm run dev                       # runs web (:3000), api (:4000), worker via turborepo
 ```
 
-Demo login: any seeded email (e.g. `admin@falconrfid.demo`, `ravi@falconrfid.demo`) / `Password123!`. Full list in `apps/api/prisma/seed.ts`.
+Demo login: any seeded email (e.g. `admin@ibtechintl.com`, `ravi@ibtechintl.com`) / `Password123!`. Full list in `apps/api/prisma/seed.ts`.
 
 See **`docs/11-user-guide.md`** for a page-by-page walkthrough of the entire app.
 

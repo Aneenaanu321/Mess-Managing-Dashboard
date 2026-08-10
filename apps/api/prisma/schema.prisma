@@ -6,9 +6,7 @@
 // ============================================================================
 
 generator client {
-  provider      = "prisma-client-js"
-  // native = local; debian = Render/Docker Linux
-  binaryTargets = ["native", "debian-openssl-3.0.x"]
+  provider = "prisma-client-js"
 }
 
 datasource db {
@@ -96,6 +94,7 @@ enum RoleKey {
   TECHNICAL_CONSULTANT
   PROJECT_MANAGER
   IMPLEMENTATION_ENGINEER
+  DELIVERY_PERSON
   SUPPORT_ENGINEER
   FINANCE
   ACCOUNTS
@@ -192,6 +191,7 @@ model User {
   managedProjects         Project[]           @relation("ProjectManager")
   engineerTasks           EngineerTask[]      @relation("TaskAssignee")
   tasksCreated            EngineerTask[]      @relation("TaskCreator")
+  tasksVerified           EngineerTask[]      @relation("TaskVerifier")
   supportTicketsAssigned  Ticket[]            @relation("TicketAssignee")
   supportTicketsRaised    Ticket[]            @relation("TicketRaisedBy")
   shiftHandovers          ShiftHandoverNote[]
@@ -1145,30 +1145,64 @@ model ProjectMilestone {
 
 enum TaskStatus {
   TODO
+  SEEN
   IN_PROGRESS
+  SUBMITTED
   BLOCKED
   DONE
 }
 
+enum TaskJobType {
+  DELIVERY
+  CHEQUE_COLLECTION
+  DOCUMENT_PICKUP
+  SITE_VISIT
+  INSTALLATION
+  EXPORT_SHIPMENT
+  IMPORT_RECEIVING
+  OTHER
+}
+
 model EngineerTask {
-  id          String     @id @default(cuid())
-  companyId   String
-  projectId   String
-  project     Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  createdById String?
-  createdBy   User?      @relation("TaskCreator", fields: [createdById], references: [id])
-  assigneeId  String?
-  assignee    User?      @relation("TaskAssignee", fields: [assigneeId], references: [id])
-  title       String
-  description String?
-  status      TaskStatus @default(TODO)
-  dueDate     DateTime?
-  completedAt DateTime?
-  isOfflineSynced Boolean @default(true) // false while queued in PWA offline cache
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  id                  String         @id @default(cuid())
+  companyId           String
+  projectId           String?
+  project             Project?       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdById         String?
+  createdBy           User?          @relation("TaskCreator", fields: [createdById], references: [id])
+  assigneeId          String?
+  assignee            User?          @relation("TaskAssignee", fields: [assigneeId], references: [id])
+  verifiedById        String?
+  verifiedBy          User?          @relation("TaskVerifier", fields: [verifiedById], references: [id])
+  title               String
+  description         String?
+  jobType             TaskJobType    @default(OTHER)
+  status              TaskStatus     @default(TODO)
+  dueDate             DateTime?
+  scheduleOrder       Int?
+  seenAt              DateTime?
+  submittedAt         DateTime?
+  verifiedAt          DateTime?
+  completedAt         DateTime?
+  completionNote      String?
+  paymentAmount       Decimal?       @db.Decimal(14, 2)
+  paymentMethod       PaymentMethod?
+  paymentReference    String?
+  /// Field SOP checklists: { preDay, warehouse, visit, docs, eod }
+  sopChecklist        Json?
+  /// Packing DO details: item counts, weights, pallets
+  packingDetails      Json?
+  customerNotifiedAt  DateTime?
+  incompleteReason    String?
+  rescheduleDate      DateTime?
+  originalsReturnedAt DateTime?
+  isOfflineSynced     Boolean        @default(true)
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
 
   @@index([assigneeId, status])
+  @@index([createdById, status])
+  @@index([assigneeId, dueDate])
   @@map("engineer_tasks")
 }
 

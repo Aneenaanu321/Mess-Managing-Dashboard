@@ -60,8 +60,8 @@ npm run prisma:deploy -w apps/api
 npm run prisma:seed -w apps/api
 ```
 
-Demo login after seed: `admin@falconrfid.demo` / `Password123!`  
-Coordinator: `coordinator@falconrfid.demo` / `Password123!`
+Demo login after seed: `admin@ibtechintl.com` / `Password123!`  
+Coordinator: `coordinator@ibtechintl.com` / `Password123!`
 
 > Free Render services **spin down after idle**. First request after sleep can take ~30–60s.  
 > Scheduled digests / SLA breach jobs need a paid worker later — the UI works without them.

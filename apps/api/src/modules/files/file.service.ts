@@ -22,6 +22,7 @@ interface ActorCtx {
  */
 const ENTITY_PERMISSIONS: Record<string, { view: string; manage: string }> = {
   CustomerPO: { view: PERMISSIONS.CUSTOMER_PO_VIEW, manage: PERMISSIONS.CUSTOMER_PO_CREATE },
+  EngineerTask: { view: PERMISSIONS.TASK_VIEW, manage: PERMISSIONS.TASK_UPDATE },
 };
 
 function requireEntityPermission(ctx: ActorCtx, entityType: string, action: "view" | "manage") {

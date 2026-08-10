@@ -14,7 +14,7 @@ test.describe("Sales flow smoke", () => {
   });
 
   test("leads list is reachable after login", async ({ page }) => {
-    const email = process.env.E2E_EMAIL ?? "admin@falconrfid.demo";
+    const email = process.env.E2E_EMAIL ?? "admin@ibtechintl.com";
     const password = process.env.E2E_PASSWORD ?? "Password123!";
 
     await page.goto("/login");

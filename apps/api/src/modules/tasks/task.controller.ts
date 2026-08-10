@@ -1,6 +1,15 @@
 import { Request, Response } from "express";
 import { taskService } from "./task.service";
-import { createTaskSchema, updateTaskSchema, listTasksQuerySchema } from "./task.validation";
+import {
+  createTaskSchema,
+  updateTaskSchema,
+  listTasksQuerySchema,
+  submitTaskSchema,
+  verifyTaskSchema,
+  updateSopSchema,
+  reportIncompleteSchema,
+  fieldDayQuerySchema,
+} from "./task.validation";
 import { ApiError } from "../../utils/ApiError";
 import { requireParam } from "../../utils/assert";
 
@@ -13,7 +22,21 @@ export const taskController = {
   async list(req: Request, res: Response) {
     const query = listTasksQuerySchema.parse(req.query);
     const result = await taskService.list(ctxFrom(req), query);
-    res.json({ success: true, data: result.items, meta: { total: result.total, page: result.page, pageSize: result.pageSize, totalPages: result.totalPages } });
+    res.json({
+      success: true,
+      data: result.items,
+      meta: { total: result.total, page: result.page, pageSize: result.pageSize, totalPages: result.totalPages },
+    });
+  },
+
+  async fieldDay(req: Request, res: Response) {
+    const query = fieldDayQuerySchema.parse(req.query);
+    const result = await taskService.fieldDay(ctxFrom(req), query);
+    res.json({ success: true, data: result });
+  },
+
+  async sopTemplates(_req: Request, res: Response) {
+    res.json({ success: true, data: taskService.sopTemplates() });
   },
 
   async getById(req: Request, res: Response) {
@@ -32,6 +55,46 @@ export const taskController = {
     const id = requireParam(req.params.id, "id");
     const input = updateTaskSchema.parse(req.body);
     const task = await taskService.update(ctxFrom(req), id, input);
+    res.json({ success: true, data: task });
+  },
+
+  async updateSop(req: Request, res: Response) {
+    const id = requireParam(req.params.id, "id");
+    const input = updateSopSchema.parse(req.body);
+    const task = await taskService.updateSop(ctxFrom(req), id, input);
+    res.json({ success: true, data: task });
+  },
+
+  async acknowledge(req: Request, res: Response) {
+    const id = requireParam(req.params.id, "id");
+    const task = await taskService.acknowledge(ctxFrom(req), id);
+    res.json({ success: true, data: task });
+  },
+
+  async submit(req: Request, res: Response) {
+    const id = requireParam(req.params.id, "id");
+    const input = submitTaskSchema.parse(req.body);
+    const task = await taskService.submit(ctxFrom(req), id, input);
+    res.json({ success: true, data: task });
+  },
+
+  async reportIncomplete(req: Request, res: Response) {
+    const id = requireParam(req.params.id, "id");
+    const input = reportIncompleteSchema.parse(req.body);
+    const task = await taskService.reportIncomplete(ctxFrom(req), id, input);
+    res.json({ success: true, data: task });
+  },
+
+  async returnOriginals(req: Request, res: Response) {
+    const id = requireParam(req.params.id, "id");
+    const task = await taskService.returnOriginals(ctxFrom(req), id);
+    res.json({ success: true, data: task });
+  },
+
+  async verify(req: Request, res: Response) {
+    const id = requireParam(req.params.id, "id");
+    const input = verifyTaskSchema.parse(req.body ?? {});
+    const task = await taskService.verify(ctxFrom(req), id, input);
     res.json({ success: true, data: task });
   },
 

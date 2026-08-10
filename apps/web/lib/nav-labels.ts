@@ -21,6 +21,7 @@ export const ROUTES = {
   installations: "/site-installations",
   devices: "/installed-equipment",
   tasks: "/team-tasks",
+  fieldOps: "/field-ops",
   finance: "/invoices-payments",
   reports: "/reports",
   aiAssistant: "/sales-assistant",
@@ -70,6 +71,7 @@ export const NAV_GROUPS = [
       { href: ROUTES.installations, label: "Site Installations" },
       { href: ROUTES.devices, label: "Installed Equipment" },
       { href: ROUTES.tasks, label: "Team Tasks" },
+      { href: ROUTES.fieldOps, label: "Field Ops" },
     ],
   },
   {
