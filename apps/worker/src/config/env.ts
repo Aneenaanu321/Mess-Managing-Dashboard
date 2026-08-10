@@ -12,7 +12,7 @@ const envSchema = z.object({
   SMTP_PORT: z.coerce.number().default(587),
   SMTP_USER: z.string().optional(),
   SMTP_PASS: z.string().optional(),
-  SMTP_FROM: z.string().default("RFIDCore <notifications@rfidcore.local>"),
+  SMTP_FROM: z.string().default("ibTech <notifications@ibtechintl.com>"),
 });
 
 const parsed = envSchema.safeParse(process.env);

@@ -47,7 +47,7 @@ function asPacking(value: unknown): PackingDetails {
 
 async function notifyCoordinators(
   companyId: string,
-  payload: { title: string; body: string; link: string },
+  payload: { title: string; body: string; link: string; emailSubject?: string },
   exceptUserId?: string,
 ) {
   const coordinators = await prisma.user.findMany({
@@ -68,9 +68,100 @@ async function notifyCoordinators(
         title: payload.title,
         body: payload.body,
         link: payload.link,
+        emailSubject: payload.emailSubject ?? payload.title,
+        linkLabel: "Open job",
       }),
     ),
   );
+}
+
+type JobMailEvent =
+  | "assigned"
+  | "reassigned"
+  | "received"
+  | "started"
+  | "submitted"
+  | "done"
+  | "blocked"
+  | "originals_returned";
+
+/** In-app + email alert for a job lifecycle event (respects user emailNotifications). */
+async function notifyJobParty(params: {
+  userId: string | null | undefined;
+  exceptUserId?: string;
+  event: JobMailEvent;
+  jobId: string;
+  jobTitle: string;
+  detail?: string;
+  actorName?: string;
+}) {
+  const { userId, exceptUserId, event, jobId, jobTitle, detail, actorName } = params;
+  if (!userId || userId === exceptUserId) return;
+
+  const who = actorName?.trim() || "Someone";
+  const link = `/team-tasks/${jobId}`;
+
+  const copy: Record<JobMailEvent, { type: "ASSIGNMENT" | "SYSTEM"; title: string; body: string; emailSubject: string }> = {
+    assigned: {
+      type: "ASSIGNMENT",
+      title: "New job assigned",
+      emailSubject: `New job assigned: ${jobTitle}`,
+      body: `You've been assigned a new job: "${jobTitle}". Open it to review the schedule, checklist, and docs.`,
+    },
+    reassigned: {
+      type: "ASSIGNMENT",
+      title: "Job assigned to you",
+      emailSubject: `Job assigned to you: ${jobTitle}`,
+      body: `A job was assigned to you: "${jobTitle}". Open it to review details and mark it as received.`,
+    },
+    received: {
+      type: "SYSTEM",
+      title: "Job received by assignee",
+      emailSubject: `Job received: ${jobTitle}`,
+      body: `${who} marked "${jobTitle}" as received/seen.`,
+    },
+    started: {
+      type: "SYSTEM",
+      title: "Job started",
+      emailSubject: `Job started: ${jobTitle}`,
+      body: `${who} started work on "${jobTitle}".`,
+    },
+    submitted: {
+      type: "SYSTEM",
+      title: "Job submitted for review",
+      emailSubject: `Job submitted for review: ${jobTitle}`,
+      body: `${who} submitted "${jobTitle}" for verification. Please review docs/payment and close the job.`,
+    },
+    done: {
+      type: "SYSTEM",
+      title: "Job verified & closed",
+      emailSubject: `Job done: ${jobTitle}`,
+      body: `"${jobTitle}" was verified and closed. Return original documents at end of day if not already done.`,
+    },
+    blocked: {
+      type: "SYSTEM",
+      title: "Job cannot be completed",
+      emailSubject: `Job blocked: ${jobTitle}`,
+      body: `"${jobTitle}" was marked incomplete/blocked${detail ? `: ${detail}` : "."}`,
+    },
+    originals_returned: {
+      type: "SYSTEM",
+      title: "Originals returned",
+      emailSubject: `Originals returned: ${jobTitle}`,
+      body: `Original documents were returned for "${jobTitle}".`,
+    },
+  };
+
+  const message = copy[event];
+  await notificationService.notify({
+    userId,
+    type: message.type,
+    title: message.title,
+    body: message.body,
+    link,
+    emailSubject: message.emailSubject,
+    linkLabel: "Open job",
+  });
 }
 
 /** When field collection is verified, post a finance Payment against an open invoice if one exists. */
@@ -251,13 +342,13 @@ export const taskService = {
       after: task,
     });
 
-    if (input.assigneeId && input.assigneeId !== ctx.userId) {
-      await notificationService.notify({
+    if (input.assigneeId) {
+      await notifyJobParty({
         userId: input.assigneeId,
-        type: "ASSIGNMENT",
-        title: "New job assigned",
-        body: `You've been assigned: ${task.title}`,
-        link: `/team-tasks/${task.id}`,
+        exceptUserId: ctx.userId,
+        event: "assigned",
+        jobId: task.id,
+        jobTitle: task.title,
       });
     }
 
@@ -273,6 +364,7 @@ export const taskService = {
     }
 
     const assigneeChanged = input.assigneeId !== undefined && input.assigneeId !== existing.assigneeId;
+    const statusChanged = input.status !== undefined && input.status !== existing.status;
 
     const updated = await taskRepository.update(id, {
       ...(input.title !== undefined ? { title: input.title } : {}),
@@ -298,13 +390,79 @@ export const taskService = {
       after: updated,
     });
 
-    if (assigneeChanged && input.assigneeId && input.assigneeId !== ctx.userId) {
-      await notificationService.notify({
+    if (assigneeChanged && input.assigneeId) {
+      await notifyJobParty({
         userId: input.assigneeId,
-        type: "ASSIGNMENT",
-        title: "Job assigned to you",
-        body: updated.title,
-        link: `/team-tasks/${id}`,
+        exceptUserId: ctx.userId,
+        event: "reassigned",
+        jobId: id,
+        jobTitle: updated.title,
+      });
+    }
+
+    if (statusChanged && input.status === "SEEN") {
+      await notifyJobParty({
+        userId: existing.createdById,
+        exceptUserId: ctx.userId,
+        event: "received",
+        jobId: id,
+        jobTitle: updated.title,
+        actorName: updated.assignee
+          ? `${updated.assignee.firstName} ${updated.assignee.lastName}`.trim()
+          : undefined,
+      });
+    }
+
+    if (statusChanged && input.status === "IN_PROGRESS") {
+      await notifyJobParty({
+        userId: existing.createdById,
+        exceptUserId: ctx.userId,
+        event: "started",
+        jobId: id,
+        jobTitle: updated.title,
+        actorName: updated.assignee
+          ? `${updated.assignee.firstName} ${updated.assignee.lastName}`.trim()
+          : undefined,
+      });
+    }
+
+    if (statusChanged && input.status === "SUBMITTED") {
+      await notifyJobParty({
+        userId: existing.createdById,
+        exceptUserId: ctx.userId,
+        event: "submitted",
+        jobId: id,
+        jobTitle: updated.title,
+        actorName: updated.assignee
+          ? `${updated.assignee.firstName} ${updated.assignee.lastName}`.trim()
+          : undefined,
+      });
+      await notifyCoordinators(
+        ctx.companyId,
+        {
+          title: "Job submitted for review",
+          emailSubject: `Job submitted for review: ${updated.title}`,
+          body: `"${updated.title}" was submitted and needs verification.`,
+          link: `/team-tasks/${id}`,
+        },
+        existing.createdById ?? ctx.userId,
+      );
+    }
+
+    if (statusChanged && input.status === "BLOCKED") {
+      const otherParty =
+        existing.createdById && existing.createdById !== ctx.userId
+          ? existing.createdById
+          : existing.assigneeId && existing.assigneeId !== ctx.userId
+            ? existing.assigneeId
+            : null;
+      await notifyJobParty({
+        userId: otherParty,
+        exceptUserId: ctx.userId,
+        event: "blocked",
+        jobId: id,
+        jobTitle: updated.title,
+        detail: updated.incompleteReason ?? undefined,
       });
     }
 
@@ -356,6 +514,7 @@ export const taskService = {
         ctx.companyId,
         {
           title: "Urgent: checklist stock used",
+          emailSubject: `Urgent stock used: ${existing.title}`,
           body: `"${existing.title}" — warehouse flagged checklist items used for urgent needs.`,
           link: `/team-tasks/${id}`,
         },
@@ -368,6 +527,8 @@ export const taskService = {
           title: "Urgent: checklist stock used",
           body: `"${existing.title}" — warehouse flagged urgent use of checklist stock.`,
           link: `/team-tasks/${id}`,
+          emailSubject: `Urgent stock used: ${existing.title}`,
+          linkLabel: "Open job",
         });
       }
     }
@@ -388,15 +549,16 @@ export const taskService = {
       seenAt: existing.seenAt ?? new Date(),
     });
 
-    if (existing.createdById && existing.createdById !== ctx.userId) {
-      await notificationService.notify({
-        userId: existing.createdById,
-        type: "SYSTEM",
-        title: "Job seen by assignee",
-        body: `${updated.assignee?.firstName ?? "Assignee"} saw "${updated.title}".`,
-        link: `/team-tasks/${id}`,
-      });
-    }
+    await notifyJobParty({
+      userId: existing.createdById,
+      exceptUserId: ctx.userId,
+      event: "received",
+      jobId: id,
+      jobTitle: updated.title,
+      actorName: updated.assignee
+        ? `${updated.assignee.firstName} ${updated.assignee.lastName}`.trim()
+        : undefined,
+    });
 
     return updated;
   },
@@ -461,15 +623,29 @@ export const taskService = {
       after: updated,
     });
 
-    if (existing.createdById && existing.createdById !== ctx.userId) {
-      await notificationService.notify({
+    if (existing.createdById) {
+      await notifyJobParty({
         userId: existing.createdById,
-        type: "SYSTEM",
-        title: "Job submitted for review",
-        body: `${updated.assignee?.firstName ?? "Assignee"} submitted "${updated.title}". Please verify docs/payment.`,
-        link: `/team-tasks/${id}`,
+        exceptUserId: ctx.userId,
+        event: "submitted",
+        jobId: id,
+        jobTitle: updated.title,
+        actorName: updated.assignee
+          ? `${updated.assignee.firstName} ${updated.assignee.lastName}`.trim()
+          : undefined,
       });
     }
+
+    await notifyCoordinators(
+      ctx.companyId,
+      {
+        title: "Job submitted for review",
+        emailSubject: `Job submitted for review: ${updated.title}`,
+        body: `${updated.assignee?.firstName ?? "Assignee"} submitted "${updated.title}". Please verify docs/payment.`,
+        link: `/team-tasks/${id}`,
+      },
+      existing.createdById ?? ctx.userId,
+    );
 
     return this.getById(ctx, id);
   },
@@ -500,15 +676,25 @@ export const taskService = {
           ? existing.assigneeId
           : null;
 
-    if (notifyUserId) {
-      await notificationService.notify({
-        userId: notifyUserId,
-        type: "SYSTEM",
+    await notifyJobParty({
+      userId: notifyUserId,
+      exceptUserId: ctx.userId,
+      event: "blocked",
+      jobId: id,
+      jobTitle: updated.title,
+      detail: input.reason,
+    });
+
+    await notifyCoordinators(
+      ctx.companyId,
+      {
         title: "Job cannot be completed",
+        emailSubject: `Job blocked: ${updated.title}`,
         body: `"${updated.title}" blocked: ${input.reason}`,
         link: `/team-tasks/${id}`,
-      });
-    }
+      },
+      notifyUserId ?? ctx.userId,
+    );
 
     return this.getById(ctx, id);
   },
@@ -526,15 +712,13 @@ export const taskService = {
       sopChecklist: checklist as Prisma.InputJsonValue,
     });
 
-    if (existing.createdById && existing.createdById !== ctx.userId) {
-      await notificationService.notify({
-        userId: existing.createdById,
-        type: "SYSTEM",
-        title: "Originals returned",
-        body: `Original docs returned for "${existing.title}".`,
-        link: `/team-tasks/${id}`,
-      });
-    }
+    await notifyJobParty({
+      userId: existing.createdById,
+      exceptUserId: ctx.userId,
+      event: "originals_returned",
+      jobId: id,
+      jobTitle: existing.title,
+    });
 
     return this.getById(ctx, id);
   },
@@ -570,15 +754,13 @@ export const taskService = {
       after: updated,
     });
 
-    if (existing.assigneeId && existing.assigneeId !== ctx.userId) {
-      await notificationService.notify({
-        userId: existing.assigneeId,
-        type: "SYSTEM",
-        title: "Job verified & closed",
-        body: `Coordinator confirmed docs/payment for "${updated.title}". Return originals at end of day.`,
-        link: `/team-tasks/${id}`,
-      });
-    }
+    await notifyJobParty({
+      userId: existing.assigneeId,
+      exceptUserId: ctx.userId,
+      event: "done",
+      jobId: id,
+      jobTitle: updated.title,
+    });
 
     const paymentResult = await autoRecordFieldPayment(ctx, {
       id: existing.id,
@@ -596,6 +778,8 @@ export const taskService = {
         title: "Payment recorded from field job",
         body: `${Number(existing.paymentAmount).toLocaleString()} posted to invoice from "${existing.title}".`,
         link: `/invoices-payments/${paymentResult.invoice.id}`,
+        emailSubject: `Payment recorded: ${existing.title}`,
+        linkLabel: "Open invoice",
       });
     }
 

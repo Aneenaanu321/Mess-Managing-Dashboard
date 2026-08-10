@@ -56,7 +56,7 @@ export default function FieldOpsPage() {
   }, [templates, openJobs]);
 
   return (
-    <div className="mx-auto max-w-5xl space-y-5">
+    <div className="space-y-5">
       <PageHeader
         eyebrow="Projects & Field Work"
         title="Field Ops"

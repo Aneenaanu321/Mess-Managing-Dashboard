@@ -1,6 +1,6 @@
 import { NotificationType } from "@prisma/client";
 import { prisma } from "./config/prisma";
-import { sendEmail } from "./email";
+import { buildNotificationEmail, sendEmail } from "./email";
 import { env } from "./config/env";
 
 interface NotifyParams {
@@ -9,6 +9,8 @@ interface NotifyParams {
   title: string;
   body: string;
   link?: string;
+  emailSubject?: string;
+  linkLabel?: string;
 }
 
 // Mirrors apps/api's notification.service.notify — kept as a separate copy
@@ -24,12 +26,26 @@ export async function notify(params: NotifyParams) {
         link: params.link,
       },
     }),
-    prisma.user.findUnique({ where: { id: params.userId }, select: { email: true, emailNotifications: true } }),
+    prisma.user.findUnique({
+      where: { id: params.userId },
+      select: { email: true, emailNotifications: true },
+    }),
   ]);
 
-  if (user?.emailNotifications) {
-    const link = params.link ? `${env.CORS_ORIGIN}${params.link}` : undefined;
-    sendEmail({ to: user.email, subject: params.title, text: link ? `${params.body}\n\n${link}` : params.body }).catch(() => {});
+  if (user?.emailNotifications && user.email) {
+    const linkUrl = params.link ? `${env.CORS_ORIGIN}${params.link}` : undefined;
+    const { text, html } = buildNotificationEmail({
+      title: params.emailSubject ?? params.title,
+      body: params.body,
+      linkUrl,
+      linkLabel: params.linkLabel,
+    });
+    await sendEmail({
+      to: user.email,
+      subject: params.emailSubject ?? params.title,
+      text,
+      html,
+    });
   }
 
   return notification;

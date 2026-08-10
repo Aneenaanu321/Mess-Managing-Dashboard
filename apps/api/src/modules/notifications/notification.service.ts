@@ -1,6 +1,6 @@
 import { NotificationType } from "@prisma/client";
 import { prisma } from "../../config/prisma";
-import { sendEmail } from "../../utils/email";
+import { buildNotificationEmail, sendEmail } from "../../utils/email";
 import { env } from "../../config/env";
 
 interface NotifyParams {
@@ -9,14 +9,19 @@ interface NotifyParams {
   title: string;
   body: string;
   link?: string;
+  /** Optional override for the email subject (defaults to title). */
+  emailSubject?: string;
+  /** Optional CTA label in the HTML email. */
+  linkLabel?: string;
 }
 
 /**
- * Fire-and-forget in-app notification, mirrored to email (US-9.2) unless the
- * user has turned email off (Topbar → account menu → Email Notifications).
- * Kept synchronous/direct (not queued) for v1 simplicity; once apps/worker is
- * wired up, high-volume triggers (SLA scans, AMC renewal sweeps) should
- * enqueue via BullMQ instead of calling this in a request path loop.
+ * Fire in-app notification and mirror to email unless the user has turned
+ * email off (Topbar → account menu → Email Notifications).
+ *
+ * Email is awaited so the send finishes before the HTTP response returns
+ * (important on short-lived / serverless runtimes). SMTP failures are logged
+ * inside sendEmail and do not fail the caller.
  */
 export const notificationService = {
   async notify(params: NotifyParams) {
@@ -30,14 +35,26 @@ export const notificationService = {
           link: params.link,
         },
       }),
-      prisma.user.findUnique({ where: { id: params.userId }, select: { email: true, emailNotifications: true } }),
+      prisma.user.findUnique({
+        where: { id: params.userId },
+        select: { email: true, emailNotifications: true },
+      }),
     ]);
 
-    if (user?.emailNotifications) {
-      // Not awaited on the critical path — a slow/unreachable mail server
-      // shouldn't hold up whatever action triggered this notification.
-      const link = params.link ? `${env.CORS_ORIGIN}${params.link}` : undefined;
-      sendEmail({ to: user.email, subject: params.title, text: link ? `${params.body}\n\n${link}` : params.body }).catch(() => {});
+    if (user?.emailNotifications && user.email) {
+      const linkUrl = params.link ? `${env.CORS_ORIGIN}${params.link}` : undefined;
+      const { text, html } = buildNotificationEmail({
+        title: params.emailSubject ?? params.title,
+        body: params.body,
+        linkUrl,
+        linkLabel: params.linkLabel,
+      });
+      await sendEmail({
+        to: user.email,
+        subject: params.emailSubject ?? params.title,
+        text,
+        html,
+      });
     }
 
     return notification;
