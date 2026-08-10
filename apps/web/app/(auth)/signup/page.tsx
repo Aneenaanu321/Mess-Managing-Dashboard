@@ -22,7 +22,7 @@ export default function SignupPage() {
     setError(null);
     try {
       const result = await register.mutateAsync({ firstName, lastName, email, password });
-      router.push(getHomeHref(result.permissions));
+      router.push(getHomeHref(result.user.permissions));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not create account");
     }
