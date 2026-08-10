@@ -15,7 +15,7 @@ export default function CustomerDetailPage() {
   if (isLoading) return <p className="text-sm text-slate-500">Loading…</p>;
   if (!customer) return <p className="text-sm text-slate-500">Customer not found.</p>;
 
-  async function useMyLocation(siteId: string) {
+  async function pinMyLocation(siteId: string) {
     if (!navigator.geolocation) return;
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
@@ -115,7 +115,7 @@ export default function CustomerDetailPage() {
                     ) : (
                       <span className="text-xs text-slate-400">No GPS pin yet</span>
                     )}
-                    <Button size="sm" variant="secondary" onClick={() => useMyLocation(site.id)} disabled={updateSite.isPending}>
+                    <Button size="sm" variant="secondary" onClick={() => pinMyLocation(site.id)} disabled={updateSite.isPending}>
                       Use my location
                     </Button>
                   </div>
