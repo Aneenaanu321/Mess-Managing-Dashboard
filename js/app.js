@@ -20,6 +20,10 @@ const App = (() => {
   const STORAGE_KEY = "mm-nav-open";
   const MOBILE_MQ = "(max-width: 900px)";
 
+  function buildIcon(inner) {
+    return `<svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${inner}</svg>`;
+  }
+
   function isMobile() {
     return window.matchMedia(MOBILE_MQ).matches;
   }
@@ -80,6 +84,7 @@ const App = (() => {
       lastSection = r.section;
       return `${sectionHtml}
       <div class="nav-item ${r.key === activeKey ? "active" : ""}" data-route="${r.key}" role="link" tabindex="0" title="${r.label}">
+        ${buildIcon(r.icon)}
         <span>${r.label}</span>
       </div>`;
     }).join("");
