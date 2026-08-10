@@ -134,7 +134,7 @@ export default function NewTaskPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl">
+    <div className="mx-auto max-w-5xl">
       <h1 className="mb-2 text-xl font-semibold text-primary">{getNewItemLabel("/team-tasks")}</h1>
       <p className="mb-6 text-sm text-slate-500">
         Link a sales order, customer PO, or invoice when you can — title, packing lines, and cheque amounts fill in automatically. Assignees follow Field Ops SOP, submit docs, then you verify.

@@ -311,7 +311,7 @@ export default function TaskDetailPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-3">
+    <div className="mx-auto max-w-5xl space-y-3">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
           <p className="text-xs font-medium text-slate-400">
