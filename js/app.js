@@ -179,6 +179,8 @@ const App = (() => {
 })();
 
 document.addEventListener("DOMContentLoaded", () => {
+  if (typeof Auth !== "undefined" && !Auth.requireAuth()) return;
+
   const start = () => {
     try {
       App.init();
