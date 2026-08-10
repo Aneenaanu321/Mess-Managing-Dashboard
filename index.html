@@ -32,11 +32,16 @@
       <nav class="sidebar-nav" id="sidebarNav"></nav>
       <div class="sidebar-footer">
         <div class="sidebar-user">
-          <div class="user-avatar">A</div>
+          <div class="user-avatar" id="userAvatar">A</div>
           <div class="user-info">
-            <div class="user-name">Admin</div>
-            <div class="user-role">Manager</div>
+            <div class="user-name" id="userName">Admin</div>
+            <div class="user-role" id="userRole">Manager</div>
           </div>
+          <button class="logout-btn" id="logoutBtn" type="button" title="Sign out" aria-label="Sign out">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
         </div>
       </div>
     </aside>
@@ -65,10 +70,13 @@
   <!-- CDN libraries -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
 
   <!-- App scripts -->
+  <script src="js/auth.js"></script>
+  <script src="js/supabase-config.js"></script>
   <script src="js/firebase-config.js"></script>
   <script src="js/utils.js"></script>
   <script src="js/data.js"></script>

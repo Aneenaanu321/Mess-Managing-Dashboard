@@ -209,7 +209,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   Promise.race([
     Store.ready(),
-    new Promise((resolve) => setTimeout(resolve, 2500)),
+    new Promise((resolve) => setTimeout(resolve, 6000)),
   ]).then(start);
 });
 

@@ -6,6 +6,15 @@ const SettingsPage = (() => {
   function render(container) {
     const settings = Store.getSettings();
     const cloudOn = Store.isCloudEnabled();
+    const provider = Store.getCloudProvider ? Store.getCloudProvider() : (cloudOn ? "cloud" : "local");
+    const storageLabel =
+      provider === "supabase" ? "Connected to free Supabase cloud. Data syncs across devices."
+      : provider === "firebase" ? "Connected to free Firebase cloud. Data syncs across devices."
+      : "Using this browser only (localStorage). Run supabase-setup.sql in Supabase to enable cloud.";
+    const badgeLabel =
+      provider === "supabase" ? "Supabase connected"
+      : provider === "firebase" ? "Firebase connected"
+      : "Local only";
 
     container.innerHTML = `
       <div class="two-col">
@@ -25,13 +34,9 @@ const SettingsPage = (() => {
 
         <div class="panel">
           <div class="section-title">Data Storage</div>
-          <p class="form-hint mb-16">
-            ${cloudOn
-              ? "Connected to free Firebase cloud. Data syncs across devices and stays online."
-              : "Using this browser only (localStorage). Add Firebase keys in <code>js/firebase-config.js</code> to enable free cloud storage."}
-          </p>
+          <p class="form-hint mb-16">${storageLabel}</p>
           <span class="badge ${cloudOn ? "badge-green" : "badge-gray"}" style="margin-bottom:20px;">
-            ${cloudOn ? "Cloud connected" : "Local only"}
+            ${badgeLabel}
           </span>
 
           <div class="section-title">Data Management</div>

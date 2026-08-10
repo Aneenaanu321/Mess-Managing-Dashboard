@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Data Store — cloud (Firebase) when configured, else localStorage fallback
+   Data Store — Supabase cloud when configured, else Firebase, else localStorage
    ========================================================================== */
 
 const Store = (() => {
@@ -7,11 +7,15 @@ const Store = (() => {
   const SETTINGS_KEY = "messDashboard_settings";
   const CLOUD_STATE_PATH = "messDashboard/state";
   const CLOUD_SETTINGS_PATH = "messDashboard/settings";
+  const SB_STATE_ID = "state";
+  const SB_SETTINGS_ID = "settings";
   const listeners = [];
   let state = null;
   let settings = {};
   let db = null;
+  let sb = null;
   let cloudEnabled = false;
+  let cloudProvider = "local"; // local | supabase | firebase
   let applyingRemote = false;
   let saveTimer = null;
   let readyResolve;
@@ -202,17 +206,47 @@ const Store = (() => {
     cacheLocal();
     notify();
 
-    if (!cloudEnabled || !db) return;
+    if (!cloudEnabled) return;
 
     clearTimeout(saveTimer);
     saveTimer = setTimeout(() => {
-      db.ref(CLOUD_STATE_PATH).set(state).catch((e) => {
+      persistCloudState().catch((e) => {
         console.error("Failed to save to cloud", e);
         if (typeof UI !== "undefined" && UI.toast) {
           UI.toast("Cloud save failed — data kept on this device", "error");
         }
       });
     }, 350);
+  }
+
+  async function persistCloudState() {
+    if (cloudProvider === "supabase" && sb) {
+      const { error } = await sb.from("app_data").upsert({
+        id: SB_STATE_ID,
+        payload: state,
+        updated_at: new Date().toISOString(),
+      });
+      if (error) throw error;
+      return;
+    }
+    if (cloudProvider === "firebase" && db) {
+      await db.ref(CLOUD_STATE_PATH).set(state);
+    }
+  }
+
+  async function persistCloudSettings() {
+    if (cloudProvider === "supabase" && sb) {
+      const { error } = await sb.from("app_data").upsert({
+        id: SB_SETTINGS_ID,
+        payload: settings,
+        updated_at: new Date().toISOString(),
+      });
+      if (error) throw error;
+      return;
+    }
+    if (cloudProvider === "firebase" && db) {
+      await db.ref(CLOUD_SETTINGS_PATH).set(settings);
+    }
   }
 
   function loadLocal() {
@@ -244,8 +278,8 @@ const Store = (() => {
       localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
     } catch (e) { /* ignore */ }
 
-    if (cloudEnabled && db) {
-      db.ref(CLOUD_SETTINGS_PATH).set(settings).catch((e) => {
+    if (cloudEnabled) {
+      persistCloudSettings().catch((e) => {
         console.error("Failed to save settings to cloud", e);
       });
     }
@@ -303,29 +337,40 @@ const Store = (() => {
     return cloudEnabled;
   }
 
+  function getCloudProvider() {
+    return cloudProvider;
+  }
+
   function ready() {
     return readyPromise;
   }
 
   function bootLocal() {
-    if (!loadLocal()) state = buildDemoData();
+    if (!loadLocal()) state = emptyData();
     saveLocalOnly();
   }
 
-  async function initCloud() {
+  async function clearDemoSeedOnce() {
+    const FLAG = "mm_cleared_demo_v1";
     try {
-      if (!firebase.apps.length) {
-        firebase.initializeApp(FirebaseConfig);
+      if (localStorage.getItem(FLAG) === "1") return false;
+    } catch (_) {}
+    state = emptyData();
+    settings = {};
+    try {
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+      localStorage.setItem(FLAG, "1");
+    } catch (_) {}
+    cacheLocal();
+    if (cloudEnabled) {
+      try {
+        await persistCloudState();
+        await persistCloudSettings();
+      } catch (e) {
+        console.warn("Could not clear cloud demo seed", e);
       }
-      db = firebase.database();
-      cloudEnabled = true;
-      return true;
-    } catch (e) {
-      console.error("Firebase init failed", e);
-      cloudEnabled = false;
-      db = null;
-      return false;
     }
+    return true;
   }
 
   function finishReady() {
@@ -333,7 +378,123 @@ const Store = (() => {
     readyResolve();
   }
 
-  async function bootCloud() {
+  function initSupabaseClient() {
+    if (typeof supabase === "undefined" || typeof isSupabaseConfigured !== "function" || !isSupabaseConfigured()) {
+      return false;
+    }
+    try {
+      const createClient = supabase.createClient || (window.supabase && window.supabase.createClient);
+      if (!createClient) return false;
+      sb = createClient(SupabaseConfig.url, SupabaseConfig.anonKey);
+      cloudProvider = "supabase";
+      cloudEnabled = true;
+      return true;
+    } catch (e) {
+      console.error("Supabase init failed", e);
+      sb = null;
+      return false;
+    }
+  }
+
+  async function initFirebaseClient() {
+    if (typeof firebase === "undefined" || typeof isFirebaseConfigured !== "function" || !isFirebaseConfigured()) {
+      return false;
+    }
+    try {
+      if (!firebase.apps.length) firebase.initializeApp(FirebaseConfig);
+      db = firebase.database();
+      cloudProvider = "firebase";
+      cloudEnabled = true;
+      return true;
+    } catch (e) {
+      console.error("Firebase init failed", e);
+      db = null;
+      return false;
+    }
+  }
+
+  function payloadFromRow(row) {
+    if (!row) return null;
+    const p = row.payload;
+    if (p == null) return null;
+    if (typeof p === "string") {
+      try { return JSON.parse(p); } catch (_) { return null; }
+    }
+    return p;
+  }
+
+  async function bootSupabase() {
+    const { data: stateRow, error: stateErr } = await Promise.race([
+      sb.from("app_data").select("payload").eq("id", SB_STATE_ID).maybeSingle(),
+      new Promise((_, reject) => setTimeout(() => reject(new Error("Cloud timeout")), 6000)),
+    ]);
+    if (stateErr) throw stateErr;
+
+    // One-time wipe of sample/demo data for real client use (after cloud is connected)
+    const cleared = await clearDemoSeedOnce();
+    if (!cleared) {
+      const remote = payloadFromRow(stateRow);
+      const hasRemoteCollections = remote && typeof remote === "object" && Object.keys(remote).some((k) => Array.isArray(remote[k]));
+
+      if (hasRemoteCollections) {
+        state = normalizeState(remote);
+      } else if (loadLocal()) {
+        await persistCloudState();
+      } else {
+        state = emptyData();
+        await persistCloudState();
+      }
+      cacheLocal();
+    }
+
+    if (!cleared) {
+      try {
+        const { data: settingsRow, error: settingsErr } = await sb
+          .from("app_data")
+          .select("payload")
+          .eq("id", SB_SETTINGS_ID)
+          .maybeSingle();
+        if (settingsErr) throw settingsErr;
+        const remoteSettings = payloadFromRow(settingsRow);
+        if (remoteSettings && typeof remoteSettings === "object" && Object.keys(remoteSettings).length) {
+          settings = remoteSettings;
+          try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch (_) {}
+        } else if (Object.keys(settings).length) {
+          await persistCloudSettings();
+        }
+      } catch (e) {
+        console.warn("Cloud settings load skipped", e);
+      }
+    }
+
+    // Live updates across browsers
+    try {
+      sb.channel("app_data_changes")
+        .on("postgres_changes", { event: "*", schema: "public", table: "app_data" }, (payload) => {
+          const row = payload.new;
+          if (!row || !row.id) return;
+          if (row.id === SB_STATE_ID) {
+            const next = payloadFromRow(row);
+            if (!next) return;
+            applyingRemote = true;
+            state = normalizeState(next);
+            cacheLocal();
+            notify();
+            applyingRemote = false;
+          } else if (row.id === SB_SETTINGS_ID) {
+            const nextSettings = payloadFromRow(row);
+            if (!nextSettings || typeof nextSettings !== "object") return;
+            settings = nextSettings;
+            try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch (_) {}
+          }
+        })
+        .subscribe();
+    } catch (e) {
+      console.warn("Realtime subscribe skipped", e);
+    }
+  }
+
+  async function bootFirebase() {
     const snap = await Promise.race([
       db.ref(CLOUD_STATE_PATH).once("value"),
       new Promise((_, reject) => setTimeout(() => reject(new Error("Cloud timeout")), 4000)),
@@ -357,9 +518,7 @@ const Store = (() => {
       const remoteSettings = settingsSnap.val();
       if (remoteSettings && typeof remoteSettings === "object") {
         settings = remoteSettings;
-        try {
-          localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
-        } catch (_) {}
+        try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch (_) {}
       } else if (Object.keys(settings).length) {
         await db.ref(CLOUD_SETTINGS_PATH).set(settings);
       }
@@ -367,8 +526,8 @@ const Store = (() => {
       console.warn("Cloud settings load skipped", e);
     }
 
-    db.ref(CLOUD_STATE_PATH).on("value", (snap) => {
-      const remoteVal = snap.val();
+    db.ref(CLOUD_STATE_PATH).on("value", (snapVal) => {
+      const remoteVal = snapVal.val();
       if (!remoteVal) return;
       applyingRemote = true;
       state = normalizeState(remoteVal);
@@ -377,53 +536,67 @@ const Store = (() => {
       applyingRemote = false;
     });
 
-    db.ref(CLOUD_SETTINGS_PATH).on("value", (snap) => {
-      const remoteSettings = snap.val();
+    db.ref(CLOUD_SETTINGS_PATH).on("value", (snapVal) => {
+      const remoteSettings = snapVal.val();
       if (!remoteSettings || typeof remoteSettings !== "object") return;
       settings = remoteSettings;
-      try {
-        localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
-      } catch (_) {}
+      try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch (_) {}
     });
   }
 
-  // Local path is sync so the UI never waits on Firebase placeholders
-  loadSettingsLocal();
-  if (typeof firebase === "undefined" || typeof isFirebaseConfigured !== "function" || !isFirebaseConfigured()) {
-    bootLocal();
-    finishReady();
-  } else {
-    initCloud().then(async (ok) => {
-      if (!ok) {
-        bootLocal();
+  async function bootCloud() {
+    loadSettingsLocal();
+
+    if (initSupabaseClient()) {
+      try {
+        await bootSupabase();
         finishReady();
         return;
-      }
-      try {
-        await bootCloud();
       } catch (e) {
-        console.error("Cloud load failed, using local data", e);
+        console.error("Supabase load failed, trying fallback", e);
         cloudEnabled = false;
-        bootLocal();
-      } finally {
-        finishReady();
+        cloudProvider = "local";
+        sb = null;
       }
-    }).catch((e) => {
-      console.error("Store boot failed", e);
-      cloudEnabled = false;
-      bootLocal();
+    }
+
+    const fbOk = await initFirebaseClient();
+    if (fbOk) {
+      try {
+        await bootFirebase();
+        finishReady();
+        return;
+      } catch (e) {
+        console.error("Firebase load failed, using local data", e);
+        cloudEnabled = false;
+        cloudProvider = "local";
+      }
+    }
+
+    await clearDemoSeedOnce();
+    if (!state) bootLocal();
+    finishReady();
+  }
+
+  loadSettingsLocal();
+  bootCloud().catch((e) => {
+    console.error("Store boot failed", e);
+    cloudEnabled = false;
+    cloudProvider = "local";
+    clearDemoSeedOnce().finally(() => {
+      if (!state) bootLocal();
       finishReady();
     });
+  });
 
-    setTimeout(() => {
-      if (!state) bootLocal();
-      readyResolve();
-    }, 5000);
-  }
+  setTimeout(() => {
+    if (!state) bootLocal();
+    readyResolve();
+  }, 7000);
 
   return {
     getAll, getById, add, update, remove, subscribe, logActivity, resetDemoData, clearAllData,
-    ready, isCloudEnabled, getSettings, saveSettings,
+    ready, isCloudEnabled, getCloudProvider, getSettings, saveSettings,
     get state() { return state; },
   };
 })();

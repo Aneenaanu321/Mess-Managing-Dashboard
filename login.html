@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Sign in | Mess Manager</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="css/style.css" />
+<link rel="stylesheet" href="css/auth.css" />
+</head>
+<body class="auth-body">
+  <main class="auth-card" aria-label="Sign in">
+    <button type="button" class="auth-theme-toggle" id="themeToggle" aria-label="Toggle theme" title="Toggle theme">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M21 14.5A8.5 8.5 0 1110.5 3 7 7 0 0021 14.5z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+      </svg>
+    </button>
+
+    <header class="auth-header">
+      <h1 class="auth-title">Sign in</h1>
+      <p class="auth-sub">Welcome back. Sign in to access the Mess Manager dashboard.</p>
+    </header>
+
+    <p class="auth-error" id="authError" role="alert"></p>
+
+    <form class="auth-form" id="loginForm" novalidate>
+      <div class="auth-field">
+        <label class="auth-label" for="email">Email</label>
+        <input class="auth-input" id="email" name="email" type="email" autocomplete="email" placeholder="you@company.com" required />
+      </div>
+
+      <div class="auth-field">
+        <label class="auth-label" for="password">Password</label>
+        <div class="auth-password-wrap">
+          <input class="auth-input" id="password" name="password" type="password" autocomplete="current-password" placeholder="Enter your password" required />
+          <button type="button" class="auth-show-btn" id="togglePassword">Show</button>
+        </div>
+      </div>
+
+      <div class="auth-row">
+        <label class="auth-check">
+          <input type="checkbox" id="remember" name="remember" />
+          Remember me
+        </label>
+        <a class="auth-link" href="#" id="forgotPassword">Forgot password?</a>
+      </div>
+
+      <button type="submit" class="auth-submit" id="submitBtn">
+        Sign in
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <rect x="5" y="11" width="14" height="10" rx="2" stroke="currentColor" stroke-width="2"/>
+          <path d="M8 11V8a4 4 0 118 0v3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </form>
+
+    <p class="auth-switch">
+      Don't have an account?
+      <a class="auth-link" href="signup.html">Create one</a>
+    </p>
+
+    <footer class="auth-footer">Secure sign-in · Role-based access</footer>
+  </main>
+
+  <script src="js/auth.js"></script>
+  <script>
+    (function () {
+      if (Auth.isLoggedIn()) {
+        window.location.replace("index.html");
+        return;
+      }
+
+      const THEME_KEY = "mm-auth-theme";
+      const body = document.body;
+      const errorEl = document.getElementById("authError");
+      const passwordInput = document.getElementById("password");
+      const togglePassword = document.getElementById("togglePassword");
+
+      function showError(message) {
+        errorEl.textContent = message;
+        errorEl.classList.add("show");
+      }
+
+      function clearError() {
+        errorEl.textContent = "";
+        errorEl.classList.remove("show");
+      }
+
+      function applyTheme(dark) {
+        body.classList.toggle("auth-dark", dark);
+        try { localStorage.setItem(THEME_KEY, dark ? "dark" : "light"); } catch (_) {}
+      }
+
+      try {
+        applyTheme(localStorage.getItem(THEME_KEY) === "dark");
+      } catch (_) {}
+
+      document.getElementById("themeToggle").addEventListener("click", () => {
+        applyTheme(!body.classList.contains("auth-dark"));
+      });
+
+      togglePassword.addEventListener("click", () => {
+        const show = passwordInput.type === "password";
+        passwordInput.type = show ? "text" : "password";
+        togglePassword.textContent = show ? "Hide" : "Show";
+      });
+
+      document.getElementById("forgotPassword").addEventListener("click", (e) => {
+        e.preventDefault();
+        showError("Password reset isn’t set up yet. Create a new account or contact your admin.");
+      });
+
+      document.getElementById("loginForm").addEventListener("submit", (e) => {
+        e.preventDefault();
+        clearError();
+        const email = document.getElementById("email").value;
+        const password = passwordInput.value;
+        const remember = document.getElementById("remember").checked;
+        const result = Auth.login({ email, password, remember });
+        if (!result.ok) {
+          showError(result.error);
+          return;
+        }
+        const params = new URLSearchParams(window.location.search);
+        const next = params.get("next");
+        const safeNext = next && !/^(https?:)?\/\//i.test(next) && !next.includes(":")
+          ? decodeURIComponent(next)
+          : "index.html";
+        window.location.href = safeNext;
+      });
+    })();
+  </script>
+</body>
+</html>
