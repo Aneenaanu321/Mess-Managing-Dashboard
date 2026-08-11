@@ -180,6 +180,7 @@ const App = (() => {
 
 document.addEventListener("DOMContentLoaded", () => {
   if (typeof Auth !== "undefined" && !Auth.requireAuth()) return;
+  document.documentElement.style.visibility = "";
 
   const start = () => {
     try {

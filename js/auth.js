@@ -15,7 +15,7 @@ const Auth = (() => {
 
   // Fixed team accounts
   const SEED_USERS = [
-    { email: "harishdas132@gmail.com", role: "manager", password: DEFAULT_PASSWORD },
+    { email: "harishdas312@gmail.com", role: "manager", password: DEFAULT_PASSWORD },
     { email: "aneenaantony321@gmail.com", role: "admin", password: DEFAULT_PASSWORD },
   ];
 
