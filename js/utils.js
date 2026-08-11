@@ -130,9 +130,15 @@ const Utils = (() => {
     return palette[Math.abs(hash) % palette.length];
   }
 
+  function fileTimestamp() {
+    const d = new Date();
+    const pad = (n) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}_${pad(d.getHours())}-${pad(d.getMinutes())}`;
+  }
+
   return {
     escapeHtml, formatCurrency, formatDate, formatDateTime, todayISO, monthLabel,
     timeAgo, uid, nextSequentialId, debounce, downloadWorkbook, matchesSearch,
-    inDateRange, sumBy, groupCount, randomColor,
+    inDateRange, sumBy, groupCount, randomColor, fileTimestamp,
   };
 })();

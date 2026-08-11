@@ -116,7 +116,7 @@ const SalaryPage = (() => {
       "Basic Salary": s.basicSalary, "Allowance": s.allowance, "Deduction": s.deduction, "Net Salary": s.netSalary,
       "Salary Month": Utils.monthLabel(s.salaryMonth), "Payment Date": Utils.formatDate(s.paymentDate), "Payment Status": s.paymentStatus,
     }));
-    Utils.downloadWorkbook({ Salaries: rows }, "Salaries.xlsx");
+    Utils.downloadWorkbook({ Salaries: rows }, `Salaries_${Utils.fileTimestamp()}.xlsx`);
     UI.toast("Salary records exported to Excel");
   }
 

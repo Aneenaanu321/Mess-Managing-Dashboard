@@ -96,11 +96,11 @@ const DeliveryStaffPage = (() => {
       "Latitude": s.currentLocation?.lat ?? "", "Longitude": s.currentLocation?.lng ?? "",
       "Status": s.status, "Last Updated": Utils.formatDateTime(s.lastUpdated),
     }));
-    Utils.downloadWorkbook({ "Delivery Staff": rows }, "DeliveryStaff.xlsx");
+    Utils.downloadWorkbook({ "Delivery Staff": rows }, `DeliveryStaff_${Utils.fileTimestamp()}.xlsx`);
     UI.toast("Delivery staff list exported to Excel");
   }
 
-  function openForm(existing) {
+  function openForm(existing, onDone) {
     const isEdit = !!existing;
     const nextId = isEdit ? existing.deliveryStaffId : Utils.nextSequentialId(Store.getAll("deliveryStaff"), "DS", "deliveryStaffId");
 
@@ -148,7 +148,8 @@ const DeliveryStaffPage = (() => {
               UI.toast("Delivery staff added");
             }
             close();
-            table.render();
+            if (table) table.render();
+            if (onDone) onDone();
           },
         },
       ],
@@ -209,5 +210,5 @@ const DeliveryStaffPage = (() => {
     });
   }
 
-  return { render, VEHICLE_TYPES, STATUS_OPTIONS, openLocationForm, refreshTable: () => table && table.render() };
+  return { render, VEHICLE_TYPES, STATUS_OPTIONS, openForm, openLocationForm, refreshTable: () => table && table.render() };
 })();

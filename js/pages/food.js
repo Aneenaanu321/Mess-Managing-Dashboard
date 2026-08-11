@@ -90,7 +90,7 @@ const FoodPage = (() => {
       "Food ID": f.foodId, "Item Name": f.name, "Category": f.category, "Price": f.price,
       "Available Quantity": f.quantity, "Status": f.status,
     }));
-    Utils.downloadWorkbook({ "Food Menu": rows }, "FoodMenu.xlsx");
+    Utils.downloadWorkbook({ "Food Menu": rows }, `FoodMenu_${Utils.fileTimestamp()}.xlsx`);
     UI.toast("Food menu exported to Excel");
   }
 

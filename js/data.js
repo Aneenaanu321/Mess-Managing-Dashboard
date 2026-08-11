@@ -254,10 +254,19 @@ const Store = (() => {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
         state = normalizeState(JSON.parse(raw));
+        // Auto-seed demo data if all collections are empty (fresh install)
+        const isEmpty = Object.values(state).every((v) => !Array.isArray(v) || v.length === 0);
+        if (isEmpty) {
+          state = buildDemoData();
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        }
         return true;
       }
     } catch (e) { /* ignore */ }
-    return false;
+    // No saved data at all — seed demo data
+    state = buildDemoData();
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) { /* ignore */ }
+    return true;
   }
 
   function loadSettingsLocal() {
@@ -351,26 +360,8 @@ const Store = (() => {
   }
 
   async function clearDemoSeedOnce() {
-    const FLAG = "mm_cleared_demo_v1";
-    try {
-      if (localStorage.getItem(FLAG) === "1") return false;
-    } catch (_) {}
-    state = emptyData();
-    settings = {};
-    try {
-      localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
-      localStorage.setItem(FLAG, "1");
-    } catch (_) {}
-    cacheLocal();
-    if (cloudEnabled) {
-      try {
-        await persistCloudState();
-        await persistCloudSettings();
-      } catch (e) {
-        console.warn("Could not clear cloud demo seed", e);
-      }
-    }
-    return true;
+    // Keep existing data (including demo staff/locations) so the map has pins.
+    return false;
   }
 
   function finishReady() {

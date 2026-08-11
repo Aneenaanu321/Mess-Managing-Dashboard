@@ -64,7 +64,7 @@ const SettingsPage = (() => {
         Customers: Store.getAll("customers").map((c) => ({ "Customer ID": c.customerId, "Name": c.name, "Phone": c.phone, "Area": c.area, "Subscription": c.subscriptionType, "Status": c.status })),
         Expenses: Store.getAll("expenses").map((x) => ({ "Expense ID": x.expenseId, "Date": Utils.formatDate(x.date), "Category": x.category, "Amount": x.amount, "Paid By": x.paidBy })),
         "Food Menu": Store.getAll("food").map((f) => ({ "Food ID": f.foodId, "Name": f.name, "Category": f.category, "Price": f.price, "Status": f.status })),
-      }, "MessManager_FullExport.xlsx");
+      }, `MessManager_FullExport_${Utils.fileTimestamp()}.xlsx`);
       UI.toast("All data exported to Excel");
     });
 

@@ -103,7 +103,7 @@ const EmployeesPage = (() => {
       "Joining Date": Utils.formatDate(e.joiningDate), "Salary": e.salary, "Salary Date": e.salaryDate,
       "Bank Account": e.bankAccount || "", "Status": e.status,
     }));
-    Utils.downloadWorkbook({ Employees: rows }, "Employees.xlsx");
+    Utils.downloadWorkbook({ Employees: rows }, `Employees_${Utils.fileTimestamp()}.xlsx`);
     UI.toast("Employee list exported to Excel");
   }
 

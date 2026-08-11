@@ -827,6 +827,21 @@ table.data-table{width:100%;border-collapse:collapse;min-width:640px;}
 .report-tab:hover{background:var(--neutral-bg);}
 .report-tab.active{background:var(--brand);border-color:var(--brand);color:#fff;}
 
+.staff-map{
+  height:360px;
+  border-radius:12px;
+  border:1px solid var(--border);
+  overflow:hidden;
+  z-index:1;
+}
+.staff-map-legend{
+  display:flex;gap:12px;font-size:11.5px;color:var(--text-muted);flex-wrap:wrap;
+}
+.staff-map-legend span{display:inline-flex;align-items:center;gap:5px;}
+.staff-map-dot{display:inline-block;width:8px;height:8px;border-radius:50%;}
+.leaflet-popup-content{font-family:var(--font);margin:10px 12px;}
+.leaflet-popup-content strong{display:block;margin-bottom:2px;}
+
 .map-list{display:flex;flex-direction:column;gap:10px;}
 .map-card{
   display:flex;align-items:center;gap:14px;

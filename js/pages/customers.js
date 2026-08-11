@@ -95,7 +95,7 @@ const CustomersPage = (() => {
       "Area": c.area, "Subscription Type": c.subscriptionType, "Start Date": Utils.formatDate(c.startDate),
       "End Date": Utils.formatDate(c.endDate), "Status": c.status,
     }));
-    Utils.downloadWorkbook({ Customers: rows }, "Customers.xlsx");
+    Utils.downloadWorkbook({ Customers: rows }, `Customers_${Utils.fileTimestamp()}.xlsx`);
     UI.toast("Customer list exported to Excel");
   }
 

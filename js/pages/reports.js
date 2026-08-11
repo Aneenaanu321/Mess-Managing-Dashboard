@@ -312,7 +312,7 @@ const ReportsPage = (() => {
 
     body.querySelector("#repExportBtn").addEventListener("click", () => {
       const rows = getData().map(cfg.excelRow);
-      Utils.downloadWorkbook({ [cfg.label]: rows }, cfg.label.replace(/[\s/]+/g, "_") + ".xlsx");
+      Utils.downloadWorkbook({ [cfg.label]: rows }, `${cfg.label.replace(/[\s/]+/g, "_")}_${Utils.fileTimestamp()}.xlsx`);
       UI.toast(cfg.label + " exported to Excel");
     });
     body.querySelector("#repPrintBtn").addEventListener("click", () => window.print());

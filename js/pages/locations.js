@@ -1,10 +1,12 @@
 /* ==========================================================================
    Delivery Staff Location Tracking Page
-   Simple, non-GPS location view: staff self-report a location name + lat/lng
+   Real map (Leaflet / OpenStreetMap) + staff location table
    ========================================================================== */
 
 const LocationsPage = (() => {
   let containerRef = null;
+  let map = null;
+  let markers = [];
 
   function statusDotColor(status) {
     if (status === "Available") return "#16a34a";
@@ -12,52 +14,97 @@ const LocationsPage = (() => {
     return "#9aa1b1";
   }
 
-  function renderMapPanel(staffList) {
-    const withCoords = staffList.filter((s) => s.currentLocation && s.currentLocation.lat && s.currentLocation.lng);
-    if (!withCoords.length) {
-      return `<div class="panel"><div class="panel-header"><div class="panel-title">Map View</div></div>${UI.emptyStateHtml("No location data available yet")}</div>`;
+  function staffWithCoords(staffList) {
+    return (staffList || []).filter((s) => {
+      const lat = Number(s.currentLocation?.lat);
+      const lng = Number(s.currentLocation?.lng);
+      return Number.isFinite(lat) && Number.isFinite(lng) && (lat !== 0 || lng !== 0);
+    });
+  }
+
+  function destroyMap() {
+    markers = [];
+    if (map) {
+      map.remove();
+      map = null;
     }
-    const lats = withCoords.map((s) => s.currentLocation.lat);
-    const lngs = withCoords.map((s) => s.currentLocation.lng);
-    const minLat = Math.min(...lats), maxLat = Math.max(...lats);
-    const minLng = Math.min(...lngs), maxLng = Math.max(...lngs);
-    const padLat = (maxLat - minLat) || 0.01;
-    const padLng = (maxLng - minLng) || 0.01;
+  }
 
-    const pins = withCoords.map((s) => {
-      const x = 6 + ((s.currentLocation.lng - minLng) / padLng) * 88;
-      const y = 90 - ((s.currentLocation.lat - minLat) / padLat) * 80;
-      const color = statusDotColor(s.status);
-      return `<div title="${Utils.escapeHtml(s.name)} — ${Utils.escapeHtml(s.currentLocation.name)}" style="position:absolute;left:${x}%;top:${y}%;transform:translate(-50%,-100%);text-align:center;">
-        <div style="width:14px;height:14px;border-radius:50% 50% 50% 0;background:${color};transform:rotate(-45deg);margin:0 auto;box-shadow:0 1px 3px rgba(0,0,0,.3);"></div>
-        <div style="font-size:10.5px;font-weight:600;color:var(--text);background:#fff;padding:1px 5px;border-radius:5px;margin-top:2px;display:inline-block;box-shadow:var(--shadow-sm);white-space:nowrap;">${Utils.escapeHtml(s.name.split(" ")[0])}</div>
-      </div>`;
-    }).join("");
+  function pinIcon(color) {
+    return L.divIcon({
+      className: "staff-map-pin",
+      html: `<div style="width:16px;height:16px;border-radius:50% 50% 50% 0;background:${color};transform:rotate(-45deg);border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.28);"></div>`,
+      iconSize: [16, 16],
+      iconAnchor: [8, 16],
+      popupAnchor: [0, -16],
+    });
+  }
 
-    return `<div class="panel">
-      <div class="panel-header">
-        <div class="panel-title">Map View (approximate positions)</div>
-        <div style="display:flex;gap:12px;font-size:11.5px;color:var(--text-muted);">
-          <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#16a34a;margin-right:4px;"></span>Available</span>
-          <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#2563eb;margin-right:4px;"></span>On Delivery</span>
-          <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#9aa1b1;margin-right:4px;"></span>Offline</span>
-        </div>
-      </div>
-      <div style="position:relative;height:260px;background:linear-gradient(135deg,#f4f6fb,#eef2ff);border-radius:10px;border:1px solid var(--border);overflow:hidden;">
-        <div style="position:absolute;inset:0;background-image:linear-gradient(rgba(79,70,229,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(79,70,229,.06) 1px,transparent 1px);background-size:24px 24px;"></div>
-        ${pins}
-      </div>
-    </div>`;
+  function initMap(staffList) {
+    destroyMap();
+    const el = document.getElementById("staffMap");
+    if (!el || typeof L === "undefined") return;
+
+    const withCoords = staffWithCoords(staffList);
+    map = L.map(el, { scrollWheelZoom: true }).setView([13.0827, 80.2707], 12);
+
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19,
+      attribution: "&copy; OpenStreetMap",
+    }).addTo(map);
+
+    const bounds = [];
+    withCoords.forEach((s) => {
+      const lat = Number(s.currentLocation.lat);
+      const lng = Number(s.currentLocation.lng);
+      const marker = L.marker([lat, lng], { icon: pinIcon(statusDotColor(s.status)) }).addTo(map);
+      marker.bindPopup(`
+        <strong>${Utils.escapeHtml(s.name)}</strong>
+        ${Utils.escapeHtml(s.currentLocation.name || "Unknown location")}<br>
+        ${Utils.escapeHtml(s.phone || "")}<br>
+        Status: ${Utils.escapeHtml(s.status || "-")}
+      `);
+      markers.push(marker);
+      bounds.push([lat, lng]);
+    });
+
+    if (bounds.length === 1) map.setView(bounds[0], 14);
+    else if (bounds.length > 1) map.fitBounds(bounds, { padding: [36, 36], maxZoom: 14 });
+
+    setTimeout(() => map && map.invalidateSize(), 80);
   }
 
   function render(container) {
     containerRef = container;
+    destroyMap();
     const staffList = Store.getAll("deliveryStaff");
+    const withCoords = staffWithCoords(staffList);
 
     container.innerHTML = `
-      ${renderMapPanel(staffList)}
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">Map View</div>
+          <div class="staff-map-legend">
+            <span><i class="staff-map-dot" style="background:#16a34a;"></i>Available</span>
+            <span><i class="staff-map-dot" style="background:#2563eb;"></i>On Delivery</span>
+            <span><i class="staff-map-dot" style="background:#9aa1b1;"></i>Offline</span>
+          </div>
+        </div>
+        ${withCoords.length
+          ? `<div id="staffMap" class="staff-map"></div>`
+          : `${UI.emptyStateHtml("No location data yet. Add delivery staff with latitude and longitude, or load sample data.")}
+             <div style="text-align:center;margin-top:12px;">
+               <button class="btn btn-primary" id="locLoadSample">Load sample locations</button>
+             </div>`}
+      </div>
       <div class="panel" style="margin-top:16px;">
-        <div class="panel-header"><div class="panel-title">Delivery Staff Locations</div></div>
+        <div class="panel-header">
+          <div class="panel-title">Delivery Staff Locations</div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn btn-secondary" id="locAddStaff">+ Add staff</button>
+            <button class="btn btn-secondary" id="locExportBtn">Export Excel</button>
+          </div>
+        </div>
         <div id="locTableContainer"></div>
       </div>
     `;
@@ -65,7 +112,7 @@ const LocationsPage = (() => {
     const tableContainer = container.querySelector("#locTableContainer");
     const table = UI.createDataTable(tableContainer, {
       pageSize: 8,
-      emptyMessage: "No delivery staff found.",
+      emptyMessage: "No delivery staff found. Use + Add staff or Load sample locations.",
       getData: () => Store.getAll("deliveryStaff").sort((a, b) => a.name.localeCompare(b.name)),
       columns: [
         { label: "Staff Name", render: (r) => `<strong>${Utils.escapeHtml(r.name)}</strong>` },
@@ -84,6 +131,39 @@ const LocationsPage = (() => {
       },
     });
     table.render();
+
+    container.querySelector("#locExportBtn").addEventListener("click", () => {
+      const rows = Store.getAll("deliveryStaff").map((s) => ({
+        "Staff ID": s.deliveryStaffId,
+        "Name": s.name,
+        "Phone": s.phone,
+        "Current Location": s.currentLocation?.name || "-",
+        "Latitude": s.currentLocation?.lat ?? "-",
+        "Longitude": s.currentLocation?.lng ?? "-",
+        "Assigned Area": s.assignedArea,
+        "Status": s.status,
+        "Last Updated": s.lastUpdated ? new Date(s.lastUpdated).toLocaleString() : "-",
+      }));
+      Utils.downloadWorkbook({ "Locations": rows }, `StaffLocations_${Utils.fileTimestamp()}.xlsx`);
+      UI.toast("Locations exported to Excel");
+    });
+
+    container.querySelector("#locAddStaff").addEventListener("click", () => {
+      DeliveryStaffPage.openForm(null, () => render(containerRef));
+    });
+
+    const sampleBtn = container.querySelector("#locLoadSample");
+    if (sampleBtn) {
+      sampleBtn.addEventListener("click", () => {
+        Store.resetDemoData();
+        UI.toast("Sample delivery staff and locations loaded");
+        render(containerRef);
+      });
+    }
+
+    if (withCoords.length) {
+      requestAnimationFrame(() => initMap(staffList));
+    }
   }
 
   return { render };

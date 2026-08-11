@@ -109,7 +109,7 @@ const DeliveriesPage = (() => {
       "Delivery Address": d.deliveryAddress, "Assigned Staff": staffName(d.assignedStaffId),
       "Order Date": Utils.formatDate(d.orderDate), "Delivery Time": d.deliveryTime, "Status": d.status, "Notes": d.notes || "",
     }));
-    Utils.downloadWorkbook({ Deliveries: rows }, "Deliveries.xlsx");
+    Utils.downloadWorkbook({ Deliveries: rows }, `Deliveries_${Utils.fileTimestamp()}.xlsx`);
     UI.toast("Deliveries exported to Excel");
   }
 

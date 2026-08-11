@@ -109,7 +109,7 @@ const ExpensesPage = (() => {
       "Expense ID": x.expenseId, "Date": Utils.formatDate(x.date), "Category": x.category, "Description": x.description,
       "Amount": x.amount, "Paid By": x.paidBy, "Payment Method": x.paymentMethod, "Notes": x.notes || "",
     }));
-    Utils.downloadWorkbook({ Expenses: rows }, "Expenses.xlsx");
+    Utils.downloadWorkbook({ Expenses: rows }, `Expenses_${Utils.fileTimestamp()}.xlsx`);
     UI.toast("Expenses exported to Excel");
   }
 
